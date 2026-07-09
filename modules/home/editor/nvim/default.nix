@@ -25,26 +25,76 @@ in {
     withRuby = false;
 
     extraPackages = with pkgs; [
+      # Core utilities (always needed)
       git fd ripgrep fzf tmux yazi
-      pyright ruff python3Packages.ipython
-      typescript-language-server prettier
-      vscode-langservers-extracted tailwindcss-language-server emmet-language-server
-      rust-analyzer cargo clippy rustfmt
-      nixd alejandra statix deadnix
-      lua-language-server stylua
-      fish bash-language-server shellcheck shfmt
-      taplo yaml-language-server marksman
+
+      # === Python (global — most common language) ===
+      pyright        # Python LSP
+      ruff           # Python linter & formatter (fast)
+      python3Packages.ipython # enhanced Python REPL
+
+      # === Nix (global — NixOS config editing) ===
+      nixd           # Nix LSP
+      alejandra      # Nix formatter
+      statix         # Nix linter (best practices)
+      deadnix        # find unused Nix code
+
+      # === Lua (global — for nvim config itself) ===
+      lua-language-server # Lua LSP
+      stylua         # Lua formatter
+
+      # === Shell (global — system scripts) ===
+      bash-language-server   # Bash LSP
+      shellcheck       # Bash linter
+      shfmt            # Shell formatter
+
+      # === Markup & config (global — always needed) ===
+      taplo            # TOML LSP & formatter
+      yaml-language-server   # YAML LSP
+      marksman         # Markdown LSP
+      prettier         # web formatter (JS/TS/HTML/CSS/JSON/MD)
+
+      # === JS/TS (move to devShell if not daily) ===
+      typescript-language-server  # TypeScript/JavaScript LSP
+      # vscode-langservers-extracted # HTML/CSS/JSON LSP — heavy, use devShell
+      # tailwindcss-language-server  # Tailwind LSP — use devShell
+      # emmet-language-server        # Emmet LSP — use devShell
+
+      # === Rust (move to devShell — very heavy) ===
+      # rust-analyzer  # Rust LSP — use devShell
+      # cargo           # Rust package manager — use devShell
+      # clippy          # Rust linter — use devShell
+      # rustfmt         # Rust formatter — use devShell
     ];
 
     plugins = with pkgs.vimPlugins; [
-      catppuccin-nvim nvim-web-devicons lualine-nvim bufferline-nvim which-key-nvim snacks-nvim
-      treesitterGrammars nvim-ts-autotag
-      blink-cmp friendly-snippets
-      nvim-lspconfig conform-nvim
-      mini-nvim guess-indent-nvim
-      render-markdown-nvim
-      gitsigns-nvim vim-slime
-      plenary-nvim
+      # UI & appearance
+      catppuccin-nvim        # color scheme
+      nvim-web-devicons      # file icons
+      lualine-nvim           # status line
+      bufferline-nvim        # tab/buffer line
+      which-key-nvim         # keybinding hints
+      snacks-nvim            # UI components library
+
+      # Treesitter & syntax
+      treesitterGrammars     # syntax highlighting for all languages
+      nvim-ts-autotag        # auto close/rename HTML tags
+
+      # Completion & snippets
+      blink-cmp              # completion engine
+      friendly-snippets      # snippet collection
+
+      # LSP & formatting
+      nvim-lspconfig         # LSP client configs
+      conform-nvim           # formatter manager
+
+      # Utilities
+      mini-nvim              # collection of small plugins
+      guess-indent-nvim      # auto-detect indentation
+      render-markdown-nvim   # live markdown preview
+      gitsigns-nvim          # git change indicators
+      vim-slime              # send code to terminal (REPL)
+      plenary-nvim           # utility library (required by many)
     ];
 
     initLua = ''

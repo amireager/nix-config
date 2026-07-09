@@ -22,6 +22,10 @@
       url = "github:0xc000022070/zen-browser-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Thorium removed — flake repos unreliable (504 timeout)
+    # Use AppImage instead: download from https://github.com/Alex313031/Thorium/releases
+    # programs.appimage is already enabled in core.nix
   };
 
   outputs = inputs @ {self, ...}: let

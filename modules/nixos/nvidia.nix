@@ -4,8 +4,11 @@
 
   hardware.nvidia = {
     modesetting.enable = true;
+
+    # Let Nvidia manage its own power (for laptop hybrid GPU)
     powerManagement.enable = true;
     powerManagement.finegrained = true;
+
     open = false;
     nvidiaSettings = true;
     prime = {
@@ -16,20 +19,22 @@
     };
   };
 
-  # Laptop power management
+  # Laptop power management — TLP handles CPU, Nvidia handles its own GPU
   services.tlp = {
     enable = true;
     settings = {
-      cpu_scaling_governor_on_ac = "performance";
-      cpu_scaling_governor_on_bat = "powersave";
-      cpu_energy_perf_policy_on_ac = "performance";
-      cpu_energy_perf_policy_on_bat = "balance_power";
-      cpu_max_perf_on_bat = 70;
-      cpu_boost_on_bat = 0;
-      usb_autosuspend = 1;
-      usb_timeout = 2;
-      wifi_pwr_on_bat = "on";
-      runtime_pm_on_bat = "auto";
+      CPU_SCALING_GOVERNOR_ON_AC = "performance";
+      CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
+      CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
+      CPU_ENERGY_PERF_POLICY_ON_BAT = "balance_power";
+      CPU_MAX_PERF_ON_BAT = 70;
+      CPU_BOOST_ON_BAT = 0;
+      USB_AUTOSUSPEND = 1;
+      USB_TIMEOUT = 2;
+      WIFI_PWR_ON_BAT = "on";
+      RUNTIME_PM_ON_BAT = "auto";
+      # Exclude Nvidia GPU from TLP — let nvidia driver manage it
+      RUNTIME_PM_DRIVER_BLACKLIST = "nvidia nouveau";
     };
   };
 

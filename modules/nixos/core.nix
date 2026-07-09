@@ -9,6 +9,7 @@
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
     auto-optimise-store = true;
+    # Binary caches for niri and noctalia
     substituters = [
       "https://niri.cachix.org"
       "https://noctalia.cachix.org"
@@ -19,20 +20,20 @@
     ];
   };
 
-  # Kernel
+  # Kernel — latest stable
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernel.sysctl = {
-    "vm.swappiness" = 20;
-    "vm.vfs_cache_pressure" = 50;
+    "vm.swappiness" = 20;          # prefer RAM over swap
+    "vm.vfs_cache_pressure" = 50;  # keep filesystem metadata longer
   };
 
-  # ZRAM swap
+  # ZRAM — compressed swap in RAM
   zramSwap = {
     enable = true;
     memoryPercent = 25;
   };
 
-  # Locale
+  # Locale & timezone
   time.timeZone = "Asia/Tehran";
   i18n.defaultLocale = "en_US.UTF-8";
   services.xserver.xkb = {
@@ -42,20 +43,20 @@
 
   # Fonts
   fonts.packages = with pkgs; [
-    vazirmatn
-    nerd-fonts.jetbrains-mono
-    nerd-fonts.fira-code
+    vazirmatn              # Persian font
+    nerd-fonts.jetbrains-mono  # dev font with icons
+    nerd-fonts.fira-code       # dev font with ligatures
   ];
 
-  # System packages
+  # Essential system packages
   environment.systemPackages = with pkgs; [
-    vim
-    git
-    gh
-    pciutils
+    vim          # terminal text editor
+    git          # version control
+    gh           # GitHub CLI
+    pciutils     # lspci — hardware info
   ];
 
-  # NH: modern NixOS management
+  # NH — modern NixOS management wrapper
   programs.nh = {
     enable = true;
     flake = flakePath;
@@ -65,7 +66,7 @@
     };
   };
 
-  # Environment variables
+  # Wayland environment variables
   environment.sessionVariables = {
     AVALONIA_PLATFORM = "Wayland";
     QT_QPA_PLATFORM = "wayland";
@@ -79,5 +80,6 @@
   };
   boot.kernelModules = ["fuse"];
 
+  # ⚠️ Set to your ACTUAL installed NixOS version — do NOT change after install
   system.stateVersion = "26.05";
 }
