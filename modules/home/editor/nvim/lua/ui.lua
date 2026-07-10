@@ -42,11 +42,11 @@ if ok_lualine then
 			lualine_a = { "mode" },
 			lualine_b = { "branch", "diff" },
 			lualine_c = {
-				{ "filename", path = 1, symbols = { modified = " ●", readonly = " ", unnamed = "[No Name]" } },
+				{ "filename", path = 1, symbols = { modified = " ●", readonly = " ", unnamed = "[No Name]" } },
 			},
 			lualine_x = {
 				"diagnostics",
-				{ lsp_clients, icon = "" },
+				{ lsp_clients, icon = " " },
 				"encoding",
 				"filetype",
 			},
@@ -100,14 +100,15 @@ if ok_which then
 	})
 end
 
+-- UI toggles — no conflicts with snacks.lua
 vim.keymap.set("n", "<leader>ul", function()
 	vim.opt.relativenumber = not vim.opt.relativenumber:get()
 end, { desc = "Toggle relative line numbers" })
 
-vim.keymap.set("n", "<leader>uw", function()
+vim.keymap.set("n", "<leader>uW", function()
 	vim.opt.wrap = not vim.opt.wrap:get()
 end, { desc = "Toggle word wrap" })
 
-vim.keymap.set("n", "<leader>us", function()
+vim.keymap.set("n", "<leader>uS", function()
 	vim.opt.spell = not vim.opt.spell:get()
 end, { desc = "Toggle spell check" })

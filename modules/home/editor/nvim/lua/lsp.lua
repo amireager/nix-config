@@ -1,5 +1,5 @@
 -- Native Neovim 0.11+ LSP setup.
--- nvim-lspconfig is still used as a source of server definitions, but not as the deprecated framework.
+-- Only servers that are installed via Nix are configured here.
 
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 local ok_blink, blink = pcall(require, "blink.cmp")
@@ -17,10 +17,10 @@ vim.diagnostic.config({
 })
 
 local signs = {
-	Error = " ",
-	Warn = " ",
-	Hint = " ",
-	Info = " ",
+	Error = " ",
+	Warn = " ",
+	Hint = " ",
+	Info = " ",
 }
 
 for type, icon in pairs(signs) do
@@ -33,10 +33,6 @@ local function on_attach(_, bufnr)
 		vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
 	end
 
-	map("n", "gd", vim.lsp.buf.definition, "Go to definition")
-	map("n", "gD", vim.lsp.buf.declaration, "Go to declaration")
-	map("n", "gr", vim.lsp.buf.references, "Go to references")
-	map("n", "gI", vim.lsp.buf.implementation, "Go to implementation")
 	map("n", "K", vim.lsp.buf.hover, "Hover documentation")
 	map("n", "<leader>lk", vim.lsp.buf.signature_help, "Signature help")
 	map("n", "<leader>lr", vim.lsp.buf.rename, "Rename symbol")
@@ -52,6 +48,7 @@ local function on_attach(_, bufnr)
 	map("n", "<leader>dq", vim.diagnostic.setqflist, "Diagnostics to quickfix")
 end
 
+-- Only installed servers (via Nix extraPackages in default.nix)
 local servers = {
 	pyright = {
 		settings = {
@@ -68,22 +65,6 @@ local servers = {
 	ruff = {},
 
 	ts_ls = {},
-
-	rust_analyzer = {
-		settings = {
-			["rust-analyzer"] = {
-				cargo = { allFeatures = true },
-				check = { command = "clippy" },
-				procMacro = { enable = true },
-			},
-		},
-	},
-
-	html = {},
-	cssls = {},
-	jsonls = {},
-	tailwindcss = {},
-	emmet_language_server = {},
 
 	nixd = {
 		settings = {

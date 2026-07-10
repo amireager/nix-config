@@ -28,39 +28,43 @@ in {
       # Core utilities (always needed)
       git fd ripgrep fzf tmux yazi
 
-      # === Python (global — most common language) ===
+      # === Python ===
       pyright        # Python LSP
       ruff           # Python linter & formatter (fast)
       python3Packages.ipython # enhanced Python REPL
 
-      # === Nix (global — NixOS config editing) ===
+      # === Nix ===
       nixd           # Nix LSP
       alejandra      # Nix formatter
       statix         # Nix linter (best practices)
       deadnix        # find unused Nix code
 
-      # === Lua (global — for nvim config itself) ===
+      # === Lua ===
       lua-language-server # Lua LSP
       stylua         # Lua formatter
 
-      # === Shell (global — system scripts) ===
+      # === Shell ===
       bash-language-server   # Bash LSP
       shellcheck       # Bash linter
       shfmt            # Shell formatter
 
-      # === Markup & config (global — always needed) ===
+      # === Markup & config ===
       taplo            # TOML LSP & formatter
       yaml-language-server   # YAML LSP
       marksman         # Markdown LSP
       prettier         # web formatter (JS/TS/HTML/CSS/JSON/MD)
 
-      # === JS/TS (move to devShell if not daily) ===
+      # === JS/TS ===
       typescript-language-server  # TypeScript/JavaScript LSP
-      # vscode-langservers-extracted # HTML/CSS/JSON LSP — heavy, use devShell
-      # tailwindcss-language-server  # Tailwind LSP — use devShell
-      # emmet-language-server        # Emmet LSP — use devShell
 
-      # === Rust (move to devShell — very heavy) ===
+      # === HTML/CSS/JSON ===
+      vscode-langservers-extracted # HTML/CSS/JSON LSP
+
+      # === Tailwind ===
+      tailwindcss-language-server  # Tailwind CSS LSP
+      emmet-language-server        # Emmet LSP (HTML expansion)
+
+      # === Rust (commented — use devShell for Rust projects) ===
       # rust-analyzer  # Rust LSP — use devShell
       # cargo           # Rust package manager — use devShell
       # clippy          # Rust linter — use devShell
@@ -87,6 +91,7 @@ in {
       # LSP & formatting
       nvim-lspconfig         # LSP client configs
       conform-nvim           # formatter manager
+      nvim-lint              # linter manager
 
       # Utilities
       mini-nvim              # collection of small plugins

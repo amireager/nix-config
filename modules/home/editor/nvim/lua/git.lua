@@ -5,8 +5,8 @@ if ok_gitsigns then
 		signs = {
 			add = { text = "▎" },
 			change = { text = "▎" },
-			delete = { text = "" },
-			topdelete = { text = "" },
+			delete = { text = "" },
+			topdelete = { text = "" },
 			changedelete = { text = "▎" },
 			untracked = { text = "▎" },
 		},
@@ -16,6 +16,7 @@ if ok_gitsigns then
 				vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
 			end
 
+			-- Navigation
 			map("n", "]h", function()
 				if vim.wo.diff then
 					return "]h"
@@ -32,20 +33,30 @@ if ok_gitsigns then
 				return "<Ignore>"
 			end, "Previous git hunk")
 
+			-- Stage / Reset
 			map({ "n", "v" }, "<leader>gs", ":Gitsigns stage_hunk<CR>", "Stage hunk")
 			map({ "n", "v" }, "<leader>gr", ":Gitsigns reset_hunk<CR>", "Reset hunk")
 			map("n", "<leader>gA", gs.stage_buffer, "Stage buffer")
 			map("n", "<leader>gR", gs.reset_buffer, "Reset buffer")
 			map("n", "<leader>gp", gs.preview_hunk, "Preview hunk")
-			map("n", "<leader>gB", function()
+
+			-- Blame
+			map("n", "<leader>gb", function()
 				gs.blame_line({ full = true })
-			end, "Blame line")
+			end, "Blame line (gitsigns)")
 			map("n", "<leader>gt", gs.toggle_current_line_blame, "Toggle line blame")
+
+			-- Diff (uses <leader>gd — no conflict with snacks picker git_diff)
 			map("n", "<leader>gd", gs.diffthis, "Diff this file")
 			map("n", "<leader>gD", function()
 				gs.diffthis("~")
 			end, "Diff this file ~")
+
+			-- Toggle deleted lines
 			map("n", "<leader>tx", gs.toggle_deleted, "Toggle deleted lines")
+
+			-- Text object: ih = hunk
+			map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "Select git hunk")
 		end,
 	})
 end
