@@ -1,172 +1,126 @@
-# 🐚 Shell — Fish، Starship، و ابزارهای شل
+# 🐚 Shell — Fish و ابزارهای شل
 
 ## Fish Shell
 
 شل تعاملی مدرن. جایگزین bash/zsh با auto-suggestions، syntax highlighting، و completions داخلی.
 
-```bash
-# ویرایش فایل با nvim (alias)
-n filename
+### تنظیمات
 
-# ناوبری هوشمند (zoxide)
-z project-name      # cd هوشمند
-zi                  # interactive cd با fzf
+| تنظیم | مقدار |
+|---|---|
+| greeting | غیرفعال |
+| autosuggestion | فعال |
+| EDITOR | `nvim` |
+| PAGER | `bat --plain` |
+| MANPAGER | `bat` (رنگی) |
 
-# تاریخچه هوشمند (atuin)
-Ctrl-R              # جستجوی تاریخچه
+### alias‌های مهم
 
-# فایل منیجر TUI
-y                   # yazi
+| alias | دستور واقعی | کاربرد |
+|---|---|---|
+| `ls` | `eza --icons` | لیست با آیکون |
+| `ll` | `eza -l --icons --git` | لیست با جزئیات |
+| `la` | `eza -la --icons --git` | شامل مخفی‌ها |
+| `lt` | `eza --tree --level=2` | درخت دایرکتوری |
+| `cat` | `bat --style=plain` | نمایش فایل |
+| `grep` | `ripgrep` | جستجو |
+| `find` | `fd` | پیدا کردن فایل |
+| `top` | `btop` | مانیتور سیستم |
 
-# alias‌های مهم
-ls                  # eza با آیکون
-ll                  # لیست با جزئیات
-la                  # شامل فایل‌های مخفی
-lt                  # درخت دایرکتوری
-cat                 # bat با syntax highlighting
-grep                # ripgrep
-find                # fd
-top                 # btop
-```
+### abbreviation‌ها (میانبرهای تایپی)
 
-**تنظیمات:** رنگ‌ها Catppuccin Mocha، greeting غیرفعال، default editor = nvim.
+| مخفف | گسترش | کاربرد |
+|---|---|---|
+| `n` | `nvim` | باز کردن ویرایشگر |
+| `y` | `yazi` | فایل منیجر |
+| `sw` | `nh os switch` | بازسازی سیستم |
+| `tst` | `nh os test` | تست سیستم |
+| `bld` | `nh os build` | بیلد سیستم |
+| `gs` | `git status` | وضعیت git |
+| `ga` | `git add` | افزودن به git |
+| `gc` | `git commit -m` | ثبت تغییرات |
+| `gco` | `git checkout` | شاخه/فایل |
+| `gp` | `git push` | ارسال |
+| `gpl` | `git pull --rebase` | دریافت |
+
+### میانبرهای Fish
+
+| میانبر | عملکرد |
+|---|---|
+| `Ctrl+R` | جستجوی تاریخچه (atuin) |
+| `Ctrl+T` | جستجوی فایل (fzf) |
+| `Alt+C` | cd به دایرکتوری (fzf) |
+| `Tab` | تکمیل |
+| `Ctrl+A` | ابتدای خط |
+| `Ctrl+E` | انتهای خط |
+| `Ctrl+U` | حذف تا ابتدای خط |
+| `Ctrl+K` | حذف تا انتهای خط |
+| `Ctrl+W` | حذف کلمه قبلی |
 
 ---
 
 ## Starship
 
-پرامپت سریع و زیبا برای هر شلی.
+پرامپت سریع و زیبا.
 
 **نمایش:**
-- مسیر فعلی (آبی)
-- شاخه git (نارنجی)
-- وضعیت git (قرمز: تغییرات، سبز: تمیز)
+- مسیر فعلی (آبی bold)
+- شاخه git (نارنجی bold)
+- وضعیت git (قرمز: تغییرات)
 - nix shell (برفی ❄️)
-- مدت زمان اجرای دستور (زرد)
-
-```bash
-# تنظیمات در fish.nix تعریف شده — نیازی به دستور خاصی نیست
-# فقط مطمئن شوید programs.starship.enable = true است
-```
-
-**کاربرد:** نمایش اطلاعات مفید در پرامپت بدون کاهش سرعت.
+- مدت زمان اجرای دستور
 
 ---
 
 ## Zoxide
 
-جایگزین هوشمند `cd`. مسیرهای پرکاربرد را یاد می‌گیرد.
+جایگزین هوشمند `cd`.
 
 ```bash
-# cd هوشمند (بعد از چند بار استفاده)
-z project           # cd ~/Documents/projects/my-project
-z downloads         # cd ~/Downloads
-
-# انتخاب تعاملی با fzf
-zi
-
-# افزودن مسیر دستی
-zoxide add /path/to/dir
-
-# حذف مسیر
-zoxide remove /path/to/dir
+z project           # cd هوشمند
+zi                  # انتخاب تعاملی
+zoxide add /path    # افزودن مسیر دستی
 ```
-
-**کاربرد:** ناوبری سریع بین دایرکتوری‌ها بدون تایپ کامل مسیر.
 
 ---
 
-## Direnv
+## Direnv + nix-direnv
 
-بارگذاری خودکار محیط‌های توسعه هنگام ورود به دایرکتوری.
+بارگذاری خودکار محیط توسعه هنگام ورود به دایرکتوری.
 
 ```bash
-# فعال‌سازی خودکار — وقتی وارد پروژه‌ای با .envrc شوید:
-cd my-project
-# → محیط خودکار بارگذاری می‌شود (PATH, env vars, nix shell)
-
-# غیرفعال‌سازی موقت
-direnv deny
-
-# فعال‌سازی مجدد
-direnv allow
-
-# نمایش وضعیت فعلی
-direnv status
+cd my-project       # محیط خودکار بارگذاری می‌شود
+direnv deny         # غیرفعال‌سازی موقت
+direnv allow        # فعال‌سازی مجدد
+direnv status       # نمایش وضعیت
 ```
-
-**مثال `.envrc`:**
-```bash
-# در یک پروژه Rust
-use nix
-# → nix-shell خودکار اجرا می‌شود
-
-# در یک پروژه Python
-layout python3
-# → virtualenv خودکار ساخته می‌شود
-```
-
-**کاربرد:** محیط توسعه izole per-project. وقتی وارد پروژه می‌شوید، ابزارهای مورد نیاز خودکار بارگذاری می‌شوند.
 
 ---
 
 ## FZF
 
-فایندر فازی. جستجوی فایل، تاریخچه، و هر چیزی با الگوی模糊.
+فایندر فازی.
 
-```bash
-# جستجوی فایل (از طریق Ctrl-T در شل)
-Ctrl-T              # جستجوی فایل و قرار دادن در خط فرمان
-
-# جستجوی دایرکتوری (از طریق Alt-C)
-Alt-C               # cd به دایرکتوری انتخاب شده
-
-# پیش‌نمایش فایل
-# → fzf با bat پیش‌نمایش نشان می‌دهد
-
-# استفاده در پایپ
-ls | fzf            # انتخاب از لیست
-git log --oneline | fzf  # انتخاب commit
-```
-
-**تنظیمات:** ارتفاع 55%، پیش‌نمایش با bat، تم Catppuccin.
-
-**کاربرد:** انتخاب سریع فایل، دایرکتوری، commit، و هر لیستی.
+| میانبر | عملکرد |
+|---|---|
+| `Ctrl+T` | جستجوی فایل |
+| `Alt+C` | cd به دایرکتوری |
+| `Ctrl+R` | جستجوی تاریخچه (via atuin) |
 
 ---
 
 ## Carapace
 
-موتور completion برای ۶۰۰+ دستور. completions اضافی برای fish.
-
-```bash
-# خودکار فعال — وقتی دستور تایپ می‌کنید:
-git ch<Tab>         # → checkout, cherry-pick, ...
-docker ru<Tab>      # → run, ...
-kubectl ge<Tab>     # → get, ...
-```
-
-**کاربرد:** completion‌های بهتر و بیشتر برای دستورات مختلف.
+موتور completion برای ۶۰۰+ دستور. خودکار فعال.
 
 ---
 
 ## Atuin
 
-تاریخچه شل هوشمند. ذخیره در SQLite، جستجوی fuzzy، sync بین دستگاه‌ها.
+تاریخچه شل هوشمند (SQLite + fuzzy search).
 
 ```bash
-# جستجوی تاریخچه (Ctrl-R)
-Ctrl-R              # جستجوی fuzzy در تاریخچه
-
-# نمایش آمار
-atuin stats
-
-# sync بین دستگاه‌ها (اختیاری)
-atuin register
-atuin login
-atuin sync
+Ctrl-R              # جستجوی تاریخچه
+atuin stats         # آمار استفاده
+atuin sync          # sync بین دستگاه‌ها
 ```
-
-**تنظیمات:** style compact، ارتفاع 25، preview فعال، Up arrow غیرفعال (برای حفظ رفتار عادی fish).
-
-**کاربرد:** جستجوی سریع در تاریخچه شل با امکان sync بین دستگاه‌ها.
