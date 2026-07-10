@@ -99,21 +99,29 @@ debug {
 }
 
 binds {
+    // === Launchers ===
     Mod+Space { spawn-sh "noctalia msg panel-toggle launcher"; }
     Mod+S { spawn-sh "noctalia msg panel-toggle control-center"; }
     Mod+Comma { spawn-sh "noctalia msg settings-toggle"; }
 
+    // === Applications ===
     Mod+Return { spawn "kitty"; }
     Mod+Slash { spawn "kitty" "--title" "quick-term"; }
     Mod+B { spawn "zen-beta"; }
     Mod+E { spawn "thunar"; }
     Mod+Shift+E { spawn "kitty" "-e" "yazi"; }
 
+    // === Session ===
+    Mod+X { spawn-sh "noctalia msg session lock"; }
+    Mod+Shift+X { spawn-sh "swaylock -f -c 1e1e2e"; }
+
+    // === Overview & workspaces ===
     Mod+Tab { toggle-overview; }
     Mod+Shift+Tab { focus-workspace-previous; }
     Mod+WheelScrollDown { focus-workspace-down; }
     Mod+WheelScrollUp { focus-workspace-up; }
 
+    // === Window management ===
     Mod+Q { close-window; }
     Mod+Shift+Q { quit; }
     Mod+T { toggle-window-floating; }
@@ -123,6 +131,7 @@ binds {
     Mod+C { center-column; }
     Mod+Period { expel-window-from-column; }
 
+    // === Focus ===
     Mod+H { focus-column-left; }
     Mod+L { focus-column-right; }
     Mod+K { focus-window-up; }
@@ -132,6 +141,7 @@ binds {
     Mod+Up { focus-window-up; }
     Mod+Down { focus-window-down; }
 
+    // === Move windows ===
     Mod+Ctrl+Left { move-column-left; }
     Mod+Ctrl+Right { move-column-right; }
     Mod+Ctrl+Up { move-window-up; }
@@ -141,10 +151,12 @@ binds {
     Mod+Shift+K { move-window-up; }
     Mod+Shift+J { move-window-down; }
 
+    // === Resize ===
     Mod+Minus { set-column-width "-10%"; }
     Mod+Equal { set-column-width "+10%"; }
     Mod+R { switch-preset-column-width; }
 
+    // === Workspaces ===
     Mod+1 { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
     Mod+3 { focus-workspace 3; }
@@ -156,6 +168,7 @@ binds {
     Mod+Shift+4 { move-column-to-workspace 4; }
     Mod+Shift+5 { move-column-to-workspace 5; }
 
+    // === Media keys ===
     XF86AudioRaiseVolume allow-when-locked=true {
         spawn-sh "noctalia msg volume-up";
     }
@@ -172,15 +185,21 @@ binds {
         spawn-sh "noctalia msg brightness-down";
     }
 
+    // === Screenshots ===
     Mod+P { screenshot; }
     Mod+Shift+P { screenshot-screen; }
     Mod+Alt+P { screenshot-window; }
 
+    // === Misc ===
     Mod+I { spawn-sh "noctalia msg caffeine-toggle"; }
 }
 
+// Idle management:
+// - 10 min: lock screen (noctalia or swaylock fallback)
+// - 15 min: monitors off
+// - 30 min: suspend
 spawn-at-startup "swayidle" "-w" \
-    "timeout" "600" "noctalia msg session lock" \
-    "timeout" "900" "noctalia msg dpms off" \
-    "resume" "noctalia msg dpms on" \
-    "timeout" "1800" "systemctl suspend" \
+    "timeout" "600" "noctalia msg session lock || swaylock -f -c 1e1e2e" \
+    "timeout" "900" "niri msg action power-off-monitors" \
+    "resume" "niri msg action power-on-monitors" \
+    "timeout" "1800" "systemctl suspend"

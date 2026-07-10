@@ -66,6 +66,15 @@
     };
   };
 
+  # Power button & lid switch handling
+  services.logind.settings.Login = {
+    HandlePowerKey = "suspend";                # short press → suspend
+    HandlePowerKeyLongPress = "poweroff";      # long press → poweroff
+    HandleLidSwitch = "suspend";               # close lid → suspend
+    HandleLidSwitchExternalPower = "lock";     # close lid (on AC) → lock
+    HandleLidSwitchDocked = "ignore";          # close lid (docked) → do nothing
+  };
+
   # Wayland environment variables
   environment.sessionVariables = {
     AVALONIA_PLATFORM = "Wayland";
