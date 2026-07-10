@@ -1,4 +1,5 @@
--- Formatting and linting. Tools are installed by Nix in default.nix.
+-- Formatting via conform.nvim.
+-- Linting is handled by LSP servers (ruff, shellcheck, statix, deadnix, etc.)
 local ok_conform, conform = pcall(require, "conform")
 if ok_conform then
   conform.setup({
@@ -40,26 +41,4 @@ if ok_conform then
     vim.g.disable_autoformat = not vim.g.disable_autoformat
     vim.notify("Autoformat: " .. (vim.g.disable_autoformat and "off" or "on"))
   end, { desc = "Toggle autoformat" })
-end
-
-local ok_lint, lint = pcall(require, "lint")
-if ok_lint then
-  lint.linters_by_ft = {
-    python = { "ruff" },
-    nix = { "statix", "deadnix" },
-    sh = { "shellcheck" },
-    bash = { "shellcheck" },
-  }
-
-  local lint_group = vim.api.nvim_create_augroup("UserLint", { clear = true })
-  vim.api.nvim_create_autocmd({ "BufWritePost", "InsertLeave" }, {
-    group = lint_group,
-    callback = function()
-      lint.try_lint()
-    end,
-  })
-
-  vim.keymap.set("n", "<leader>cl", function()
-    lint.try_lint()
-  end, { desc = "Run linter" })
 end

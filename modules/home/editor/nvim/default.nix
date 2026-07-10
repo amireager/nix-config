@@ -91,7 +91,6 @@ in {
       # LSP & formatting
       nvim-lspconfig         # LSP client configs
       conform-nvim           # formatter manager
-      nvim-lint              # linter manager
 
       # Utilities
       mini-nvim              # collection of small plugins

@@ -9,12 +9,17 @@
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
     auto-optimise-store = true;
-    # Binary caches for niri and noctalia
+
+    # Binary caches — mirrors for reliable downloads
     substituters = [
+      "https://cache.nixos.org"
+      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+      "https://mirrors.ustc.edu.cn/nix-channels/store"
       "https://niri.cachix.org"
       "https://noctalia.cachix.org"
     ];
     trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
       "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
     ];
@@ -23,8 +28,8 @@
   # Kernel — latest stable
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernel.sysctl = {
-    "vm.swappiness" = 20;          # prefer RAM over swap
-    "vm.vfs_cache_pressure" = 50;  # keep filesystem metadata longer
+    "vm.swappiness" = 20;
+    "vm.vfs_cache_pressure" = 50;
   };
 
   # ZRAM — compressed swap in RAM
@@ -43,17 +48,17 @@
 
   # Fonts
   fonts.packages = with pkgs; [
-    vazirmatn              # Persian font
-    nerd-fonts.jetbrains-mono  # dev font with icons
-    nerd-fonts.fira-code       # dev font with ligatures
+    vazirmatn
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.fira-code
   ];
 
   # Essential system packages
   environment.systemPackages = with pkgs; [
-    vim          # terminal text editor
-    git          # version control
-    gh           # GitHub CLI
-    pciutils     # lspci — hardware info
+    vim
+    git
+    gh
+    pciutils
   ];
 
   # NH — modern NixOS management wrapper
@@ -68,11 +73,11 @@
 
   # Power button & lid switch handling
   services.logind.settings.Login = {
-    HandlePowerKey = "suspend";                # short press → suspend
-    HandlePowerKeyLongPress = "poweroff";      # long press → poweroff
-    HandleLidSwitch = "suspend";               # close lid → suspend
-    HandleLidSwitchExternalPower = "lock";     # close lid (on AC) → lock
-    HandleLidSwitchDocked = "ignore";          # close lid (docked) → do nothing
+    HandlePowerKey = "suspend";
+    HandlePowerKeyLongPress = "poweroff";
+    HandleLidSwitch = "suspend";
+    HandleLidSwitchExternalPower = "lock";
+    HandleLidSwitchDocked = "ignore";
   };
 
   # Wayland environment variables
