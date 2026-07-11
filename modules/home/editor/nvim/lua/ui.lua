@@ -87,16 +87,17 @@ if ok_which then
 	which_key.add({
 		{ "<leader>b", group = " Buffers (bufferline)" },
 		{ "<leader>c", group = " Code (LSP)" },
-		{ "<leader>d", group = " Diagnostics (LSP)" },
+		{ "<leader>d", group = " Debug (DAP) — disabled" },
 		{ "<leader>e", group = " Explorer (Snacks)" },
 		{ "<leader>f", group = " Find (Snacks)" },
-		{ "<leader>g", group = " Git (Gitsigns + Snacks)" },
+		{ "<leader>g", group = " Git (Gitsigns + Snacks + Diffview)" },
 		{ "<leader>l", group = " LSP" },
 		{ "<leader>m", group = " Markdown" },
 		{ "<leader>r", group = " Run / REPL (Slime)" },
 		{ "<leader>t", group = " Tabs / Terminal" },
 		{ "<leader>u", group = " UI Toggles (Snacks)" },
 		{ "<leader>w", group = " Windows (Native)" },
+		{ "<leader>x", group = " Diagnostics (Trouble)" },
 	})
 end
 

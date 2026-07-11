@@ -56,7 +56,7 @@ opt.listchars = {
 }
 
 -- Disable unused providers to reduce startup overhead.
-vim.g.loaded_python3_provider = 0
+-- Note: withNodeJs/withPython3 are set in default.nix
+-- Only disable providers you're SURE you don't need.
 vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
-vim.g.loaded_node_provider = 0

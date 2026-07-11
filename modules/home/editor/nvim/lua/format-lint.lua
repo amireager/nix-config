@@ -29,12 +29,12 @@ if ok_conform then
       if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
         return nil
       end
-      return { timeout_ms = 1200, lsp_fallback = true }
+      return { timeout_ms = 1200, lsp_format = "fallback" }
     end,
   })
 
   vim.keymap.set({ "n", "v" }, "<leader>cf", function()
-    conform.format({ async = true, lsp_fallback = true })
+    conform.format({ async = true, lsp_format = "fallback" })
   end, { desc = "Format file or selection" })
 
   vim.keymap.set("n", "<leader>cF", function()

@@ -64,11 +64,12 @@ in {
       tailwindcss-language-server  # Tailwind CSS LSP
       emmet-language-server        # Emmet LSP (HTML expansion)
 
-      # === Rust (commented — use devShell for Rust projects) ===
-      # rust-analyzer  # Rust LSP — use devShell
-      # cargo           # Rust package manager — use devShell
-      # clippy          # Rust linter — use devShell
-      # rustfmt         # Rust formatter — use devShell
+      # === Go ===
+      gopls            # Go LSP
+
+      # === Rust ===
+      rust-analyzer    # Rust LSP
+
     ];
 
     plugins = with pkgs.vimPlugins; [
@@ -99,6 +100,19 @@ in {
       gitsigns-nvim          # git change indicators
       vim-slime              # send code to terminal (REPL)
       plenary-nvim           # utility library (required by many)
+
+      # DAP (Debug Adapter Protocol)
+      # Commented out — codeberg.org blocked in Iran (TLS error)
+      # Uncomment after first build with proxy, or use alternative source
+      # nvim-dap               # core debugger
+      # nvim-dap-ui            # debugger UI
+      # nvim-dap-virtual-text  # inline variable values
+      # nvim-dap-python        # Python debug adapter
+
+      # UX Enhancements
+      todo-comments-nvim     # TODO/FIXME/HACK highlighting
+      trouble-nvim           # diagnostics list
+      diffview-nvim          # git diff view
     ];
 
     initLua = ''
@@ -114,6 +128,8 @@ in {
       ${builtins.readFile ./lua/productivity.lua}
       ${builtins.readFile ./lua/run.lua}
       ${builtins.readFile ./lua/markdown.lua}
+      ${builtins.readFile ./lua/dap.lua}
+      ${builtins.readFile ./lua/ux.lua}
     '';
   };
 }

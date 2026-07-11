@@ -28,20 +28,42 @@ for type, icon in pairs(signs) do
 	vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
 end
 
-local function on_attach(_, bufnr)
+local function on_attach(client, bufnr)
 	local map = function(mode, lhs, rhs, desc)
 		vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
 	end
 
-	map("n", "K", vim.lsp.buf.hover, "Hover documentation")
-	map("n", "<leader>lk", vim.lsp.buf.signature_help, "Signature help")
-	map("n", "<leader>lr", vim.lsp.buf.rename, "Rename symbol")
-	map({ "n", "v" }, "<leader>la", vim.lsp.buf.code_action, "Code action")
-	map("n", "<leader>lf", function()
-		vim.lsp.buf.format({ async = true })
-	end, "LSP format")
+	-- Hover documentation
+	if client.supports_method("textDocument/hover") then
+		map("n", "K", vim.lsp.buf.hover, "Hover documentation")
+	end
+
+	-- Signature help
+	if client.supports_method("textDocument/signatureHelp") then
+		map("n", "<leader>lk", vim.lsp.buf.signature_help, "Signature help")
+	end
+
+	-- Rename
+	if client.supports_method("textDocument/rename") then
+		map("n", "<leader>lr", vim.lsp.buf.rename, "Rename symbol")
+	end
+
+	-- Code action
+	if client.supports_method("textDocument/codeAction") then
+		map({ "n", "v" }, "<leader>la", vim.lsp.buf.code_action, "Code action")
+	end
+
+	-- Format
+	if client.supports_method("textDocument/formatting") then
+		map("n", "<leader>lf", function()
+			vim.lsp.buf.format({ async = true })
+		end, "LSP format")
+	end
+
+	-- LSP info
 	map("n", "<leader>li", "<cmd>LspInfo<CR>", "LSP info")
 
+	-- Diagnostics
 	map("n", "[d", vim.diagnostic.goto_prev, "Previous diagnostic")
 	map("n", "]d", vim.diagnostic.goto_next, "Next diagnostic")
 	map("n", "<leader>dd", vim.diagnostic.open_float, "Line diagnostics")
@@ -86,6 +108,16 @@ local servers = {
 	},
 
 	bashls = {},
+	gopls = {},
+
+	rust_analyzer = {
+		settings = {
+			["rust-analyzer"] = {
+				checkOnSave = { command = "clippy" },
+				cargo = { allFeatures = true },
+			},
+		},
+	},
 	taplo = {},
 	yamlls = {},
 	marksman = {},

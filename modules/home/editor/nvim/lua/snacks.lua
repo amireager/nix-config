@@ -184,7 +184,7 @@ end, { desc = "LSP type definitions (Snacks)" })
 -- GIT PICKERS (Snacks)
 -- ══════════════════════════════════════════
 
-map("n", "<leader>gb", function()
+map("n", "<leader>gB", function()
 	snacks.picker.git_branches()
 end, { desc = "Git branches" })
 map("n", "<leader>gl", function()
@@ -195,9 +195,7 @@ map("n", "<leader>go", function()
 end, { desc = "Open in browser (Snacks)" })
 
 -- Git (Snacks native)
-map("n", "<leader>gB", function()
-	snacks.git.blame_line()
-end, { desc = "Blame line (Snacks)" })
+-- Blame is handled by gitsigns (<leader>gb) — no need for snacks blame
 
 -- ══════════════════════════════════════════
 -- RENAME (Snacks)
