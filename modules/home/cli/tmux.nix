@@ -8,8 +8,17 @@
     keyMode = "vi";
     mouse = true;
     terminal = "tmux-256color";
+
     extraConfig = ''
       set -ga terminal-overrides ",*256col*:Tc"
+      set -g renumber-windows on
+      set -g detach-on-destroy off
+      set -g focus-events on
+      set -g set-clipboard on
+      setw -g pane-base-index 1
+      setw -g automatic-rename on
+
+      bind C-a send-prefix
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
       bind h select-pane -L

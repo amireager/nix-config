@@ -19,6 +19,7 @@
     unzip # extract zip archives
     p7zip # 7z support
     unrar # rar extraction
+    # ouch # modern extract
 
     # Mount & notifications
     udiskie # auto-mount USB drives

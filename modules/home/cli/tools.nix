@@ -1,65 +1,54 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    # File & disk utilities
-    duf          # modern df replacement with color
-    erdtree      # fast directory tree + size
-    fd           # fast find alternative
-    eza          # modern ls with icons & git
-    yazi         # terminal file manager
-    glow         # markdown renderer in terminal
+    # File and disk utilities
+    duf # Modern df replacement with readable output
+    dust # Modern du replacement for disk usage analysis
+    fd # Fast and user-friendly find replacement
+    eza # Modern ls replacement with git and tree support
+    lsd # Alternative modern ls with polished icons and config support
+    ouch # Unified archive compression/decompression tool
+    glow # Terminal markdown renderer
+    trash-cli # Safe trash management from the command line
 
-    # Text & search
-    bat          # cat with syntax highlighting
-    ripgrep      # fast grep alternative
-    jq           # JSON processor
-    sd           # sed alternative (simpler syntax)
+    # Text, search, and data
+    ripgrep # Fast grep replacement
+    jq # JSON processor
+    yq-go # YAML processor
+    sd # Simple and fast sed replacement
+    jless # Interactive JSON viewer
+    jc # Convert classic command output to JSON
 
-    # System monitoring
-    btop         # system monitor (TUI)
-    fastfetch    # fast system info
-    iotop        # I/O monitoring
-    procs        # modern ps alternative
-    bandwhich    # bandwidth per process
+    # System inspection and debugging
+    procs # Modern ps replacement
+    bandwhich # Per-process bandwidth monitor
+    lsof # List open files, sockets, and ports
+    strace # Trace syscalls for debugging programs
+    psmisc # pstree, killall, fuser, and related process tools
 
-    # Network & transfer
-    curl           # HTTP client (classic, everywhere)
-    wget           # file downloader (recursive, resume)
-    xh             # modern HTTP client (like httpie, nicer output)
-    aria2          # multi-protocol downloader (fast, parallel)
-    rsync          # file sync & transfer (local/remote)
+    # Network and transfer
+    curl # Classic HTTP client
+    wget # Recursive and resumable downloader
+    xh # Modern HTTP client
+    aria2 # Fast multi-protocol downloader
+    rsync # File synchronization and transfer
 
     # Network diagnostics
-    dnsutils       # dig, nslookup, host — DNS lookup tools
-    mtr            # ping + traceroute combo (real-time)
-    nethogs        # bandwidth per process (who eats your net)
-    tcpdump        # packet capture (low-level debugging)
-    nmap           # network scanner (ports, services, OS)
-    net-tools      # ifconfig, route (legacy, prefer iproute2)
+    dnsutils # dig, nslookup, host
+    doggo # Modern DNS client
+    mtr # Realtime traceroute and ping combined
+    whois # Domain and IP ownership lookup
+    socat # Socket relay and network debugging toolbox
+    tcpdump # Packet capture and low-level network debugging
+    nmap # Network scanner
+    proxychains-ng # Route CLI applications through SOCKS/HTTP proxies
 
-    # Network monitoring (new)
-    iftop          # bandwidth per connection (who talks to whom)
-    nload          # real-time bandwidth graph (in/out traffic)
-    vnstat         # traffic history & statistics (daily/monthly)
-    iperf3         # network speed test (client/server)
-    bmon           # bandwidth monitor TUI (visual)
-    dog            # modern DNS client (faster dig alternative)
-    proxychains-ng # route any app through a proxy (SOCKS/HTTP)
+    # Data and file inspection
+    file # File type detection
+    tailspin # Log viewer with highlighting
 
-    # Data & format
-    hexyl        # hex viewer
-    file         # file type detection
-    grex         # regex generator from examples
-    tailspin     # log file viewer with highlighting
-
-    # Productivity & dev helpers
-    lazygit      # git TUI
-    navi         # command cheatsheet with fuzzy search
-    hyperfine    # benchmarking tool
-    just         # modern make alternative
-    gh-dash      # GitHub dashboard (TUI)
-    tokei        # code statistics (lines, files)
-    watchexec    # file watcher & command runner
-    difftastic   # structural diff tool
+    # Productivity and dev helpers
+    just # Modern command runner
+    difftastic # Structural diff tool
   ];
 
   programs.bat = {
