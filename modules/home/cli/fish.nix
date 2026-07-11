@@ -8,7 +8,7 @@
     enable = true;
     interactiveShellInit = ''
       set -g fish_greeting
-      set -g fish_autosuggestion_enabled 1
+      set -g fish_autosuggestion_enabled true
       set -g fish_key_bindings fish_default_key_bindings
       set -gx EDITOR nvim
       set -gx VISUAL nvim

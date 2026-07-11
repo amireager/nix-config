@@ -15,6 +15,6 @@
     XDG_CURRENT_DESKTOP = "niri";
     XDG_SESSION_TYPE = "wayland";
     QT_QPA_PLATFORM = "wayland";
-    DISPLAY = ":0";
+    # DISPLAY is auto-set by XWayland — do NOT set manually for Wayland sessions
   };
 }

@@ -25,6 +25,9 @@
     ];
   };
 
+  # IPv6 disabled — not usable in Iran
+  networking.enableIPv6 = false;
+
   # Kernel — latest stable
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernel.sysctl = {

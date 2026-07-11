@@ -22,8 +22,28 @@
     bandwhich    # bandwidth per process
 
     # Network & transfer
-    xh           # modern HTTP client (like httpie)
-    rsync        # file sync & transfer
+    curl           # HTTP client (classic, everywhere)
+    wget           # file downloader (recursive, resume)
+    xh             # modern HTTP client (like httpie, nicer output)
+    aria2          # multi-protocol downloader (fast, parallel)
+    rsync          # file sync & transfer (local/remote)
+
+    # Network diagnostics
+    dnsutils       # dig, nslookup, host — DNS lookup tools
+    mtr            # ping + traceroute combo (real-time)
+    nethogs        # bandwidth per process (who eats your net)
+    tcpdump        # packet capture (low-level debugging)
+    nmap           # network scanner (ports, services, OS)
+    net-tools      # ifconfig, route (legacy, prefer iproute2)
+
+    # Network monitoring (new)
+    iftop          # bandwidth per connection (who talks to whom)
+    nload          # real-time bandwidth graph (in/out traffic)
+    vnstat         # traffic history & statistics (daily/monthly)
+    iperf3         # network speed test (client/server)
+    bmon           # bandwidth monitor TUI (visual)
+    dog            # modern DNS client (faster dig alternative)
+    proxychains-ng # route any app through a proxy (SOCKS/HTTP)
 
     # Data & format
     hexyl        # hex viewer

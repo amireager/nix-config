@@ -16,6 +16,7 @@
 
     noctalia = {
       url = "github:noctalia-dev/noctalia/cachix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     zen-browser = {
