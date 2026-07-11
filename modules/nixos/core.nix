@@ -1,6 +1,5 @@
 {
   pkgs,
-  inputs,
   flakePath,
   ...
 }: {
@@ -8,14 +7,34 @@
   # CORE SYSTEM — NixOS Foundation
   # ============================================================
 
-  # === Nix Settings ===
+  # === Nixpkgs ===
+  # Workstation profile: allow proprietary firmware/drivers/apps when needed.
   nixpkgs.config.allowUnfree = true;
+
+  # === Nix Settings ===
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
+
+    # Store optimization: deduplicate identical files in /nix/store.
     auto-optimise-store = true;
 
-    # Binary caches — mirrors for reliable downloads
-    # Chinese mirrors help when direct access to cache.nixos.org is slow/blocked
+    # Nix database performance: reduce lock contention and improve reliability.
+    use-sqlite-wal = true;
+
+    # Build performance.
+    max-jobs = "auto";
+    cores = 0;
+
+    # Network reliability for slower/unstable connections.
+    connect-timeout = 10;
+    download-attempts = 3;
+    fallback = true;
+
+    # Allow admin users to use trusted Nix features and binary caches.
+    trusted-users = ["root" "@wheel"];
+
+    # Binary caches — mirrors for reliable downloads.
+    # Chinese mirrors help when direct access to cache.nixos.org is slow/blocked.
     substituters = [
       "https://cache.nixos.org"
       "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
@@ -23,6 +42,7 @@
       "https://niri.cachix.org"
       "https://noctalia.cachix.org"
     ];
+
     trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
@@ -31,47 +51,48 @@
   };
 
   # === IPv6 ===
-  # Disabled — not widely usable in Iran
+  # Disabled — not widely usable in Iran.
   networking.enableIPv6 = false;
 
   # === Firmware ===
-  # Required for AMD CPU microcode updates and hardware support
+  # Required for AMD CPU microcode updates and broader hardware support.
   hardware.enableAllFirmware = true;
   hardware.enableRedistributableFirmware = true;
 
   # === Kernel ===
+  # Latest kernel is useful for newer hardware, Wayland, and NVIDIA fixes.
   boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  # Keep early boot output quiet unless something goes wrong.
+  boot.initrd.verbose = false;
 
   # === Memory & Swap ===
   boot.kernel.sysctl = {
-    # ZRAM optimization: higher swappiness = more use of compressed RAM swap
-    # Default 60 is too low for ZRAM — 180 is recommended by ZRAM docs
+    # ZRAM optimization: higher swappiness makes compressed RAM swap more useful.
     "vm.swappiness" = 180;
 
-    # How aggressively the kernel reclaims cache memory
-    # 50 = balanced (not too aggressive, not too lazy)
+    # Balanced cache reclaiming: avoid being too aggressive with filesystem cache.
     "vm.vfs_cache_pressure" = 50;
   };
 
-  # ZRAM — compressed swap in RAM (25% of 16GB = ~4GB compressed)
-  # Much faster than disk swap, no SSD wear
+  # ZRAM — compressed swap in RAM.
   zramSwap = {
     enable = true;
     memoryPercent = 25;
   };
 
   # === SSD Maintenance ===
-  # Automatic TRIM for NVMe SSD — prevents performance degradation over time
+  # Automatic TRIM for NVMe/SATA SSDs to prevent performance degradation.
   services.fstrim = {
     enable = true;
-    interval = "weekly"; # run every week
+    interval = "weekly";
   };
 
   # === Locale & Timezone ===
   time.timeZone = "Asia/Tehran";
   i18n.defaultLocale = "en_US.UTF-8";
 
-  # Keyboard layout — US + Persian, toggle with Alt+Shift
+  # Keyboard layout — US + Persian, toggle with Alt+Shift.
   services.xserver.xkb = {
     layout = "us,ir";
     options = "grp:alt_shift_toggle";
@@ -79,23 +100,38 @@
 
   # === Fonts ===
   fonts.packages = with pkgs; [
-    vazirmatn          # Persian/Farsi font (Google)
-    nerd-fonts.jetbrains-mono  # Nerd Font for terminal & dev icons
-    nerd-fonts.fira-code       # Alternative Nerd Font
+    vazirmatn
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.fira-code
   ];
 
   # === Essential System Packages ===
+  # Keep only rescue/debug/system-wide tools here.
+  # User applications and daily CLI tools belong in Home Manager.
   environment.systemPackages = with pkgs; [
-    vim          # text editor (always needed)
-    git          # version control
-    gh           # GitHub CLI
-    pciutils     # lspci — hardware inspection
+    # Emergency / rescue
+    vim
+    git
+
+    # Hardware inspection
+    pciutils
+    usbutils
+    lshw
+    dmidecode
+
+    # Storage and boot inspection
+    smartmontools
+    nvme-cli
+    efibootmgr
+
+    # Sensors and thermal debugging
+    lm_sensors
   ];
 
   # === NH — NixOS Management Wrapper ===
   # Rebuild: nh os switch
   # Test:    nh os test
-  # Clean:   nh clean (auto, 30 days / 5 generations)
+  # Clean:   nh clean
   programs.nh = {
     enable = true;
     flake = flakePath;
@@ -107,27 +143,29 @@
 
   # === Power Button & Lid Switch ===
   services.logind.settings.Login = {
-    HandlePowerKey = "suspend";         # short press → suspend
-    HandlePowerKeyLongPress = "poweroff"; # long press → power off
-    HandleLidSwitch = "suspend";        # close lid → suspend
-    HandleLidSwitchExternalPower = "lock"; # lid + AC → lock screen
-    HandleLidSwitchDocked = "ignore";   # lid + dock → ignore (external display)
+    HandlePowerKey = "suspend";
+    HandlePowerKeyLongPress = "poweroff";
+    HandleLidSwitch = "suspend";
+    HandleLidSwitchExternalPower = "lock";
+    HandleLidSwitchDocked = "ignore";
   };
 
   # === Wayland Environment Variables ===
   environment.sessionVariables = {
-    AVALONIA_PLATFORM = "Wayland";  # Avalonia UI framework
-    QT_QPA_PLATFORM = "wayland";    # Qt applications
-    NIXOS_OZONE_WL = "1";          # Electron apps (VS Code, etc.)
+    AVALONIA_PLATFORM = "Wayland";
+    QT_QPA_PLATFORM = "wayland";
+    NIXOS_OZONE_WL = "1";
   };
 
   # === AppImage Support ===
   programs.appimage = {
     enable = true;
-    binfmt = true; # auto-run .AppImage files
+    binfmt = true;
   };
-  boot.kernelModules = ["fuse"]; # required for AppImage mounting
 
-  # ⚠️ Set to your ACTUAL installed NixOS version — do NOT change after install
+  # Required for AppImage mounting.
+  boot.kernelModules = ["fuse"];
+
+  # Set to your actual installed NixOS version; do not change after installation.
   system.stateVersion = "26.05";
 }

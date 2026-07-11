@@ -97,18 +97,22 @@
   # CLI tools (curl, wget, dig, mtr, etc.) are in modules/home/cli/tools.nix
   environment.systemPackages = with pkgs; [
     # --- Core proxy engines ---
-    sing-box           # modern all-in-one proxy (VLESS, VMess, Trojan, Hysteria, TUIC)
-    xray               # V2Ray fork with XTLS — fast, stealthy protocols
+    sing-box # modern all-in-one proxy (VLESS, VMess, Trojan, Hysteria, TUIC)
+    xray # V2Ray fork with XTLS — fast, stealthy protocols
 
     # --- DPI bypass (Deep Packet Inspection circumvention) ---
-    byedpi             # SOCKS proxy with DPI bypass methods (lightweight)
-    spoofdpi           # fast DPI bypass tool written in Go
+    byedpi # SOCKS proxy with DPI bypass methods (lightweight)
+    spoofdpi # fast DPI bypass tool written in Go
 
     # --- Cloudflare WARP ---
-    wgcf               # unofficial CLI for Cloudflare WARP (free VPN)
-    wireguard-tools    # WireGuard VPN tools (wg, wg-quick)
+    wgcf # unofficial CLI for Cloudflare WARP (free VPN)
+    wireguard-tools # WireGuard VPN tools (wg, wg-quick)
 
     # --- System networking ---
-    iproute2           # ip, ss, bridge — core network config tool
+    iproute2 # ip, ss, bridge — core network config tool
+
+    # --- sys proxy ---
+    mihomo
+    tor
   ];
 }
