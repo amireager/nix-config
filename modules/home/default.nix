@@ -11,6 +11,7 @@
     ./gui/xdg.nix
     ./dev/nix-tools.nix
     ./dev/tools.nix
+    ./dev/media.nix
     ./editor/nvim
     ./theme/gtk.nix
     ./theme/noctalia.nix

@@ -58,6 +58,9 @@
       set -g fish_pager_color_selected_description 89b4fa
 
       # ── CUSTOM KEYBINDINGS ──
+      # Ctrl+R — fzf native history widget (cleaner than fzf-fish)
+      bind ctrl-r fzf-history-widget
+
       # Ctrl+Space — accept autosuggestion
       bind ctrl-space forward-char
 

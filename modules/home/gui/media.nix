@@ -9,23 +9,29 @@
 
     # PDF viewer
     zathura # vim-like PDF viewer
-    poppler-utils # pdftotext, pdfinfo, pdfimages
 
     # MarkDown viewer
     inlyne # markdown renderer in gui
+
+    # Note taking
+    joplin # lightweight markdown notes with sync
+
+    # Camera
+    cheese # webcam app — photos, videos, effects
 
     # Archive tools
     zip # create zip archives
     unzip # extract zip archives
     p7zip # 7z support
     unrar # rar extraction
-    # ouch # modern extract
 
     # Mount & notifications
     udiskie # auto-mount USB drives
     libnotify # desktop notifications (notify-send)
 
-    # Media processing
-    ffmpegthumbnailer # video thumbnails for file managers
-  ];
+    # Media processing — essential
+    ffmpeg # all-in-one media converter/editor
+    yt-dlp # download from YouTube and 1000+ sites
+    imagemagick # image convert, resize, annotate
+  };
 }

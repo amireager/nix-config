@@ -120,6 +120,8 @@ binds {
     Mod+Shift+Tab { focus-workspace-previous; }
     Mod+WheelScrollDown { focus-workspace-down; }
     Mod+WheelScrollUp { focus-workspace-up; }
+    Mod+TouchpadScrollDown { spawn-sh "noctalia msg volume-up"; }
+    Mod+TouchpadScrollUp { spawn-sh "noctalia msg volume-down"; }
 
     // === Window management ===
     Mod+Q { close-window; }
@@ -130,6 +132,14 @@ binds {
     Mod+Ctrl+F { toggle-windowed-fullscreen; }
     Mod+C { center-column; }
     Mod+Period { expel-window-from-column; }
+
+    // === Tabs ===
+    Mod+W { consume-window-into-column; }
+    Mod+Shift+W { expel-window-from-column; }
+    Mod+G { toggle-column-tabbed-display; }
+
+    // === Inhibit ===
+    Mod+Escape { toggle-keyboard-shortcuts-inhibit; }
 
     // === Focus ===
     Mod+H { focus-column-left; }

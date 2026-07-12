@@ -15,6 +15,9 @@
       cursor_shape = "beam";
       repaint_delay = 10;
       input_delay = 3;
+      scrollback_lines = 10000;
+      enable_audio_bell = false;
+      visual_bell_duration = 0;
       color0 = "#161617";
       color1 = "#eb6f92";
       color2 = "#a6e3a1";
@@ -39,6 +42,13 @@
     keybindings = {
       "ctrl+shift+c" = "copy_to_clipboard";
       "ctrl+shift+v" = "paste_from_clipboard";
+      "ctrl+shift+up" = "scroll_line_up";
+      "ctrl+shift+down" = "scroll_line_down";
+      "ctrl+shift+page_up" = "scroll_page_up";
+      "ctrl+shift+page_down" = "scroll_page_down";
+      "ctrl+shift+home" = "scroll_home";
+      "ctrl+shift+end" = "scroll_end";
+      "ctrl+shift+f" = "show_scrollback";
     };
   };
 }
