@@ -33,6 +33,9 @@
     gping # Ping with terminal graph
     traceroute # Classic traceroute tool
     websocat # WebSocket client and relay
+    tcpdump # Packet capture and low-level network debugging
+    nmap # Network scanner
+    strace # Trace syscalls for debugging programs
 
     # File transfer and cloud sync helpers
     rclone # Cloud and remote storage sync

@@ -45,6 +45,9 @@
       commit.verbose = true;
       column.ui = "auto";
       branch.sort = "-committerdate";
+
+      # Handle non-ASCII filenames (Persian/Arabic paths)
+      core.quotePath = false;
     };
   };
 

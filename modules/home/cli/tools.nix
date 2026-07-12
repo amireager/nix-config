@@ -18,11 +18,10 @@
     jless # Interactive JSON viewer
     jc # Convert classic command output to JSON
 
-    # System inspection and debugging
+    # System inspection
     procs # Modern ps replacement
     bandwhich # Per-process bandwidth monitor
     lsof # List open files, sockets, and ports
-    strace # Trace syscalls for debugging programs
     psmisc # pstree, killall, fuser, and related process tools
 
     # Network and transfer
@@ -38,9 +37,10 @@
     mtr # Realtime traceroute and ping combined
     whois # Domain and IP ownership lookup
     socat # Socket relay and network debugging toolbox
-    tcpdump # Packet capture and low-level network debugging
-    nmap # Network scanner
     proxychains-ng # Route CLI applications through SOCKS/HTTP proxies
+
+    # Background task management
+    pueue # Queue and manage parallel background tasks
 
     # Data and file inspection
     file # File type detection
@@ -49,6 +49,7 @@
     # Productivity and dev helpers
     just # Modern command runner
     difftastic # Structural diff tool
+    gum # Interactive shell scripts (prompts, spinners, choose)
   ];
 
   programs.bat = {

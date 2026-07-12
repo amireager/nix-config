@@ -12,9 +12,6 @@
     enable = true;
 
     interactiveShellInit = ''
-      # ── STARSHIP INIT (manual — enableFishIntegration may not work) ──
-      starship init fish | source
-
       # ── UI & GREETING ──
       set -g fish_greeting
 
@@ -59,6 +56,19 @@
       set -g fish_pager_color_selected_prefix f9e2af --bold
       set -g fish_pager_color_selected_completion cdd6f4 --bold
       set -g fish_pager_color_selected_description 89b4fa
+
+      # ── CUSTOM KEYBINDINGS ──
+      # Ctrl+Space — accept autosuggestion
+      bind ctrl-space forward-char
+
+      # Ctrl+Alt+P — kill process (fzf)
+      bind ctrl-alt-p 'killp'
+
+      # Ctrl+Alt+G — git log interactive
+      bind ctrl-alt-g 'glog'
+
+      # Ctrl+Alt+B — git branch checkout
+      bind ctrl-alt-b 'gco_branch'
     '';
 
     plugins = [
@@ -66,10 +76,10 @@
       {name = "colored-man-pages"; src = pkgs.fishPlugins.colored-man-pages.src;}
       {name = "done"; src = pkgs.fishPlugins.done.src;}
 
-      # fzf integration
+      # fzf integration (Ctrl+T, Alt+C, Ctrl+R)
       {name = "fzf-fish"; src = pkgs.fishPlugins.fzf-fish.src;}
 
-      # Auto-close brackets: (), [], {}, "", '''
+      # Auto-close brackets
       {name = "autopair"; src = pkgs.fishPlugins.autopair.src;}
 
       # git interactive with fzf: log, diff, add, reset, stash
@@ -89,7 +99,7 @@
       grep = "rg";
       find = "fd";
       top = "btop";
-      cdi = "zi"; # Smart cd with zoxide
+      cdi = "zi";
 
       # ── NixOS / Home Manager ──
       ns = "nix shell";
@@ -133,24 +143,134 @@
       tst = "nh os test";
       bld = "nh os build";
     };
+
+    functions = {
+      # ── mkcd: Create directory and enter it ──
+      mkcd = {
+        description = "Create directory and cd into it";
+        body = ''
+          mkdir -p $argv[1] && cd $argv[1]
+        '';
+      };
+
+      # ── extract: Extract any archive format ──
+      extract = {
+        description = "Extract any archive format";
+        body = ''
+          if test (count $argv) -eq 0
+            echo "Usage: extract <file>"
+            return 1
+          end
+          for file in $argv
+            switch $file
+              case "*.tar.bz2"
+                tar xjf $file
+              case "*.tar.gz"
+                tar xzf $file
+              case "*.tar.xz"
+                tar xJf $file
+              case "*.tar.zst"
+                tar --zstd -xf $file
+              case "*.bz2"
+                bunzip2 $file
+              case "*.rar"
+                unrar x $file
+              case "*.gz"
+                gunzip $file
+              case "*.tar"
+                tar xf $file
+              case "*.tbz2"
+                tar xjf $file
+              case "*.tgz"
+                tar xzf $file
+              case "*.zip"
+                unzip $file
+              case "*.Z"
+                uncompress $file
+              case "*.7z"
+                7z x $file
+              case "*.zst"
+                unzstd $file
+              case "*"
+                echo "extract: unknown format: $file"
+            end
+          end
+        '';
+      };
+
+      # ── backup: Quick file backup with timestamp ──
+      backup = {
+        description = "Backup file with timestamp";
+        body = ''
+          if test (count $argv) -eq 0
+            echo "Usage: backup <file>"
+            return 1
+          end
+          for file in $argv
+            if test -e $file
+              cp -r $file "$file.bak."(date +%Y%m%d%H%M%S)
+              echo "Backed up: $file"
+            else
+              echo "backup: $file not found"
+            end
+          end
+        '';
+      };
+
+      # ── killp: Kill process with fzf ──
+      killp = {
+        description = "Kill process selected with fzf";
+        body = ''
+          set -l pid (ps aux | fzf --height=40% --layout=reverse --header="Select process to kill" | awk "{print \$2}")
+          if test -n "$pid"
+            echo "Kill PID $pid? (y/N)"
+            read -n 1 confirm
+            if test "$confirm" = "y"
+              kill -9 $pid
+              echo "Killed $pid"
+            end
+          end
+        '';
+      };
+
+      # ── glog: Interactive git log with fzf ──
+      glog = {
+        description = "Interactive git log with fzf";
+        body = ''
+          set -l commit (git log --oneline --graph --decorate --color=always | fzf --height=60% --layout=reverse --no-sort --ansi --header="Select commit" | awk "{print \$2}")
+          if test -n "$commit"
+            git show $commit
+          end
+        '';
+      };
+
+      # ── gco_branch: Interactive git branch checkout ──
+      gco_branch = {
+        description = "Interactive git branch checkout";
+        body = ''
+          set -l branch (git branch --all --color=always --format=%(refname:short) | fzf --height=40% --layout=reverse --ansi --header="Select branch")
+          if test -n "$branch"
+            git checkout $branch
+          end
+        '';
+      };
+    };
   };
 
   # ──────────────────────────────────────────────
-  # STARSHIP PROMPT — Enhanced
+  # STARSHIP PROMPT
   # ──────────────────────────────────────────────
   programs.starship = {
     enable = true;
-    # enableFishIntegration — called manually above
+    enableFishIntegration = true;
     settings = {
       add_newline = false;
       command_timeout = 500;
       scan_timeout = 10;
 
-      # ── FORMAT ──
       format = "$directory$git_branch$git_status$nix_shell$fill$cmd_duration$line_break$character";
       right_format = "$time$battery";
 
-      # ── DIRECTORY ──
       directory = {
         truncation_length = 4;
         truncate_to_repo = true;
@@ -158,13 +278,11 @@
         format = "[$path]($style) ";
       };
 
-      # ── GIT BRANCH ──
       git_branch = {
         symbol = " ";
         style = "bold #fab387";
       };
 
-      # ── GIT STATUS (symbols) ──
       git_status = {
         style = "bold #f38ba8";
         format = "([$all_status$ahead_behind]($style) )";
@@ -181,20 +299,17 @@
         deleted = "✘";
       };
 
-      # ── NIX SHELL ──
       nix_shell = {
         symbol = "❄️ ";
         style = "bold #89b4fa";
         format = "[$symbol$state]($style) ";
       };
 
-      # ── CMD DURATION ──
       cmd_duration = {
         min_time = 1500;
         format = "[$duration](bold #f9e2af) ";
       };
 
-      # ── TIME (right) ──
       time = {
         disabled = false;
         format = "[$time]($style) ";
@@ -202,7 +317,6 @@
         time_format = "%R";
       };
 
-      # ── BATTERY (right) ──
       battery = {
         full_symbol = " ";
         charging_symbol = " ";
@@ -217,7 +331,6 @@
         ];
       };
 
-      # ── LANGUAGE VERSIONS (auto-detect) ──
       nodejs = {
         symbol = " ";
         style = "bold #a6e3a1";
@@ -236,13 +349,11 @@
         format = "via [$symbol($version)]($style) ";
       };
 
-      # ── CHARACTER ──
       character = {
         success_symbol = "[❯](bold #a6e3a1)";
         error_symbol = "[❯](bold #f38ba8)";
       };
 
-      # ── FILL ──
       fill = { symbol = " "; };
     };
   };
@@ -267,7 +378,8 @@
   };
 
   # ──────────────────────────────────────────────
-  # FZF: FUZZY FINDER (Enhanced)
+  # FZF: FUZZY FINDER
+  # Ctrl+T = files, Alt+C = dirs, Ctrl+R = history
   # ──────────────────────────────────────────────
   programs.fzf = {
     enable = true;
@@ -275,15 +387,14 @@
 
     defaultCommand = "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git";
 
-    # Ctrl+T: Files
     fileWidget = {
       command = "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git";
       options = [
         "--preview 'bat --style=numbers --color=always --line-range :500 {}'"
+        "--multi"
       ];
     };
 
-    # Alt+C: Directories
     changeDirWidget = {
       command = "fd --type d --strip-cwd-prefix --hidden --follow --exclude .git";
       options = [
@@ -291,14 +402,18 @@
       ];
     };
 
-    # Ctrl+R → atuin (historyWidget empty)
-    historyWidget.command = "";
+    # Ctrl+R = history search via fzf (no atuin)
+    historyWidget.options = [
+      "--preview 'echo {}'"
+      "--preview-window down:3:wrap"
+    ];
 
     defaultOptions = [
       "--height 55%"
       "--layout=reverse"
       "--border rounded"
       "--preview-window=right:65%:wrap"
+      "--multi"
       # Catppuccin Mocha
       "--color=fg:#cdd6f4,bg:#1e1e2e,hl:#f38ba8"
       "--color=fg+:#cdd6f4,bg+:#313244,hl+:#f38ba8"
@@ -313,24 +428,5 @@
   programs.carapace = {
     enable = true;
     enableFishIntegration = true;
-  };
-
-  # ──────────────────────────────────────────────
-  # ATUIN: SMART SHELL HISTORY
-  # ──────────────────────────────────────────────
-  # Ctrl+R = Search command history
-  # Up arrow = Recent commands (chronological)
-  # History stored in ~/.local/share/atuin/history.db — independent of packages
-  programs.atuin = {
-    enable = true;
-    enableFishIntegration = true;
-    flags = ["--disable-up-arrow"];
-    settings = {
-      style = "compact";
-      inline_height = 25;
-      show_preview = true;
-      enter_accept = false;
-      store_failed = true;
-    };
   };
 }
