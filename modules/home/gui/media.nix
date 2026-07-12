@@ -33,5 +33,5 @@
     ffmpeg # all-in-one media converter/editor
     yt-dlp # download from YouTube and 1000+ sites
     imagemagick # image convert, resize, annotate
-  };
+  ];
 }

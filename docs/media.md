@@ -1,188 +1,160 @@
-# 🎬 Media — mpv، imv، zathura، playerctl
+# Media — Daily Applications
 
-## mpv
+## Image Viewer — imv
+Minimal Wayland-native image viewer.
+```
+imv image.png           # view single image
+imv *.png               # view multiple images
+imv -f directory/       # view all images in directory
+```
+**Default app for:** png, jpeg, gif, webp
 
-پخش‌کننده ویدیو و صوت سبک و قدرتمند.
+---
 
-```bash
-mpv video.mp4                   # پخش ویدیو
-mpv audio.mp3                   # پخش صوت
-mpv https://youtube.com/watch?v=...  # پخش از URL
-mpv --fullscreen video.mp4      # تمام صفحه
-mpv --loop video.mp4            # تکرار
-mpv --speed 1.5 video.mp4      # سرعت 1.5x
+## Video & Audio — mpv
+Plays everything. Lightweight and powerful.
+```
+mpv video.mp4                   # play video
+mpv audio.mp3                   # play audio
+mpv https://youtube.com/...     # play from URL
+mpv --fullscreen video.mp4      # fullscreen
+mpv --loop video.mp4            # loop
+mpv --speed 1.5 video.mp4      # 1.5x speed
 ```
 
-### میانبرها (حین پخش)
-
-| میانبر | عملکرد |
+### Keybindings (during playback)
+| Key | Action |
 |---|---|
-| `Space` | pause/play |
-| `Left/Right` | عقب/جلو 5 ثانیه |
-| `Up/Down` | عقب/جلو 60 ثانیه |
-| `[/]` | کاهش/افزایش سرعت |
-| `f` | toggle fullscreen |
-| `m` | mute |
-| `9/0` | کاهش/افزایش صدا |
-| `s` | اسکرین‌شات |
-| `q` | خروج |
-| `o` | نمایش OSD |
-| `i` | نمایش اطلاعات فایل |
-| `j/J` | سوییچ زیرنویس |
-| `#/` | سوییچ صوت |
+| `Space` | Play/pause |
+| `Left/Right` | Seek 5s |
+| `Up/Down` | Seek 60s |
+| `[/]` | Speed down/up |
+| `f` | Toggle fullscreen |
+| `9/0` | Volume down/up |
+| `s` | Screenshot |
+| `q` | Quit |
+| `j/J` | Switch subtitle |
+| `#` | Switch audio track |
 
-### تنظیمات
-
-پخش‌کننده پیش‌فرض برای: mp4, mkv, webm, mpeg, flac
+**Default app for:** mp4, mkv, webm, mpeg, flac
 
 ---
 
-## imv
-
-نمایشگر تصویر سبک برای Wayland.
-
-```bash
-imv image.png                   # نمایش تصویر
-imv *.png                       # نمایش چند تصویر
-imv -f directory/               # نمایش تمام تصاویر دایرکتوری
+## Media Control — playerctl
+Control media playback from terminal.
+```
+playerctl play              # play
+playerctl pause             # pause
+playerctl next              # next
+playerctl previous          # previous
+playerctl volume 0.5        # set volume
+playerctl status            # show status
+playerctl metadata title    # show title
 ```
 
-### میانبرها
+---
 
-| میانبر | عملکرد |
+## PDF Viewer — zathura
+Vim-like PDF viewer.
+```
+zathura document.pdf
+```
+
+### Keybindings
+| Key | Action |
 |---|---|
-| `j/k` | تصویر قبلی/بعدی |
-| `q` | خروج |
-| `f` | fullscreen |
-| `r` | چرخش |
-| `+/-` | زوم |
-| `c` | center |
-| `w` | fit to window |
-| `a` | fit to actual size |
+| `j/k` | Scroll |
+| `J/K` | Next/prev page |
+| `gg/G` | First/last page |
+| `/` | Search |
+| `n/N` | Next/prev match |
+| `+/-` | Zoom |
+| `W` | Fit width |
+| `d` | Dual page |
+| `q` | Quit |
 
-**تنظیمات:** نمایشگر پیش‌فرض برای: png, jpeg, gif, webp
-
----
-
-## zathura
-
-نمایشگر PDF vim-style.
-
-```bash
-zathura document.pdf            # باز کردن PDF
-```
-
-### میانبرها
-
-| میانبر | عملکرد |
-|---|---|
-| `j/k` | اسکرول |
-| `h/l` | اسکرول افقی |
-| `J/K` | صفحه بعدی/قبلی |
-| `gg/G` | اول/آخر |
-| `/` | جستجو |
-| `n/N` | تطابق بعدی/قبلی |
-| `+/-` | زوم |
-| `W` | عرض صفحه |
-| `a` | اندازه واقعی |
-| `s` | ذخیره snapshot |
-| `p` | ارائه |
-| `d` | حالت دو صفحه |
-| `F` | fullscreen |
-| `R` | چرخش |
-| `r` | ریلود |
-| `q` | خروج |
-
-**تنظیمات:** نمایشگر پیش‌فرض برای PDF
+**Default app for:** PDF
 
 ---
 
-## playerctl
-
-کنترل پخش رسانه از ترمینال.
-
-```bash
-playerctl play                  # پخش
-playerctl pause                 # توقف
-playerctl play-pause            # toggle
-playerctl next                  # بعدی
-playerctl previous              # قبلی
-playerctl volume 0.5            # تنظیم صدا
-playerctl volume 0.1+           # افزایش
-playerctl status                # وضعیت
-playerctl metadata              # اطلاعات آهنگ
-playerctl metadata title        # عنوان
-playerctl metadata artist       # هنرمند
+## Markdown Viewer — inlyne
+GUI markdown renderer in terminal.
 ```
-
-### استفاده با پردازش‌های خاص
-
-```bash
-playerctl -p spotify play       # فقط Spotify
-playerctl -p mpv pause          # فقط mpv
-playerctl -l                    # لیست پردازش‌های فعال
+inlyne README.md
 ```
 
 ---
 
-## poppler-utils
-
-ابزارهای CLI برای PDF.
-
-```bash
-pdftotext document.pdf output.txt    # تبدیل PDF به متن
-pdfinfo document.pdf                 # اطلاعات PDF
-pdfimages document.pdf img           # استخراج تصاویر
-pdftohtml document.pdf output.html   # تبدیل به HTML
-pdffonts document.pdf                # لیست فونت‌ها
+## Note Taking — joplin
+Lightweight markdown notes with sync support.
+```
+joplin                  # open GUI
 ```
 
 ---
 
-## ffmpegthumbnailer
-
-ساخت بندانگشتی (thumbnail) از ویدیو. توسط Thunar و سایر فایل منیجرها استفاده می‌شود.
-
-```bash
-# خودکار توسط فایل منیجر استفاده می‌شود
-ffmpegthumbnailer -i video.mp4 -o thumb.png -s 256
+## Camera — cheese
+Webcam application — photos, videos, effects.
+```
+cheese                  # open camera
 ```
 
 ---
 
-## udiskie
+## Archive Tools
+| Tool | Create | Extract |
+|---|---|---|
+| **zip** | `zip archive.zip file1 file2` | `unzip archive.zip` |
+| **7z** | `7z a archive.7z file1` | `7z x archive.7z` |
+| **unrar** | — | `unrar x archive.rar` |
 
-اتومات mount کردن USB drives.
+---
 
-```bash
-# خودکار اجرا می‌شود — USB را وصل کنید، mount می‌شود
-udiskie -t                      # با tray icon
-udiskie --no-automount          # فقط notification
+## Mount & Notifications
+| Tool | Purpose | Usage |
+|---|---|---|
+| **udiskie** | Auto-mount USB | Runs automatically |
+| **libnotify** | Desktop notifications | `notify-send "title" "body"` |
+
+---
+
+## Media Processing
+
+### ffmpeg — All-in-one media converter
+```
+ffmpeg -i video.mp4 video.avi           # convert format
+ffmpeg -i video.mp4 -ss 00:01:00 -t 10 clip.mp4  # cut 10s from 1min
+ffmpeg -i video.mp4 -vf "scale=1280:720" hd.mp4   # resize
+ffmpeg -i video.mp4 -vn audio.mp3       # extract audio
+ffmpeg -i video.mp4 -r 30 output.mp4    # set fps
+```
+
+### yt-dlp — Download from YouTube and 1000+ sites
+```
+yt-dlp "https://youtube.com/watch?v=..."         # download video
+yt-dlp -x "https://youtube.com/watch?v=..."      # audio only
+yt-dlp --format mp4 "url"                        # specific format
+yt-dlp --playlist "url"                          # download playlist
+yt-dlp -o "%(title)s.%(ext)s" "url"             # custom filename
+```
+
+### imagemagick — Image processing
+```
+convert input.png -resize 50% output.png         # resize 50%
+convert input.png -resize 800x600 output.png     # resize to 800x600
+convert input.jpg output.webp                    # convert format
+montage *.png -geometry 200x200+5+5 grid.png     # create grid
 ```
 
 ---
 
-## فایل‌های فشرده
-
-### zip / unzip
-
-```bash
-zip archive.zip file1 file2     # ساخت zip
-zip -r archive.zip directory/   # zip recursive
-unzip archive.zip               # استخراج
-unzip archive.zip -d /path/    # استخراج در مسیر
-```
-
-### p7zip (7z)
-
-```bash
-7z a archive.7z file1 file2    # ساخت 7z
-7z x archive.7z                 # استخراج
-```
-
-### unrar
-
-```bash
-unrar x archive.rar             # استخراج
-unrar l archive.rar             # لیست فایل‌ها
-```
+## Wayland Tools
+| Tool | Purpose | Usage |
+|---|---|---|
+| **grim** | Screenshot | `grim screenshot.png` |
+| **slurp** | Region select | `slurp \| grim -g - screenshot.png` |
+| **wl-screenrec** | Screen record | `wl-screenrec output.mp4` |
+| **brightnessctl** | Brightness | `brightnessctl set 50%` |
+| **pamixer** | Volume | `pamixer --set-volume 50` |
+| **bluetui** | Bluetooth TUI | `bluetui` |
+| **wl-clipboard** | Clipboard | `wl-copy`, `wl-paste` |

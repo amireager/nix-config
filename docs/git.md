@@ -1,154 +1,148 @@
-# 🔀 Git — مدیریت نسخه
+# Git — Version Control
 
 ## Git
+Distributed version control.
 
-مدیریت نسخه توزیع‌شده.
-
-### alias‌های تعریف‌شده
-
+### Aliases (defined in config)
 ```bash
-git st              # git status -sb (خلاصه)
+git st              # git status -sb (summary)
 git lg              # git log --oneline --graph --decorate --all
 git last            # git log -1 HEAD --stat
 git unstage         # git reset HEAD --
 git amend           # git commit --amend --no-edit
 ```
 
-### abbreviations (fish)
+### Shell Aliases (in fish)
+| Alias | Command |
+|---|---|
+| `gst` | `git status --short --branch` |
+| `gaa` | `git add --all` |
+| `gl` | `git log --oneline --graph --decorate` |
+| `gd` | `git diff` |
+| `gds` | `git diff --staged` |
+| `gclean` | `git clean -fd` |
+| `gsta` | `git stash` |
+| `gstp` | `git stash pop` |
 
-```bash
-gs                  # git status
-ga                  # git add
-gc "message"        # git commit -m "message"
-gco branch          # git checkout branch
-gcb new-branch      # git checkout -b new-branch
-gp                  # git push
-gpl                 # git pull --rebase
-gaa                 # git add --all
-gl                  # git log --oneline --graph --decorate
-```
+### Shell Abbreviations
+| Abbr | Expansion |
+|---|---|
+| `gs` | `git status` |
+| `ga` | `git add` |
+| `gc` | `git commit -m` |
+| `gco` | `git checkout` |
+| `gcb` | `git checkout -b` |
+| `gp` | `git push` |
+| `gpl` | `git pull --rebase` |
 
-### تنظیمات مهم
-
-| تنظیم | مقدار | توضیح |
+### Key Settings
+| Setting | Value | Description |
 |---|---|---|
-| `pull.rebase` | true | pull همیشه rebase |
-| `push.autoSetupRemote` | true | `git push` روی branch جدید خودکار |
-| `fetch.prune` | true | حذف branch‌های حذف‌شده از remote |
-| `rebase.autoStash` | true | stash خودکار قبل از rebase |
-| `merge.conflictStyle` | zdiff3 | نمایش بهتر conflict‌ها |
-| `commit.verbose` | true | نمایش diff هنگام نوشتن commit message |
-| `branch.sort` | -committerdate | مرتب‌سازی branch‌ها بر اساس آخرین commit |
+| `pull.rebase` | true | pull always rebases |
+| `push.autoSetupRemote` | true | auto-set upstream on first push |
+| `fetch.prune` | true | delete remote-tracking branches |
+| `rebase.autoStash` | true | auto-stash before rebase |
+| `merge.conflictStyle` | zdiff3 | better conflict display |
+| `commit.verbose` | true | show diff in commit message editor |
+| `branch.sort` | -committerdate | sort branches by recent commit |
+| `core.quotePath` | false | handle Persian/Arabic filenames |
 
----
-
-## Delta
-
-نمایش زیبای diff در ترمینال.
-
-```bash
-git diff            # → با delta نمایش داده می‌شود
-git log -p          # → با delta نمایش داده می‌شود
-git show            # → با delta نمایش داده می‌شود
-```
-
-### میانبرها (در delta)
-
-| میانبر | عملکرد |
+### Git Aliases (in git config)
+| Alias | Command |
 |---|---|
-| `n` | تطابق بعدی |
-| `N` | تطابق قبلی |
-| `q` | خروج |
-
-**تنظیمات:** line numbers فعال، side-by-side غیرفعال، theme ansi.
-
----
-
-## gh (GitHub CLI)
-
-رابط خط فرمان GitHub.
-
-```bash
-# احراز هویت
-gh auth login
-
-# ریپو
-gh repo create my-project --public
-gh repo clone user/repo
-gh repo view
-
-# Issues
-gh issue list
-gh issue create --title "Bug" --body "Description"
-gh issue view 42
-
-# Pull Requests
-gh pr list
-gh pr create --title "Feature" --body "Description"
-gh pr checkout 42
-gh pr merge 42
-gh pr review 42 --approve
-
-# Actions
-gh run list
-gh run view 12345
-
-# Release
-gh release create v1.0.0 --title "v1.0.0" --notes "Release notes"
-```
-
-**تنظیمات:** `git_protocol = "ssh"` (استفاده از SSH به جای HTTPS).
+| `st` | `status -sb` |
+| `lg` | `log --oneline --graph --decorate --all` |
+| `last` | `log -1 HEAD --stat` |
+| `unstage` | `reset HEAD --` |
+| `amend` | `commit --amend --no-edit` |
 
 ---
 
-## lazygit
+## Delta — Beautiful Diff
+Syntax-highlighted diff viewer integrated with git.
 
-رابط TUI برای git. مدیریت ریپو بدون تایپ دستورات.
+**Configured:**
+- Line numbers: enabled
+- Side-by-side: disabled
+- Theme: ansi
+- Navigation: enabled
 
+**Usage (automatic via git):**
 ```bash
-lazygit             # باز کردن lazygit
+git diff            # → displayed with delta
+git log -p          # → displayed with delta
+git show            # → displayed with delta
 ```
 
-### میانبرها
-
-| میانبر | عملکرد |
+**Keybindings (in delta):**
+| Key | Action |
 |---|---|
-| `1-5` | سوییچ بین پنل‌ها |
-| `Space` | stage/unstage فایل |
-| `a` | stage همه |
-| `c` | commit |
-| `C` | commit با editor |
-| `P` | push |
-| `p` | pull |
-| `m` | resolve conflict (ours/theirs) |
-| `e` | باز کردن فایل در ادیتور |
-| `o` | باز کردن در مرورگر |
-| `d` | discard changes |
-| `z` | undo |
-| `Z` | redo |
-| `/` | جستجو |
-| `q` | خروج |
-
-### پنل‌ها
-
-1. **Status** — branch فعلی، stash، merge state
-2. **Files** — فایل‌های تغییریافته
-3. **Branches** — branch‌های محلی
-4. **Commits** — تاریخچه commits
-5. **Stash** — stash‌ها
+| `n` | Next match |
+| `N` | Previous match |
+| `q` | Quit |
 
 ---
 
-## gh-dash
+## GitHub CLI — gh
+Command-line interface for GitHub.
 
-داشبورد TUI برای GitHub.
+**Configured:** `git_protocol = "ssh"`
 
+### Common Commands
 ```bash
-gh-dash             # باز کردن داشبورد
+gh auth login           # authenticate
+gh repo clone owner/repo # clone repo
+gh pr list              # list pull requests
+gh pr create            # create PR
+gh pr merge 42          # merge PR #42
+gh issue create         # create issue
+gh issue list           # list issues
+gh gist create file     # create gist
 ```
 
-**نمایش:**
-- PRهای باز شما
-- Issueهای اختصاص‌داده شده
-- نوتیفیکیشن‌ها
-- GitHub Actions workflowها
+---
+
+## Lazygit — Git TUI
+Terminal UI for git. No need to type commands.
+
+```bash
+lazygit                 # open lazygit
+```
+
+### Keybindings
+| Key | Action |
+|---|---|
+| `1-5` | Switch panel |
+| `Space` | Stage/unstage file |
+| `a` | Stage all |
+| `c` | Commit |
+| `C` | Commit with editor |
+| `P` | Push |
+| `p` | Pull |
+| `e` | Open file in editor |
+| `o` | Open in browser |
+| `/` | Search |
+| `q` | Quit |
+
+### Panels
+1. **Status** — current branch, stash, merge state
+2. **Files** — changed files
+3. **Branches** — local branches
+4. **Commits** — commit history
+5. **Stash** — stashes
+
+---
+
+## gh-dash — GitHub Dashboard TUI
+```bash
+gh-dash               # open dashboard
+```
+
+**Shows:**
+- Your open PRs
+- Assigned issues
+- Notifications
+- GitHub Actions workflows
+
+## Configuration
+File: `modules/home/cli/git.nix`

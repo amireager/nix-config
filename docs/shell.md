@@ -1,126 +1,111 @@
-# 🐚 Shell — Fish و ابزارهای شل
+# Shell — Fish & Shell Tools
 
 ## Fish Shell
+Modern interactive shell with auto-suggestions, syntax highlighting, and completions built-in.
 
-شل تعاملی مدرن. جایگزین bash/zsh با auto-suggestions، syntax highlighting، و completions داخلی.
-
-### تنظیمات
-
-| تنظیم | مقدار |
+### Configuration
+| Setting | Value |
 |---|---|
-| greeting | غیرفعال |
-| autosuggestion | فعال |
-| EDITOR | `nvim` |
-| PAGER | `bat --plain` |
-| MANPAGER | `bat` (رنگی) |
+| greeting | disabled |
+| autosuggestion | enabled |
+| EDITOR | nvim |
+| PAGER | bat |
+| MANPAGER | bat (colored) |
 
-### alias‌های مهم
-
-| alias | دستور واقعی | کاربرد |
+### Aliases
+| Alias | Command | Purpose |
 |---|---|---|
-| `ls` | `eza --icons` | لیست با آیکون |
-| `ll` | `eza -l --icons --git` | لیست با جزئیات |
-| `la` | `eza -la --icons --git` | شامل مخفی‌ها |
-| `lt` | `eza --tree --level=2` | درخت دایرکتوری |
-| `cat` | `bat --style=plain` | نمایش فایل |
-| `grep` | `ripgrep` | جستجو |
-| `find` | `fd` | پیدا کردن فایل |
-| `top` | `btop` | مانیتور سیستم |
+| `ls` | `eza --icons --git` | List with icons |
+| `ll` | `eza -l --icons --git --header` | List with details |
+| `la` | `eza -la --icons --git --header` | Include hidden |
+| `lt` | `eza --tree --level=2` | Directory tree |
+| `cat` | `bat --style=plain` | Show file |
+| `grep` | `ripgrep` | Search |
+| `find` | `fd` | Find files |
+| `top` | `btop` | System monitor |
+| `cdi` | `zi` | Smart cd (zoxide) |
 
-### abbreviation‌ها (میانبرهای تایپی)
-
-| مخفف | گسترش | کاربرد |
+### Abbreviations
+| Abbr | Expansion | Purpose |
 |---|---|---|
-| `n` | `nvim` | باز کردن ویرایشگر |
-| `y` | `yazi` | فایل منیجر |
-| `sw` | `nh os switch` | بازسازی سیستم |
-| `tst` | `nh os test` | تست سیستم |
-| `bld` | `nh os build` | بیلد سیستم |
-| `gs` | `git status` | وضعیت git |
-| `ga` | `git add` | افزودن به git |
-| `gc` | `git commit -m` | ثبت تغییرات |
-| `gco` | `git checkout` | شاخه/فایل |
-| `gp` | `git push` | ارسال |
-| `gpl` | `git pull --rebase` | دریافت |
+| `n` | `nvim` | Open editor |
+| `y` | `yazi` | File manager |
+| `sw` | `nh os switch` | Rebuild system |
+| `tst` | `nh os test` | Test system |
+| `bld` | `nh os build` | Build system |
+| `gs` | `git status` | Git status |
+| `ga` | `git add` | Git add |
+| `gc` | `git commit -m` | Git commit |
+| `gco` | `git checkout` | Git checkout |
+| `gcb` | `git checkout -b` | New branch |
+| `gp` | `git push` | Git push |
+| `gpl` | `git pull --rebase` | Git pull |
 
-### میانبرهای Fish
-
-| میانبر | عملکرد |
+### Keybindings
+| Key | Action |
 |---|---|
-| `Ctrl+R` | جستجوی تاریخچه (atuin) |
-| `Ctrl+T` | جستجوی فایل (fzf) |
-| `Alt+C` | cd به دایرکتوری (fzf) |
-| `Tab` | تکمیل |
-| `Ctrl+A` | ابتدای خط |
-| `Ctrl+E` | انتهای خط |
-| `Ctrl+U` | حذف تا ابتدای خط |
-| `Ctrl+K` | حذف تا انتهای خط |
-| `Ctrl+W` | حذف کلمه قبلی |
+| `Ctrl+R` | Search command history (fzf) |
+| `Ctrl+T` | Search files (fzf) |
+| `Alt+C` | Search directories (fzf) |
+| `Ctrl+Space` | Accept autosuggestion |
+| `Ctrl+Alt+P` | Kill process (fzf) |
+| `Ctrl+Alt+G` | Git log interactive |
+| `Ctrl+Alt+B` | Git branch checkout |
 
----
+### Functions
+| Function | Example | Description |
+|---|---|---|
+| `mkcd` | `mkcd src/api` | Create dir and cd into it |
+| `extract` | `extract file.tar.gz` | Extract any archive format |
+| `backup` | `backup config.nix` | Quick backup with timestamp |
+| `killp` | `killp` | Kill process with fzf |
+| `glog` | `glog` | Interactive git log |
+| `gco_branch` | `gco_branch` | Interactive branch checkout |
 
-## Starship
-
-پرامپت سریع و زیبا.
-
-**نمایش:**
-- مسیر فعلی (آبی bold)
-- شاخه git (نارنجی bold)
-- وضعیت git (قرمز: تغییرات)
-- nix shell (برفی ❄️)
-- مدت زمان اجرای دستور
-
----
-
-## Zoxide
-
-جایگزین هوشمند `cd`.
-
-```bash
-z project           # cd هوشمند
-zi                  # انتخاب تعاملی
-zoxide add /path    # افزودن مسیر دستی
-```
-
----
-
-## Direnv + nix-direnv
-
-بارگذاری خودکار محیط توسعه هنگام ورود به دایرکتوری.
-
-```bash
-cd my-project       # محیط خودکار بارگذاری می‌شود
-direnv deny         # غیرفعال‌سازی موقت
-direnv allow        # فعال‌سازی مجدد
-direnv status       # نمایش وضعیت
-```
-
----
-
-## FZF
-
-فایندر فازی.
-
-| میانبر | عملکرد |
+### Plugins
+| Plugin | Purpose |
 |---|---|
-| `Ctrl+T` | جستجوی فایل |
-| `Alt+C` | cd به دایرکتوری |
-| `Ctrl+R` | جستجوی تاریخچه (via atuin) |
+| `colored-man-pages` | Colored man pages |
+| `done` | Notification when long command finishes |
+| `fzf-fish` | fzf integration (Ctrl+T, Alt+C) |
+| `autopair` | Auto-close brackets |
+| `forgit` | Git interactive with fzf |
 
 ---
 
-## Carapace
+## Starship Prompt
+Fast, minimal prompt with Git integration.
 
-موتور completion برای ۶۰۰+ دستور. خودکار فعال.
+**Shows:**
+- Current directory (blue)
+- Git branch (orange) + status (red/green)
+- Nix shell indicator (snowflake)
+- Command duration
+- Time + battery (right side)
 
 ---
 
-## Atuin
+## Zoxide — Smart cd
+`z project` → cd to most used directory matching "project"
+`zi` → interactive selection
 
-تاریخچه شل هوشمند (SQLite + fuzzy search).
+---
 
-```bash
-Ctrl-R              # جستجوی تاریخچه
-atuin stats         # آمار استفاده
-atuin sync          # sync بین دستگاه‌ها
-```
+## Direnv — Project Environment Loading
+Automatically loads `.envrc` when entering a directory.
+Works with `nix develop` for project-specific shells.
+
+---
+
+## FZF — Fuzzy Finder
+| Key | Action |
+|---|---|
+| `Ctrl+T` | Search files (with preview) |
+| `Alt+C` | Search directories (with tree preview) |
+| `Ctrl+R` | Search command history |
+| `Tab` | Multi-select |
+
+---
+
+## Carapace — Extra Completions
+Auto-completions for 600+ commands. Works silently in background.

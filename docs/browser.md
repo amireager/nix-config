@@ -1,141 +1,112 @@
-# 🌐 مرورگرها
+# Browsers
 
-## Zen Browser (پیش‌فرض)
+## Zen Browser (Default)
+Firefox-based with Arc-like UX. Vertical tabs, clean workspace.
 
-مرورگر مبتنی بر Firefox با UX شبیه Arc. تب‌های عمودی، فضای کاری تمیز.
+**Installed via:** flake (`zen-browser-flake`)
 
-**نصب:** از طریق flake (`zen-browser-flake`)
+**Features:**
+- Vertical tabs on the left
+- Workspaces
+- Firefox extension support
+- Modern minimal design
 
-**ویژگی‌ها:**
-- تب‌های عمودی در سمت چپ
-- فضاهای کاری (workspace) جداگانه
-- پشتیبانی از افزونه‌های Firefox
-- طراحی مدرن و مینیمال
-
-**تنظیمات Wayland:**
+**Wayland:**
 ```
-MOZ_ENABLE_WAYLAND=1   # فعال در متغیرهای محیطی
+MOZ_ENABLE_WAYLAND=1   # set in environment variables
 ```
 
-**میانبرهای مفید:**
-
-| میانبر | عملکرد |
+**Keybindings:**
+| Key | Action |
 |---|---|
-| `Ctrl+T` | تب جدید |
-| `Ctrl+W` | بستن تب |
-| `Ctrl+Shift+T` | بازگرداندن تب بسته‌شده |
-| `Ctrl+L` | فوکوس روی آدرس‌بار |
-| `Ctrl+Tab` | تب بعدی |
-| `Ctrl+Shift+Tab` | تب قبلی |
-| `F11` | تمام‌صفحه |
+| `Ctrl+T` | New tab |
+| `Ctrl+W` | Close tab |
+| `Ctrl+Shift+T` | Restore closed tab |
+| `Ctrl+L` | Focus address bar |
+| `Ctrl+Tab` | Next tab |
+| `Ctrl+Shift+Tab` | Previous tab |
+| `F11` | Fullscreen |
+
+**Default app for:** HTML, HTTP/HTTPS links
 
 ---
 
 ## Qutebrowser
+Keyboard-driven browser with vim-like navigation.
 
-مرورگر مبتنی بر Python و Qt با کنترل کامل از طریق کیبورد (vim-like).
+**Installed via:** nixpkgs (`pkgs.qutebrowser`)
 
-**نصب:** از nixpkgs (`pkgs.qutebrowser`)
+**Features:**
+- 100% keyboard control
+- No mouse needed
+- Python scriptable
+- Lightweight and fast
 
-**ویژگی‌ها:**
-- کنترل ۱۰۰% با کیبورد
-- بدون نیاز به ماوس
-- قابلیت اسکریپت‌نویسی با Python
-- سبک و سریع
-
-**میانبرهای پایه:**
-
-| میانبر | عملکرد |
+**Keybindings:**
+| Key | Action |
 |---|---|
-| `o` | باز کردن URL |
-| `O` | باز کردن URL در تب فعلی |
-| `t` | تب جدید |
-| `d` | بستن تب |
-| `J` / `K` | تب قبلی / بعدی |
-| `r` | ریلود |
-| `R` | ریلود بدون کش |
-| `H` / `L` | عقب / جلو |
-| `/` | جستجو در صفحه |
-| `n` / `N` | تطابق بعدی / قبلی |
-| `gg` | ابتدای صفحه |
-| `G` | انتهای صفحه |
-| `h/j/k/l` | حرکت (vim-style) |
-| `f` | دنبال‌کردن لینک (hint mode) |
-| `F` | دنبال‌کردن لینک در تب جدید |
-| `:` | حالت دستور |
-| `q` | خروج |
-
-**دستورات مفید:**
-
-```
-:set content.javascript.enabled false   # غیرفعال‌سازی JS
-:open github.com                         # باز کردن URL
-:bookmark-add                            # افزودن بوکمارک
-:history                                 # نمایش تاریخچه
-```
+| `o` | Open URL |
+| `O` | Open URL in current tab |
+| `t` | New tab |
+| `d` | Close tab |
+| `J` / `K` | Previous / next tab |
+| `r` | Reload |
+| `R` | Reload without cache |
+| `H` / `L` | Back / forward |
+| `/` | Search in page |
+| `n` / `N` | Next / prev match |
+| `gg` | Top of page |
+| `G` | Bottom of page |
+| `h/j/k/l` | Movement (vim-style) |
+| `f` | Follow link (hint mode) |
+| `F` | Follow link in new tab |
+| `:` | Command mode |
+| `q` | Quit |
 
 ---
 
 ## Brave
+Chromium-based with built-in privacy features.
 
-مرورگر مبتنی بر Chromium با تمرکز بر حریم خصوصی.
+**Installed via:** nixpkgs (`pkgs.brave`)
 
-**نصب:** از nixpkgs (`pkgs.brave`)
+**Features:**
+- Built-in ad blocker (Brave Shields)
+- Tracker blocker
+- HTTPS Everywhere built-in
+- Chrome extension compatible
+- Tor in private window
 
-**ویژگی‌ها:**
-- بلاکر تبلیغات داخلی (Brave Shields)
-- بلاکر tracker
-- HTTPS Everywhere داخلی
-- سازگار با افزونه‌های Chrome
-- Tor در پنجره خصوصی
-
-**تنظیمات Wayland:**
-
-برای اجرای Brave با Wayland:
+**Wayland:**
 ```bash
 brave --ozone-platform=wayland
 ```
 
-یا در تنظیمات NixOS (قبلاً در `environment.sessionVariables` تنظیم شده):
-```
-NIXOS_OZONE_WL=1
-```
-
-**میانبرهای مفید:**
-
-| میانبر | عملکرد |
+**Keybindings:**
+| Key | Action |
 |---|---|
-| `Ctrl+T` | تب جدید |
-| `Ctrl+W` | بستن تب |
-| `Ctrl+Shift+T` | بازگرداندن تب بسته‌شده |
-| `Ctrl+L` | فوکوس روی آدرس‌بار |
-| `Ctrl+Shift+N` | پنجره خصوصی |
-| `F12` | ابزارهای توسعه‌دهنده |
-| `Ctrl+Shift+Delete` | پاک کردن داده‌های مرور |
-
-**Brave Shields:**
-
-آیکون شیر در نوار آدرس:
-- سطح حفاظت را تنظیم کنید
-- tracker و تبلیغات را بلاک کنید
-- کوکی‌ها را مدیریت کنید
+| `Ctrl+T` | New tab |
+| `Ctrl+W` | Close tab |
+| `Ctrl+Shift+T` | Restore closed tab |
+| `Ctrl+L` | Focus address bar |
+| `Ctrl+Shift+N` | Private window |
+| `F12` | Developer tools |
+| `Ctrl+Shift+Delete` | Clear browsing data |
 
 ---
 
-## انتخاب مرورگر مناسب
-
-| نیاز | مرورگر |
+## Choosing a Browser
+| Need | Browser |
 |---|---|
-| استفاده روزانه | **Zen Browser** — UX مدرن و تب‌های عمودی |
-| مرور با کیبورد | **Qutebrowser** — بدون نیاز به ماوس |
-| امنیت و حریم خصوصی | **Brave** — بلاکر داخلی و Tor |
-| سرعت | **Thorium** — AppImage (در صورت نیاز) |
+| Daily use | **Zen Browser** — modern UX, vertical tabs |
+| Keyboard-driven | **Qutebrowser** — no mouse needed |
+| Privacy | **Brave** — built-in blocker and Tor |
+| Speed | **Thorium** — AppImage (if needed) |
 
-## مرورگر پیش‌فرض سیستم
+## Default Browser
+Zen Browser is set as default:
+- Opening links → Zen Browser
+- HTML files → Zen Browser
+- `http://` and `https://` → Zen Browser
 
-Zen Browser به عنوان مرورگر پیش‌فرض تنظیم شده:
-- باز کردن لینک‌ها → Zen Browser
-- فایل‌های HTML → Zen Browser
-- `http://` و `https://` → Zen Browser
-
-تنظیمات در `modules/home/gui/xdg.nix` تعریف شده.
+Configured in `modules/home/gui/xdg.nix`.

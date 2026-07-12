@@ -1,277 +1,143 @@
-# 💻 ترمینال — Kitty و Tmux
+# Terminal — Kitty & Tmux
 
-## Kitty
+## Kitty — Terminal Emulator
+Fast GPU-accelerated terminal with Wayland support.
 
-ترمینال emulator سریع با شتاب‌دهی GPU و پشتیبانی کامل از Wayland.
-
-### تنظیمات
-
-| تنظیم | مقدار |
+### Settings
+| Setting | Value |
 |---|---|
-| فونت | JetBrainsMono Nerd Font — سایز 12 |
-| شفافیت | 92% |
-| پس‌زمینه | `#0b0b0e` (بسیار تاریک) |
-| متن | `#e0e0e0` |
-| شکل مCursor | خطی (beam) |
-| پدینگ | 4px |
-| رنگ‌ها | Catppuccin Mocha (16 رنگ ANSI) |
+| Font | JetBrainsMono Nerd Font — size 12 |
+| Opacity | 92% |
+| Background | `#0b0b0e` (very dark) |
+| Foreground | `#e0e0e0` |
+| Cursor | beam |
+| Padding | 4px |
+| Scrollback | 10,000 lines |
+| Colors | Catppuccin Mocha (16 ANSI colors) |
+| Bell | disabled |
 
-### میانبرهای کلیدی
-
-| میانبر | عملکرد |
+### Keybindings
+| Key | Action |
 |---|---|
-| `Ctrl+Shift+C` | کپی |
-| `Ctrl+Shift+V` | پیست |
-| `Ctrl+Shift+T` | تب جدید |
-| `Ctrl+Shift+W` | بستن تب |
-| `Ctrl+Shift+Right` | تب بعدی |
-| `Ctrl+Shift+Left` | تب قبلی |
-| `Ctrl+Shift+Enter` | پنجره جدید (split) |
-| `Ctrl+Shift+L` | حرکت به پنجره بعدی |
-| `Ctrl+Shift+PageUp` | اسکرول به بالا |
-| `Ctrl+Shift+PageDown` | اسکرول به پایین |
-| `Ctrl+Shift+F` | جستجو در خروجی |
-| `Ctrl+Shift+Plus` | بزرگ‌نمایی فونت |
-| `Ctrl+Shift+Minus` | کوچک‌نمایی فونت |
-| `Ctrl+Shift+0` | اندازه پیش‌فرض فونت |
-
-### اسکرول و کپی
-
-```bash
-# ورود به حالت اسکرول
-Ctrl+Shift+PageUp     # اسکرول به بالا
-
-# با ماوس:
-# 1. کلیک و درگ برای انتخاب متن
-# 2. خودکار کپی می‌شود (clipboard integration)
-
-# پیست
-Ctrl+Shift+V          # پیست از clipboard
-```
-
-### عملکرد
-
-| تنظیم | مقدار | توضیح |
-|---|---|---|
-| repaint_delay | 10ms | تأخیر بازطراحی (کمتر = سریع‌تر) |
-| input_delay | 3ms | تأخیر ورودی (بهینه برای Wayland) |
-| dynamic_background_opacity | yes | تغییر شفافیت با میانبر |
+| `Ctrl+Shift+C` | Copy |
+| `Ctrl+Shift+V` | Paste |
+| `Ctrl+Shift+Up/Down` | Scroll line up/down |
+| `Ctrl+Shift+PageUp/Down` | Scroll page up/down |
+| `Ctrl+Shift+Home/End` | Scroll to top/bottom |
+| `Ctrl+Shift+F` | Show scrollback buffer |
 
 ---
 
-## Tmux
+## Tmux — Terminal Multiplexer
+Multiple windows and panes in one terminal. SSH session persistence.
 
-مالتی‌پلکسر ترمینال. چندین پنجره و پنل در یک ترمینال. اتصال SSH بدون از دست دادن کار.
-
-### تنظیمات
-
-| تنظیم | مقدار | توضیح |
+### Settings
+| Setting | Value | Description |
 |---|---|---|
-| prefix | `Ctrl+A` | کلید شروع تمام دستورات (راحت‌تر از `Ctrl+B`) |
-| شماره‌گذاری | از 1 | پنجره‌ها از 1 شروع می‌شوند (نه 0) |
-| escape time | 10ms | تأخیر Escape (سریع برای nvim) |
-| حالت کلید | vi | میانبرهای vim در حالت اسکرول |
-| ماوس | فعال | کلیک، درگ، اسکرول |
-| رنگ‌ها | 256 + true color | پشتیبانی کامل از رنگ |
-| تاریخچه | 50,000 خط | حافظه اسکرول زیاد |
+| prefix | `Ctrl+A` | Key to start all commands |
+| numbering | from 1 | Windows start at 1 (not 0) |
+| escape time | 10ms | Fast escape for nvim |
+| key mode | vi | Vim keys in scroll mode |
+| mouse | enabled | Click, drag, scroll |
+| colors | 256 + true color | Full color support |
+| history | 50,000 lines | Large scrollback |
 
-### مفاهیم پایه
-
+### Concepts
 ```
-Session (جلسه)
-  └── Window (پنجره) — مثل تب
-       └── Pane (پنل) — مثل split
+Session (session)
+  └── Window (window) — like a tab
+       └── Pane (pane) — like a split
 ```
 
-- **Session:** یک جلسه کاری مستقل. می‌توان detach کرد و بعداً برگشت.
-- **Window:** مثل تب در مرورگر. هر پنجره می‌تواند چندین پنل داشته باشد.
-- **Pane:** بخشی از پنجره. می‌توان افقی یا عمودی تقسیم کرد.
+- **Session:** Independent work session. Can detach and reattach later.
+- **Window:** Like browser tab. Each window can have multiple panes.
+- **Pane:** Part of a window. Can split horizontally or vertically.
 
-### میانبرهای کلیدی
+### Keybindings
 
-> همه میانبرها بعد از زدن `Ctrl+A` (prefix) فعال می‌شوند.
+> All keybindings work after pressing `Ctrl+A` (prefix).
 
-#### مدیریت پنجره‌ها
-
-| میانبر | عملکرد |
+#### Window Management
+| Key | Action |
 |---|---|
-| `Ctrl+A` + `c` | پنجره جدید |
-| `Ctrl+A` + `n` | پنجره بعدی |
-| `Ctrl+A` + `p` | پنجره قبلی |
-| `Ctrl+A` + `0-9` | رفتن به پنجره شماره N |
-| `Ctrl+A` + `w` | لیست پنجره‌ها (انتخابی) |
-| `Ctrl+A` + `,` | تغییر نام پنجره فعلی |
-| `Ctrl+A` + `&` | بستن پنجره فعلی |
+| `Ctrl+A` + `c` | New window |
+| `Ctrl+A` + `n` | Next window |
+| `Ctrl+A` + `p` | Previous window |
+| `Ctrl+A` + `0-9` | Go to window N |
+| `Ctrl+A` + `w` | List windows (selectable) |
+| `Ctrl+A` + `,` | Rename current window |
+| `Ctrl+A` + `&` | Close current window |
 
-#### مدیریت پنل‌ها
-
-| میانبر | عملکرد |
+#### Pane Management
+| Key | Action |
 |---|---|
-| `Ctrl+A` + `\|` | تقسیم عمودی |
-| `Ctrl+A` + `-` | تقسیم افقی |
-| `Ctrl+A` + `h` | حرکت به پنل چپ |
-| `Ctrl+A` + `j` | حرکت به پنل پایین |
-| `Ctrl+A` + `k` | حرکت به پنل بالا |
-| `Ctrl+A` + `l` | حرکت به پنل راست |
-| `Ctrl+A` + `x` | بستن پنل فعلی |
-| `Ctrl+A` + `z` | زوم روی پنل فعلی (fullscreen موقت) |
-| `Ctrl+A` + `{` | حرکت پنل به چپ |
-| `Ctrl+A` + `}` | حرکت پنل به راست |
+| `Ctrl+A` + `\|` | Split vertical |
+| `Ctrl+A` + `-` | Split horizontal |
+| `Ctrl+A` + `h/j/k/l` | Move to pane (vim-style) |
+| `Ctrl+A` + `x` | Close current pane |
+| `Ctrl+A` + `z` | Zoom pane (fullscreen toggle) |
+| `Ctrl+A` + `{` | Move pane left |
+| `Ctrl+A` + `}` | Move pane right |
+| `Ctrl+A` + `H/J/K/L` | Resize pane (5 steps) |
 
-#### مدیریت جلسه (Session)
-
-| میانبر | عملکرد |
+#### Session Management
+| Key | Action |
 |---|---|
-| `Ctrl+A` + `d` | detach (خروج بدون بستن) |
-| `Ctrl+A` + `s` | لیست جلسات |
-| `Ctrl+A` + `$` | تغییر نام جلسه فعلی |
+| `Ctrl+A` + `d` | Detach (exit without closing) |
+| `Ctrl+A` + `s` | List sessions |
+| `Ctrl+A` + `$` | Rename current session |
 
-#### اسکرول و کپی
-
-| میانبر | عملکرد |
+#### Scroll & Copy
+| Key | Action |
 |---|---|
-| `Ctrl+A` + `[` | ورود به حالت اسکرول |
-| `j` / `k` | حرکت بالا / پایین (در حالت vi) |
-| `g` | رفتن به ابتدا |
-| `G` | رفتن به انتها |
-| `/` | جستجو به پایین |
-| `?` | جستجو به بالا |
-| `n` | تطابق بعدی |
-| `Space` | شروع انتخاب |
-| `Enter` | کپی انتخاب |
-| `q` | خروج از حالت اسکرول |
+| `Ctrl+A` + `[` | Enter scroll mode |
+| `j` / `k` | Move up/down (vi mode) |
+| `g` / `G` | Go to top/bottom |
+| `/` / `?` | Search down/up |
+| `Space` | Start selection |
+| `Enter` | Copy selection |
+| `q` | Exit scroll mode |
 
-#### سایر
-
-| میانبر | عملکرد |
+#### Other
+| Key | Action |
 |---|---|
-| `Ctrl+A` + `r` | ریلود فایل کانفیگ |
-| `Ctrl+A` + `:` | ورود به حالت دستور |
-| `Ctrl+A` + `?` | لیست تمام میانبرها |
+| `Ctrl+A` + `r` | Reload config |
+| `Ctrl+A` + `:` | Command mode |
+| `Ctrl+A` + `?` | List all keybindings |
+| `Shift+Left/Right` | Switch window (direct) |
 
-### دستورات ترمینال
-
+### Terminal Commands
 ```bash
-# لیست جلسات
-tmux ls
-
-# جلسه جدید
-tmux new -s project-name
-
-# اتصال به جلسه
-tmux attach -t project-name
-
-# اتصال به جلسه شماره 0
-tmux attach -t 0
-
-# بستن جلسه
-tmux kill-session -t project-name
-
-# ارسال دستور به جلسه از بیرون
-tmux send-keys -t project-name "command" Enter
+tmux                          # new session
+tmux new -s project           # named session
+tmux ls                       # list sessions
+tmux attach -t project        # attach to session
+tmux kill-session -t project  # kill session
 ```
 
-### الگوهای استفاده
+### Usage Patterns
 
-#### توسعه وب
-
+#### Web Development
 ```
-┌─────────────────────────────────────┐
-│ nvim (کد)          │ terminal       │
-│                    │ (server)       │
-│                    │                │
-├────────────────────┤────────────────│
-│ browser preview    │ logs           │
-│                    │                │
-└─────────────────────────────────────┘
+┌──────────────┬──────────────┐
+│ nvim (code)  │ terminal     │
+│              │              │
+├──────────────┤              │
+│ terminal     │              │
+│ (server)     │              │
+└──────────────┴──────────────┘
 ```
 
+#### Remote Server
 ```bash
-# ساخت جلسه
-tmux new -s webdev
-
-# تقسیم عمودی
-Ctrl+A + |
-
-# تقسیم پایین سمت چپ
-Ctrl+A + -
-
-# حرکت به سمت راست
-Ctrl+A + l
-
-# اجرای سرور
-npm run dev
-
-# بازگشت به سمت چپ بالا
-Ctrl+A + h
-Ctrl+A + k
-
-# باز کردن nvim
-nvim .
-```
-
-#### سرور از راه دور
-
-```bash
-# اتصال SSH
 ssh user@server
-
-# شروع جلسه tmux
-tmux new -s deploy
-
-# کار کنید...
-# اگر اتصال قطع شد:
-
-# دوباره اتصال
+tmux new -s work
+# ... work ...
+# if connection drops:
 ssh user@server
-
-# اتصال مجدد به جلسه
-tmux attach -t deploy
-# → تمام کارها سر جاشون هستن!
+tmux attach -t work
+# → everything is preserved!
 ```
 
-#### چند پروژه
-
-```bash
-# پروژه اول
-tmux new -s frontend
-# ... کار کنید
-Ctrl+A + d  # detach
-
-# پروژه دوم
-tmux new -s backend
-# ... کار کنید
-Ctrl+A + d  # detach
-
-# لیست همه
-tmux ls
-
-# سوییچ بین پروژه‌ها
-tmux attach -t frontend
-# یا
-tmux attach -t backend
-```
-
-### پیکربندی پیشرفته
-
-فایل کانفیگ Tmux در `modules/home/cli/tmux.nix` تعریف شده. تنظیمات اضافی در `extraConfig`:
-
-```nix
-extraConfig = ''
-  # True color
-  set -ga terminal-overrides ",*256col*:Tc"
-  
-  # تقسیم با مسیر فعلی
-  bind | split-window -h -c "#{pane_current_path}"
-  bind - split-window -v -c "#{pane_current_path}"
-  
-  # ناوبری vim-style
-  bind h select-pane -L
-  bind j select-pane -D
-  bind k select-pane -U
-  bind l select-pane -R
-  
-  # ریلود کانفیگ
-  bind r source-file ~/.config/tmux/tmux.conf \; display "Config reloaded!"
-'';
-```
+### Configuration
+File: `modules/home/cli/tmux.nix`
