@@ -12,7 +12,7 @@
     enable = true;
 
     interactiveShellInit = ''
-      # ── STARSHIP INIT (manual — enableFishIntegration ممکنه کار نکنه) ──
+      # ── STARSHIP INIT (manual — enableFishIntegration may not work) ──
       starship init fish | source
 
       # ── UI & GREETING ──
@@ -62,17 +62,17 @@
     '';
 
     plugins = [
-      # نوتیفیکیشن وقتی دستور طولانی تموم میشه
+      # Notification when long-running command finishes
       {name = "colored-man-pages"; src = pkgs.fishPlugins.colored-man-pages.src;}
       {name = "done"; src = pkgs.fishPlugins.done.src;}
 
       # fzf integration
       {name = "fzf-fish"; src = pkgs.fishPlugins.fzf-fish.src;}
 
-      # بستن خودکار براکت‌ها: (), [], {}, "", ''
+      # Auto-close brackets: (), [], {}, "", '''
       {name = "autopair"; src = pkgs.fishPlugins.autopair.src;}
 
-      # git interactive با fzf: log, diff, add, reset, stash
+      # git interactive with fzf: log, diff, add, reset, stash
       {name = "forgit"; src = pkgs.fishPlugins.forgit.src;}
     ];
 
@@ -89,7 +89,7 @@
       grep = "rg";
       find = "fd";
       top = "btop";
-      cdi = "zi"; # cd هوشمند zoxide
+      cdi = "zi"; # Smart cd with zoxide
 
       # ── NixOS / Home Manager ──
       ns = "nix shell";
@@ -140,7 +140,7 @@
   # ──────────────────────────────────────────────
   programs.starship = {
     enable = true;
-    # enableFishIntegration — دستی بالا فراخوانی شد
+    # enableFishIntegration — called manually above
     settings = {
       add_newline = false;
       command_timeout = 500;
@@ -275,7 +275,7 @@
 
     defaultCommand = "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git";
 
-    # Ctrl+T: فایل‌ها
+    # Ctrl+T: Files
     fileWidget = {
       command = "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git";
       options = [
@@ -283,7 +283,7 @@
       ];
     };
 
-    # Alt+C: پوشه‌ها
+    # Alt+C: Directories
     changeDirWidget = {
       command = "fd --type d --strip-cwd-prefix --hidden --follow --exclude .git";
       options = [
@@ -291,7 +291,7 @@
       ];
     };
 
-    # Ctrl+R → atuin (historyWidget خالی)
+    # Ctrl+R → atuin (historyWidget empty)
     historyWidget.command = "";
 
     defaultOptions = [
@@ -318,9 +318,9 @@
   # ──────────────────────────────────────────────
   # ATUIN: SMART SHELL HISTORY
   # ──────────────────────────────────────────────
-  # Ctrl+R = جستجوی تاریخچه
-  # Up arrow = دستورات اخیر (chronological)
-  # تاریخچه در ~/.local/share/atuin/history.db — مستقل از پکیج‌ها
+  # Ctrl+R = Search command history
+  # Up arrow = Recent commands (chronological)
+  # History stored in ~/.local/share/atuin/history.db — independent of packages
   programs.atuin = {
     enable = true;
     enableFishIntegration = true;
