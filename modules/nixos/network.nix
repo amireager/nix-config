@@ -98,7 +98,6 @@
   environment.systemPackages = with pkgs; [
     # --- Core proxy engines ---
     sing-box # modern all-in-one proxy (VLESS, VMess, Trojan, Hysteria, TUIC)
-    xray # V2Ray fork with XTLS — fast, stealthy protocols
 
     # --- DPI bypass (Deep Packet Inspection circumvention) ---
     byedpi # SOCKS proxy with DPI bypass methods (lightweight)
@@ -112,7 +111,6 @@
     iproute2 # ip, ss, bridge — core network config tool
 
     # --- sys proxy ---
-    mihomo
     tor
   ];
 }

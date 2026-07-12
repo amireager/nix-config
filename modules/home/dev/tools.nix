@@ -4,7 +4,7 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     # Advanced search and code analysis
-    ripgrep-all # Search inside PDFs, archives, documents, and more
+    # ripgrep-all # Search inside PDFs, archives, documents, and more
     ast-grep # Structural code search and refactoring
 
     # File tree, binary, and text helpers

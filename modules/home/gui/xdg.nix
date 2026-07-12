@@ -1,4 +1,4 @@
-{config, ...}: {
+{...}: {
   # Standard user directories
   xdg.userDirs = {
     enable = true;

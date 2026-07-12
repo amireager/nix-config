@@ -3,6 +3,7 @@
     ./cli/git.nix
     ./cli/fish.nix
     ./cli/tmux.nix
+    ./cli/zellij.nix
     ./cli/tools.nix
     ./gui/terminal.nix
     ./gui/browser.nix

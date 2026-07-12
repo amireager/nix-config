@@ -13,11 +13,8 @@
     # MarkDown viewer
     inlyne # markdown renderer in gui
 
-    # Note taking
-    joplin # lightweight markdown notes with sync
-
     # Camera
-    cheese # webcam app — photos, videos, effects
+    guvcview # lightweight webcam app with controls
 
     # Archive tools
     zip # create zip archives

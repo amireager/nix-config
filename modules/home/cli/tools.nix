@@ -21,7 +21,7 @@
     # System inspection
     procs # Modern ps replacement
     bandwhich # Per-process bandwidth monitor
-    lsof # List open files, sockets, and ports
+    lsof #  List open files, sockets, and ports
     psmisc # pstree, killall, fuser, and related process tools
 
     # Network and transfer
