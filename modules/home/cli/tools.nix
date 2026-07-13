@@ -1,57 +1,62 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    # File and disk utilities
-    duf # Modern df replacement with readable output
-    dust # Modern du replacement for disk usage analysis
-    fd # Fast and user-friendly find replacement
-    eza # Modern ls replacement with git and tree support
-    lsd # Alternative modern ls with polished icons and config support
-    ouch # Unified archive compression/decompression tool
-    glow # Terminal markdown renderer
-    trash-cli # Safe trash management from the command line
+    # === File and Disk Utilities ===
+    duf # Modern df with beautiful, readable output
+    dust # Interactive du with tree visualization (very practical)
+    fd # Fast, user-friendly find alternative
+    eza # Modern ls with git status, icons, and tree support
+    ouch # Simple unified tool for archive compression/decompression
+    trash-cli # Safe delete with trash bin (prevents accidental rm)
 
-    # Text, search, and data
-    ripgrep # Fast grep replacement
-    jq # JSON processor
-    yq-go # YAML processor
-    sd # Simple and fast sed replacement
-    jless # Interactive JSON viewer
-    jc # Convert classic command output to JSON
+    # === Text, Search and Data Processing ===
+    ripgrep # Extremely fast grep with regex support
+    jq # Powerful JSON processor
+    yq-go # YAML processor (jq for YAML)
+    sd # Intuitive find & replace (modern sed)
+    jc # Convert any command output to JSON
+    jless # Interactive pager for JSON
 
-    # System inspection
-    procs # Modern ps replacement
-    bandwhich # Per-process bandwidth monitor
-    lsof #  List open files, sockets, and ports
-    psmisc # pstree, killall, fuser, and related process tools
+    # === System Inspection ===
+    procs # Modern ps with better filtering and tree view
+    bandwhich # Real-time bandwidth per process and connection
+    lsof # List open files, sockets and ports
 
-    # Network and transfer
-    curl # Classic HTTP client
-    wget # Recursive and resumable downloader
-    xh # Modern HTTP client
-    aria2 # Fast multi-protocol downloader
-    rsync # File synchronization and transfer
+    # === Network and Transfer ===
+    curl # Classic and reliable HTTP client
+    wget # Recursive downloads with resume support
+    xh # Modern, clean HTTP client (daily use)
+    aria2 # Fast multi-connection downloader (HTTP + Torrent)
+    rsync # Efficient incremental file synchronization
 
-    # Network diagnostics
+    # === Network Diagnostics ===
     dnsutils # dig, nslookup, host
-    doggo # Modern DNS client
-    mtr # Realtime traceroute and ping combined
+    doggo # Modern DNS client with DoH/DoT support
+    mtr # Combined traceroute + ping with live stats
+    gping # Ping with beautiful live graph
     whois # Domain and IP ownership lookup
-    socat # Socket relay and network debugging toolbox
-    proxychains-ng # Route CLI applications through SOCKS/HTTP proxies
+    vnstat # Lightweight network traffic history (monthly usage)
+    speedtest-cli # Official internet speed testing
+    ipcalc # IP address and subnet calculations
 
-    # Background task management
-    pueue # Queue and manage parallel background tasks
+    # === Productivity and Helpers ===
+    just # Modern, simple command runner (better than make)
+    pueue # Manage long-running background tasks
+    glow # Terminal Markdown renderer
+    tailspin # Smart log viewer with highlighting
+    gum # Beautiful interactive prompts, spinners, and choosers
+    difftastic # Structural/semantic diff tool
 
-    # Data and file inspection
-    file # File type detection
-    tailspin # Log viewer with highlighting
+    # === Additional Modern Tools ===
+    fx # Interactive & beautiful JSON explorer
+    bottom # Advanced system resource monitor
+    ugrep # Powerful grep with regex and binary support
 
-    # Productivity and dev helpers
-    just # Modern command runner
-    difftastic # Structural diff tool
-    gum # Interactive shell scripts (prompts, spinners, choose)
+    # === Tools for testing (commented) ===
+    superfile # Modern terminal file manager
+    # lla        # ls alternative with nice UI
   ];
 
+  # Program configurations
   programs.bat = {
     enable = true;
     config = {
@@ -72,6 +77,18 @@
   };
 
   programs.btop.enable = true;
+  programs.bottom.enable = true;
   programs.fastfetch.enable = true;
   programs.lazygit.enable = true;
 }
+# === Removed / Replaced Tools (Old list) ===
+# lsd          # Replaced by eza (better git support)
+# nload        # Replaced by btop + bandwhich
+# bmon         # Replaced by btop + bandwhich
+# iftop        # Replaced by bandwhich
+# nethogs      # Replaced by bandwhich
+# iotop        # Covered by btop
+# socat        # Too low-level for daily use
+# proxychains-ng # Niche use-case
+# trippy       # Optional - mtr is sufficient for most users
+

@@ -3,42 +3,31 @@
 # Add dev-specific packages here only if they don't belong in the general CLI set.
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    # Advanced search and code analysis
-    # ripgrep-all # Search inside PDFs, archives, documents, and more
-    ast-grep # Structural code search and refactoring
+    # === Modern CLI Enhancements ===
+    ast-grep # Structural code search & refactoring (like grep for AST)
+    erdtree # Fast tree viewer with disk usage
+    hexyl # Colorful hex viewer
+    dasel # Query and edit JSON/YAML/TOML/XML/CSV
+    grex # Generate regex from example texts
 
-    # File tree, binary, and text helpers
-    erdtree # Fast tree viewer with disk usage support
-    hexyl # Hex viewer
-    grex # Regex generator from examples
-    dasel # Query and edit JSON, YAML, TOML, XML, and CSV
+    # === Benchmarking & Watching ===
+    hyperfine # Accurate command-line benchmarking
+    watchexec # Execute commands when files change
 
-    # Benchmarking, watching, and project metrics
-    hyperfine # Command-line benchmarking
-    watchexec # Run commands when files change
-    tokei # Code statistics
+    # === Code Analysis ===
+    tokei # Fast code statistics (lines of code)
 
-    # GitHub and command workflow
+    # === GitHub & Workflow ===
     gh-dash # GitHub dashboard TUI
-    navi # Interactive command cheatsheets
+    navi # Interactive cheatsheets for commands
 
-    # Extra network monitoring and diagnostics
-    iotop # I/O monitoring
-    nethogs # Bandwidth per process
-    iftop # Bandwidth per connection
-    nload # Realtime network throughput graph
-    vnstat # Network traffic history
-    iperf3 # Network throughput testing
-    bmon # Bandwidth monitor TUI
-    gping # Ping with terminal graph
-    traceroute # Classic traceroute tool
-    websocat # WebSocket client and relay
-    tcpdump # Packet capture and low-level network debugging
-    nmap # Network scanner
-    strace # Trace syscalls for debugging programs
-
-    # File transfer and cloud sync helpers
-    rclone # Cloud and remote storage sync
-    magic-wormhole # Simple encrypted file transfer between machines
+    # === File Transfer & Sync ===
+    rclone # Sync with cloud providers (Google Drive, S3, etc.)
+    magic-wormhole # Secure, simple P2P file transfer
   ];
 }
+# === Removed / Replaced Tools ===
+# ripgrep-all  # Heavy, rarely needed (use ripgrep + specific tools)
+# lsd          # Already using eza in tools.nix
+# bmon / nload # Covered in tools
+
