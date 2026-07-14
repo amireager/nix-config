@@ -1,17 +1,20 @@
 # Browsers
 
 ## Zen Browser (Default)
+
 Firefox-based with Arc-like UX. Vertical tabs, clean workspace.
 
 **Installed via:** flake (`zen-browser-flake`)
 
 **Features:**
+
 - Vertical tabs on the left
 - Workspaces
 - Firefox extension support
 - Modern minimal design
 
 **Wayland:**
+
 ```
 MOZ_ENABLE_WAYLAND=1   # set in environment variables
 ```
@@ -32,11 +35,13 @@ MOZ_ENABLE_WAYLAND=1   # set in environment variables
 ---
 
 ## Qutebrowser
+
 Keyboard-driven browser with vim-like navigation.
 
 **Installed via:** nixpkgs (`pkgs.qutebrowser`)
 
 **Features:**
+
 - 100% keyboard control
 - No mouse needed
 - Python scriptable
@@ -66,11 +71,13 @@ Keyboard-driven browser with vim-like navigation.
 ---
 
 ## Brave
+
 Chromium-based with built-in privacy features.
 
 **Installed via:** nixpkgs (`pkgs.brave`)
 
 **Features:**
+
 - Built-in ad blocker (Brave Shields)
 - Tracker blocker
 - HTTPS Everywhere built-in
@@ -78,6 +85,7 @@ Chromium-based with built-in privacy features.
 - Tor in private window
 
 **Wayland:**
+
 ```bash
 brave --ozone-platform=wayland
 ```
@@ -96,15 +104,18 @@ brave --ozone-platform=wayland
 ---
 
 ## Choosing a Browser
-| Need | Browser |
-|---|---|
-| Daily use | **Zen Browser** — modern UX, vertical tabs |
-| Keyboard-driven | **Qutebrowser** — no mouse needed |
-| Privacy | **Brave** — built-in blocker and Tor |
-| Speed | **Thorium** — AppImage (if needed) |
+
+| Need            | Browser                                    |
+| --------------- | ------------------------------------------ |
+| Daily use       | **Zen Browser** — modern UX, vertical tabs |
+| Keyboard-driven | **Qutebrowser** — no mouse needed          |
+| Privacy         | **Brave** — built-in blocker and Tor       |
+| Speed           | **Thorium** — AppImage (if needed)         |
 
 ## Default Browser
+
 Zen Browser is set as default:
+
 - Opening links → Zen Browser
 - HTML files → Zen Browser
 - `http://` and `https://` → Zen Browser

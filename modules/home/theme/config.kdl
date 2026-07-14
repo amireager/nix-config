@@ -55,6 +55,12 @@ window-rule {
 }
 
 window-rule {
+    match app-id="wezterm"
+    opacity 0.92
+    draw-border-with-background false
+}
+
+window-rule {
     match title="quick-term"
     open-floating true
     default-column-width { proportion 0.4; }

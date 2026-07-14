@@ -48,13 +48,15 @@ opt.pumheight = 12
 opt.clipboard = "unnamedplus"
 opt.list = true
 opt.listchars = {
-  tab = "  ",
-  trail = "·",
-  extends = "›",
-  precedes = "‹",
-  nbsp = "␣",
+	tab = "  ",
+	trail = "·",
+	extends = "›",
+	precedes = "‹",
+	nbsp = "␣",
 }
-
+-- Add parsi
+opt.termbidi = true
+opt.arabicshape = true
 -- Disable unused providers to reduce startup overhead.
 -- Note: withNodeJs/withPython3 are set in default.nix
 -- Only disable providers you're SURE you don't need.
