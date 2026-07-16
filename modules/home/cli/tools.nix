@@ -51,7 +51,7 @@
     bottom # Advanced system resource monitor
     ugrep # Powerful grep with regex and binary support
 
-    # === Tools for testing (commented) ===
+    # === Additional file managers ===
     superfile # Modern terminal file manager
     # lla        # ls alternative with nice UI
   ];

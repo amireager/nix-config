@@ -1,12 +1,12 @@
+# Copy this directory to users/<username>/ and customize.
 {pkgs, ...}: {
-  users.users.amir = {
+  users.users.username = {
     isNormalUser = true;
-    group = "amir";
+    group = "username";
     extraGroups = ["networkmanager" "wheel" "video" "audio"];
     shell = pkgs.fish;
-    # Set a password via `passwd` after first install, or use sops-nix here later.
   };
 
-  users.groups.amir = {};
+  users.groups.username = {};
   programs.fish.enable = true;
 }

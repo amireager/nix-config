@@ -214,8 +214,8 @@ binds {
 // - 10 min: lock screen (noctalia or swaylock fallback)
 // - 15 min: monitors off
 // - 30 min: suspend
-spawn-at-startup "swayidle" "-w" \
-    "timeout" "600" "noctalia msg session lock || swaylock -f -c 1e1e2e" \
-    "timeout" "900" "niri msg action power-off-monitors" \
-    "resume" "niri msg action power-on-monitors" \
-    "timeout" "1800" "systemctl suspend"
+// spawn-at-startup "swayidle" "-w" \
+//     "timeout" "600" "noctalia msg session lock || swaylock -f -c 1e1e2e" \
+//     "timeout" "900" "niri msg action power-off-monitors" \
+//     "resume" "niri msg action power-on-monitors" \
+//     "timeout" "1800" "systemctl suspend"

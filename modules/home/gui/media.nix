@@ -1,42 +1,44 @@
-# media/core.nix — Daily & Lightweight Media Tools
 {pkgs, ...}: {
   home.packages = with pkgs; [
     # ── Image Viewing & Management ──
-    imv # Lightweight Wayland-native image viewer
-    loupe # Modern GNOME image viewer (alternative to imv)
-    nomacs # Advanced image viewer with editing tools
+    imv
+    loupe
+    nomacs
 
     # ── Video & Audio ──
-    mpv # Best all-format media player
-    playerctl # Control media players via keyboard/media keys
-    celluloid # Nice GTK frontend for mpv (optional)
+    mpv
+    playerctl
+    celluloid
 
     # ── Document & Reading ──
-    zathura # Minimalist Vim-like PDF viewer
-    inlyne # Fast Markdown renderer (GUI)
-
-    # ── Note Taking (Lightweight) ──
-    # logseq           # Alternative to Obsidian (if you prefer outliner style)
-    glow # Terminal Markdown viewer (already in CLI tools)
+    zathura
+    inlyne
+    marker
 
     # ── Capture & Input ──
-    guvcview # Webcam app with controls
-    wf-recorder # Wayland screen recorder (CLI)
+    guvcview
+    wf-recorder
+    kooha
 
     # ── Archive & File Management ──
     zip
     unzip
     p7zip
     unrar
-    # ouch               # Modern unified archive tool (already in tools)
 
     # ── Auto-mount & Notifications ──
-    udiskie # Auto-mount USB drives + notifications
-    libnotify # notify-send command
+    udiskie
+    libnotify
 
-    # ── Media Processing (Essential) ──
-    ffmpeg # Universal media converter
-    yt-dlp # Best YouTube & site downloader
-    imagemagick # Powerful image manipulation
+    # ── Media Processing ──
+    ffmpeg
+    ffmpegthumbnailer
+    yt-dlp
+    imagemagick
+
+    # ── Image / PDF tools ──
+    pinta
+    poppler-utils
+    pdfarranger
   ];
 }

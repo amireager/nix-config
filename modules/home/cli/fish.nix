@@ -5,7 +5,7 @@
   ...
 }: {
   # ============================================================
-  # FISH SHELL — Modern & Professional Configuration
+  # FISH SHELL
   # ============================================================
   programs.fish = {
     enable = true;
@@ -14,7 +14,7 @@
       # ──────────────────────────────────────────────
       # General Settings
       # ──────────────────────────────────────────────
-      set -g fish_greeting                              # Disable welcome message
+      set -g fish_greeting
       set -g fish_autosuggestion_enabled true
       set -g fish_key_bindings fish_default_key_bindings
 
@@ -65,27 +65,11 @@
       # ──────────────────────────────────────────────
       # Custom Key Bindings
       # ──────────────────────────────────────────────
-      # Ctrl+R — fzf native history widget (cleaner than fzf-fish)
-      bind ctrl-r fzf-history-widget
-
       # Ctrl+Space — accept autosuggestion
       bind ctrl-space forward-char
-
-      # Ctrl+Alt+P — kill process (fzf)
-      bind ctrl-alt-p 'killp'
-
-      # Ctrl+Alt+G — git log interactive
-      bind ctrl-alt-g 'glog'
-
-      # Ctrl+Alt+B — git branch checkout
-      bind ctrl-alt-b 'gco_branch'
     '';
 
-    # ============================================================
-    # Plugins
-    # ============================================================
     plugins = [
-      # Core & Useful
       {
         name = "colored-man-pages";
         src = pkgs.fishPlugins.colored-man-pages.src;
@@ -93,49 +77,36 @@
       {
         name = "done";
         src = pkgs.fishPlugins.done.src;
-      } # Notification after long commands
-      {
-        name = "fzf-fish";
-        src = pkgs.fishPlugins.fzf-fish.src;
       }
       {
         name = "autopair";
         src = pkgs.fishPlugins.autopair.src;
-      } # Auto-close brackets
+      }
       {
         name = "forgit";
         src = pkgs.fishPlugins.forgit.src;
-      } # Interactive Git with fzf
+      }
       {
         name = "sponge";
         src = pkgs.fishPlugins.sponge.src;
-      } # Clean mistyped commands from history
+      }
       {
         name = "puffer";
         src = pkgs.fishPlugins.puffer.src;
-      } # .. → ../.. , ... → ../../.. etc.
+      }
     ];
 
-    # ============================================================
-    # Aliases & Abbreviations
-    # ============================================================
     shellAliases = {
-      # Modern ls
       ls = "eza --icons --group-directories-first --git";
       ll = "eza -l --icons --group-directories-first --git --header";
       la = "eza -la --icons --group-directories-first --git --header";
       lt = "eza --tree --level=2 --icons --git";
       tree = "eza --tree --icons --git";
-
-      # Utilities
       cat = "bat --style=plain";
-      grep = "rg";
-      find = "fd";
       top = "btop";
     };
 
     shellAbbrs = {
-      # Git
       gs = "git status";
       ga = "git add";
       gc = "git commit -m";
@@ -145,15 +116,11 @@
       gpl = "git pull --rebase";
       gsw = "git switch";
 
-      # General
       n = "nvim";
-      y = "yazi";
 
-      # -- Nixos --
       sw = "nh os switch";
       tst = "nh os test";
       bld = "nh os build";
-      # NixOS & Home Manager
       nrf = "sudo nixos-rebuild switch --flake ${flakePath}#${hostname}";
       nrs = "nh os switch";
       nrt = "nh os test";
@@ -162,12 +129,8 @@
       hmb = "nh home build";
     };
 
-    # ============================================================
-    # Custom Functions
-    # ============================================================
     functions = {
       mkcd = "mkdir -p $argv[1] && cd $argv[1]";
-      # ── extract: Extract any archive format ──
       extract = {
         description = "Extract any archive format";
         body = ''
@@ -214,9 +177,7 @@
     };
   };
 
-  # ============================================================
   # Starship Prompt
-  # ============================================================
   programs.starship = {
     enable = true;
     enableFishIntegration = true;
@@ -246,9 +207,7 @@
     };
   };
 
-  # ============================================================
   # Additional Tools
-  # ============================================================
   programs.zoxide = {
     enable = true;
     enableFishIntegration = true;

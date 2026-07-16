@@ -3,19 +3,23 @@
   inputs,
   ...
 }: {
+  # ============================================================
+  # DESKTOP — Wayland / Niri / Noctalia
+  # ============================================================
+
   # Niri compositor
   programs.niri = {
     enable = true;
     package = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
   };
 
-  # Display manager (SDDM, Wayland)
+  # Display manager
   services.displayManager.sddm = {
     enable = true;
     wayland.enable = true;
   };
 
-  # Audio (PipeWire)
+  # Audio
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -24,7 +28,7 @@
     jack.enable = true;
   };
 
-  # Graphics base
+  # Graphics
   hardware.graphics = {
     enable = true;
     enable32Bit = true;
@@ -45,7 +49,21 @@
     ];
   };
 
-  # Wayland helpers
+  # Thunar
+  programs.thunar = {
+    enable = true;
+    plugins = with pkgs; [thunar-archive-plugin thunar-volman];
+  };
+  services.gvfs.enable = true;
+  services.tumbler.enable = true;
+
+  # Wayland environment variables
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    QT_QPA_PLATFORM = "wayland";
+    AVALONIA_PLATFORM = "Wayland";
+  };
+
   environment.systemPackages = with pkgs; [
     wayland-utils
     glib

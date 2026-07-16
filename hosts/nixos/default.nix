@@ -1,16 +1,19 @@
 # ============================================================
 # HOST: nixos — Acer Aspire A715-42G
 # ============================================================
-# This file contains host-specific configuration.
-# Hardware-specific settings are in hardware.nix.
-# GPU configuration is in modules/nixos/hardware/nvidia.nix
 {...}: {
   imports = [
     ./hardware.nix
-    ../../modules/nixos
+    ../../modules/nixos/core.nix
+    ../../modules/nixos/network.nix
+    ../../modules/nixos/security.nix
+    ../../modules/nixos/desktop.nix
+    ../../modules/nixos/laptop.nix
+    ../../modules/nixos/nvidia.nix
   ];
 
   # Bootloader (UEFI system)
   boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
 }
