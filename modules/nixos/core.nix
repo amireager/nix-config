@@ -87,12 +87,28 @@
     options = "grp:alt_shift_toggle";
   };
 
-  # === Fonts ===
-  fonts.packages = with pkgs; [
-    vazirmatn
-    nerd-fonts.jetbrains-mono
-    nerd-fonts.fira-code
-  ];
+  # === Fonts & Typography ===
+  fonts = {
+    packages = with pkgs; [
+      vazirmatn
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.fira-code
+      noto-fonts
+      noto-fonts-cjk-sans
+      twitter-color-emoji
+      inter
+    ];
+
+    fontconfig = {
+      enable = true;
+      defaultFonts = {
+        monospace = ["JetBrainsMono Nerd Font" "Vazirmatn" "Noto Sans Mono"];
+        sansSerif = ["Inter" "Vazirmatn" "Noto Sans"];
+        serif = ["Noto Serif" "Vazirmatn"];
+        emoji = ["Twitter Color Emoji"];
+      };
+    };
+  };
 
   # === Essential System Packages ===
   environment.systemPackages = with pkgs; [

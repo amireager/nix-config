@@ -61,7 +61,7 @@ window-rule {
 }
 
 window-rule {
-    match title="quick-term"
+    match app-id="quick-term"
     open-floating true
     default-column-width { proportion 0.4; }
     default-window-height { proportion 0.5; }
@@ -112,10 +112,11 @@ binds {
 
     // === Applications ===
     Mod+Return { spawn "kitty"; }
-    Mod+Slash { spawn "kitty" "--title" "quick-term"; }
+    Mod+Slash { spawn "kitty" "--class" "quick-term"; }
     Mod+B { spawn "zen-beta"; }
     Mod+E { spawn "thunar"; }
     Mod+Shift+E { spawn "kitty" "-e" "yazi"; }
+    Mod+V { spawn-sh "cliphist list | fuzzel --dmenu --prompt 'Clipboard: ' | cliphist decode | wl-copy"; }
 
     // === Session ===
     Mod+X { spawn-sh "noctalia msg session lock"; }

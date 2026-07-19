@@ -1,4 +1,12 @@
 {pkgs, ...}: {
+  # Automount external USB drives & notify
+  services.udiskie = {
+    enable = true;
+    automount = true;
+    notify = true;
+    tray = "auto";
+  };
+
   # Hardware-accelerated video playback with MPV
   programs.mpv = {
     enable = true;
