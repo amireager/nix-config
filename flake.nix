@@ -26,6 +26,8 @@
   };
 
   outputs = inputs @ {self, ...}: let
+    system = "x86_64-linux";
+    pkgs = inputs.nixpkgs.legacyPackages.${system};
     lib = import ./lib {inherit inputs;};
   in {
     nixosConfigurations = {
@@ -36,6 +38,12 @@
       };
     };
 
-    formatter.x86_64-linux = inputs.nixpkgs.legacyPackages.x86_64-linux.alejandra;
+    # Centralized On-Demand Environments (GC-Resilient & Modular)
+    # Quick invocation from anywhere using `nix develop .#<name>` or `dev <name>`
+    devShells.${system} = import ./shells {
+      inherit inputs pkgs system;
+    };
+
+    formatter.${system} = pkgs.alejandra;
   };
 }

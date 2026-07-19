@@ -1,6 +1,7 @@
 {
   pkgs,
   flakePath,
+  inputs ? {},
   ...
 }: {
   # ============================================================
@@ -13,6 +14,10 @@
   # === Nix Settings ===
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
+
+    # GC resilience: keep build outputs and derivations of live profiles/devShells from being collected.
+    keep-outputs = true;
+    keep-derivations = true;
 
     # Store optimization: deduplicate identical files in /nix/store.
     auto-optimise-store = true;
@@ -110,8 +115,23 @@
     };
   };
 
-  # === Essential System Packages ===
-  environment.systemPackages = with pkgs; [
+  # === Essential System Packages + GC Protection for Centralized DevShells ===
+  # Registers all central devShell outputs/dependencies as system GC roots so that
+  # nix-collect-garbage never removes them from the Nix store.
+  environment.systemPackages = let
+    devShells = inputs.self.devShells.${pkgs.stdenv.hostPlatform.system} or {};
+    devShellRoots = pkgs.writeText "devshells-gc-roots.json" (
+      builtins.toJSON (
+        pkgs.lib.mapAttrs (name: shell: shell.outPath) devShells
+      )
+    );
+  in with pkgs; [
+    (runCommand "devshells-gc-holder" {} ''
+      mkdir -p $out/share
+      ln -s ${devShellRoots} $out/share/devshells-roots.json
+    '')
+
+    # Core system utilities
     vim
     git
     pciutils
