@@ -57,15 +57,18 @@
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.initrd.verbose = false;
 
-  # === Memory & Swap ===
+  # === Memory & Swap (Optimized for ZRAM) ===
   boot.kernel.sysctl = {
     "vm.swappiness" = 180;
     "vm.vfs_cache_pressure" = 50;
+    "vm.page-cluster" = 0;
+    "vm.watermark_boost_factor" = 0;
+    "vm.watermark_scale_factor" = 125;
   };
 
   zramSwap = {
     enable = true;
-    memoryPercent = 25;
+    memoryPercent = 100;
   };
 
   # === SSD Maintenance ===

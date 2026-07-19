@@ -1,4 +1,15 @@
 {pkgs, ...}: {
+  # Hardware-accelerated video playback with MPV
+  programs.mpv = {
+    enable = true;
+    config = {
+      hwdec = "auto-safe";
+      vo = "gpu-next";
+      gpu-api = "vulkan";
+      profile = "gpu-hq";
+    };
+  };
+
   home.packages = with pkgs; [
     # ── Image Viewing & Management ──
     imv
@@ -6,7 +17,6 @@
     nomacs
 
     # ── Video & Audio ──
-    mpv
     playerctl
     celluloid
 

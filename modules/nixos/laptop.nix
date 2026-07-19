@@ -25,8 +25,9 @@
       USB_AUTOSUSPEND = 1;
       USB_TIMEOUT = 2;
       WIFI_PWR_ON_BAT = "on";
+      RUNTIME_PM_ON_AC = "auto";
       RUNTIME_PM_ON_BAT = "auto";
-      RUNTIME_PM_DRIVER_BLACKLIST = "nvidia nouveau";
+      RUNTIME_PM_DRIVER_BLACKLIST = "";
     };
   };
 
