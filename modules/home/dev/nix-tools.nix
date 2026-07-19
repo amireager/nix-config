@@ -1,12 +1,12 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     # === Nix LSP & Inspection Tools ===
-    nixd               # Nix LSP for editor integration
-    nix-tree           # Explore Nix store dependency tree
-    nvd                # Diff between NixOS generations
-    nix-search-tv      # Interactive nixpkgs search (TUI)
-    comma              # Run any command without installing
-    nix-index          # Locate packages providing a file
+    nixd # Nix LSP for editor integration
+    nix-tree # Explore Nix store dependency tree
+    nvd # Diff between NixOS generations
+    nix-search-tv # Interactive nixpkgs search (TUI)
+    comma # Run any command without installing
+    nix-index # Locate packages providing a file
     nix-output-monitor # Beautiful build output with progress
 
     # === Global Dev CLI — Quick launcher for centralized isolated environments ===

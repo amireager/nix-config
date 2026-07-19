@@ -29,7 +29,9 @@
     max-jobs = "auto";
     cores = 0;
 
-    # Network reliability for slower/unstable connections.
+    # Network reliability and download concurrency for slower/unstable connections.
+    http-connections = 50;
+    tarball-ttl = 604800; # Cache downloaded flake tarballs for 7 days to speed up evaluation
     connect-timeout = 10;
     download-attempts = 3;
     fallback = true;
@@ -62,13 +64,15 @@
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.initrd.verbose = false;
 
-  # === Memory & Swap (Optimized for ZRAM) ===
+  # === Memory, Swap & I/O Responsiveness (Optimized for ZRAM + NVMe) ===
   boot.kernel.sysctl = {
     "vm.swappiness" = 180;
     "vm.vfs_cache_pressure" = 50;
     "vm.page-cluster" = 0;
     "vm.watermark_boost_factor" = 0;
     "vm.watermark_scale_factor" = 125;
+    "vm.dirty_background_ratio" = 5;
+    "vm.dirty_ratio" = 10;
   };
 
   zramSwap = {
@@ -125,24 +129,25 @@
         pkgs.lib.mapAttrs (name: shell: shell.outPath) devShells
       )
     );
-  in with pkgs; [
-    (runCommand "devshells-gc-holder" {} ''
-      mkdir -p $out/share
-      ln -s ${devShellRoots} $out/share/devshells-roots.json
-    '')
+  in
+    with pkgs; [
+      (runCommand "devshells-gc-holder" {} ''
+        mkdir -p $out/share
+        ln -s ${devShellRoots} $out/share/devshells-roots.json
+      '')
 
-    # Core system utilities
-    vim
-    git
-    pciutils
-    usbutils
-    lshw
-    dmidecode
-    smartmontools
-    nvme-cli
-    efibootmgr
-    lm_sensors
-  ];
+      # Core system utilities
+      vim
+      git
+      pciutils
+      usbutils
+      lshw
+      dmidecode
+      smartmontools
+      nvme-cli
+      efibootmgr
+      lm_sensors
+    ];
 
   # === NH — NixOS Management Wrapper ===
   programs.nh = {
