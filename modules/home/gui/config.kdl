@@ -43,6 +43,30 @@ layout {
     background-color "transparent"
 }
 
+// Smooth, responsive spring animations (snappy yet fluid)
+animations {
+    workspace-switch {
+        spring damping-ratio=0.85 stiffness=1000 epsilon=0.0001
+    }
+    window-open {
+        duration-ms 200
+        curve "ease-out-expo"
+    }
+    window-close {
+        duration-ms 150
+        curve "ease-out-quad"
+    }
+    horizontal-view-movement {
+        spring damping-ratio=0.85 stiffness=800 epsilon=0.0001
+    }
+    window-movement {
+        spring damping-ratio=0.85 stiffness=800 epsilon=0.0001
+    }
+    window-resize {
+        spring damping-ratio=0.85 stiffness=800 epsilon=0.0001
+    }
+}
+
 window-rule {
     geometry-corner-radius 20
     clip-to-geometry true
@@ -117,6 +141,8 @@ binds {
     Mod+E { spawn "thunar"; }
     Mod+Shift+E { spawn "kitty" "-e" "yazi"; }
     Mod+V { spawn-sh "cliphist list | fuzzel --dmenu --prompt 'Clipboard: ' | cliphist decode | wl-copy"; }
+    Mod+N { spawn-sh "fuzzel-wifi"; }
+    Mod+Alt+C { spawn-sh "fuzzel-calc"; }
 
     // === Session ===
     Mod+X { spawn-sh "noctalia msg session lock"; }
@@ -202,10 +228,13 @@ binds {
         spawn-sh "noctalia msg brightness-down";
     }
 
-    // === Screenshots ===
+    // === Screenshots & Screen Recording ===
     Mod+P { screenshot; }
     Mod+Shift+P { screenshot-screen; }
     Mod+Alt+P { screenshot-window; }
+    Mod+Ctrl+P { spawn-sh "capture-region-clipboard"; }
+    Mod+Alt+R { spawn-sh "record-screen"; }
+    Mod+Alt+K { spawn-sh "toggle-keycaster"; }
 
     // === Misc ===
     Mod+I { spawn-sh "noctalia msg caffeine-toggle"; }

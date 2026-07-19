@@ -22,7 +22,6 @@
     # ── Image Viewing & Management ──
     imv
     loupe
-    nomacs
 
     # ── Video & Audio ──
     playerctl
@@ -35,7 +34,6 @@
 
     # ── Capture & Input ──
     guvcview
-    wf-recorder
     kooha
 
     # ── Archive & File Management ──
@@ -44,8 +42,7 @@
     p7zip
     unrar
 
-    # ── Auto-mount & Notifications ──
-    udiskie
+    # ── Notifications ──
     libnotify
 
     # ── Media Processing ──
