@@ -1,6 +1,33 @@
--- UI plugins: theme, statusline, bufferline, and keymap discovery.
-local ok_theme, catppuccin = pcall(require, "catppuccin")
-if ok_theme then
+-- UI plugins: theme setup, per-tab buffer isolation (scope), statusline, bufferline, which-key.
+
+-- 1. Scope setup: isolates buffers per Neovim tab so each new tab has its own clean bufferline!
+local ok_scope, scope = pcall(require, "scope")
+if ok_scope then
+	scope.setup()
+end
+
+-- 2. Theme configurations (Nightfox, Catppuccin, Tokyonight)
+-- Nightfox setup with exact deep-dark palette requested (#0d131a)
+local ok_nf, nightfox = pcall(require, "nightfox")
+if ok_nf then
+	nightfox.setup({
+		palettes = {
+			nightfox = {
+				bg0 = "#0d131a",
+				bg1 = "#141b22",
+				bg3 = "#202a36",
+			},
+		},
+		options = {
+			transparent = false,
+			dim_inactive = false,
+		},
+	})
+end
+
+-- Catppuccin setup
+local ok_cat, catppuccin = pcall(require, "catppuccin")
+if ok_cat then
 	catppuccin.setup({
 		flavour = "mocha",
 		transparent_background = false,
@@ -13,8 +40,20 @@ if ok_theme then
 			snacks = true,
 		},
 	})
-	vim.cmd.colorscheme("catppuccin")
 end
+
+-- Tokyonight setup
+local ok_tn, tokyonight = pcall(require, "tokyonight")
+if ok_tn then
+	tokyonight.setup({
+		style = "storm",
+		transparent = false,
+		terminal_colors = true,
+	})
+end
+
+-- Set default active colorscheme (Nightfox custom #0d131a by default, switch live with <leader>fC)
+vim.cmd.colorscheme("nightfox")
 
 local function lsp_clients()
 	local clients = vim.lsp.get_clients({ bufnr = 0 })

@@ -26,7 +26,7 @@ in {
 
     extraPackages = with pkgs; [
       # Core utilities (always needed)
-      git fd ripgrep fzf tmux yazi
+      git lazygit fd ripgrep fzf tmux yazi
 
       # === Python ===
       pyright        # Python LSP
@@ -74,7 +74,10 @@ in {
 
     plugins = with pkgs.vimPlugins; [
       # UI & appearance
-      catppuccin-nvim        # color scheme
+      catppuccin-nvim        # Catppuccin theme
+      nightfox-nvim          # Nightfox dark theme (with custom #0d131a palette)
+      tokyonight-nvim        # Tokyonight theme
+      scope-nvim             # Per-tab buffer isolation (fixes bufferline tabs)
       nvim-web-devicons      # file icons
       lualine-nvim           # status line
       bufferline-nvim        # tab/buffer line

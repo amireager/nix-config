@@ -4,10 +4,66 @@ if not ok then
 	return
 end
 
+-- Safe stub for plugins (like snacks.dashboard) that check require("lazy.stats") when managed by Nix.
+package.preload["lazy.stats"] = function()
+	return {
+		get = function()
+			return { count = 50, loaded = 50, startmillis = 0, times = {} }
+		end,
+	}
+end
+
 snacks.setup({
 	bigfile = { enabled = true },
 	quickfile = { enabled = true },
-	dashboard = { enabled = false },
+	image = { enabled = true }, -- Render images in markdown files via Kitty/Sixel
+	dashboard = {
+		enabled = true,
+		on_open = function(buf)
+			vim.b[buf].minitrailspace_disable = true
+			vim.opt_local.list = false
+		end,
+		sections = {
+			-- Left Pane (Pane 1): Clean Header & Practical Shortcuts
+			{ section = "header", pane = 1 },
+			{
+				section = "keys",
+				pane = 1,
+				gap = 1,
+				padding = 1,
+			},
+			-- Right Pane (Pane 2): Recent Files, Projects, and Live Git Status
+			{
+				section = "recent_files",
+				pane = 2,
+				icon = " ",
+				title = "Recent Files",
+				limit = 6,
+				indent = 2,
+				padding = 1,
+			},
+			{
+				section = "projects",
+				pane = 2,
+				icon = " ",
+				title = "Projects",
+				limit = 4,
+				indent = 2,
+				padding = 1,
+			},
+			{
+				section = "terminal",
+				cmd = "git -c color.status=always status -sb 2>/dev/null || echo 'Not inside a git repository'",
+				pane = 2,
+				height = 5,
+				padding = 1,
+				title = "Git Status",
+				icon = " ",
+			},
+		},
+	},
+	zen = { enabled = true },
+	dim = { enabled = true },
 	input = { enabled = true },
 	notifier = { enabled = true, timeout = 2500 },
 	picker = {
@@ -142,6 +198,15 @@ end, { desc = "Highlights" })
 map("n", "<leader>fC", function()
 	snacks.picker.colorschemes()
 end, { desc = "Colorschemes" })
+map("n", "<leader>fI", function()
+	snacks.picker.icons()
+end, { desc = "Find icons & emojis" })
+map("n", "<leader>ft", function()
+	snacks.picker.todo_comments()
+end, { desc = "Find TODO/FIXME comments" })
+map("n", "<leader>fl", function()
+	snacks.picker.lines()
+end, { desc = "Find current buffer lines" })
 
 -- ══════════════════════════════════════════
 -- SEARCH (Snacks Picker)

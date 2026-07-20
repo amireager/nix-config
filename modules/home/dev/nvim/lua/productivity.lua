@@ -75,9 +75,24 @@ if ok_bufremove then bufremove.setup() end
 local ok_trailspace, trailspace = pcall(require, "mini.trailspace")
 if ok_trailspace then
   trailspace.setup()
+
+  -- Disable trailing whitespace highlights and list mode on UI/dashboard/special buffers
+  vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter", "FileType" }, {
+    callback = function(args)
+      local ft = vim.bo[args.buf].filetype
+      local bt = vim.bo[args.buf].buftype
+      if bt == "nofile" or bt == "prompt" or bt == "terminal" or ft == "snacks_dashboard" or ft == "lazy" or ft == "trouble" or ft == "help" then
+        vim.b[args.buf].minitrailspace_disable = true
+        vim.opt_local.list = false
+      end
+    end,
+  })
+
   vim.keymap.set("n", "<leader>cw", function()
-    trailspace.trim()
-    trailspace.trim_last_lines()
+    if not vim.b.minitrailspace_disable then
+      trailspace.trim()
+      trailspace.trim_last_lines()
+    end
   end, { desc = "Trim trailing whitespace" })
 end
 
