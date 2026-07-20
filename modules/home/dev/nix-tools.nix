@@ -23,22 +23,31 @@
       if [ $# -eq 0 ]; then
         echo -e "\033[1;36m💡 Usage: dev <environment> [command...]\033[0m"
         echo -e "\033[1;33m📦 Available centralized environments ($FLAKE_PATH):\033[0m"
-        echo "  - dev python   (Poetry, Ruff, Pyright + automatic .venv)"
-        echo "  - dev nix      (statix, deadnix, alejandra, nix-check)"
-        echo "  - dev cli      (ast-grep, hyperfine, tokei, bandwhich)"
-        echo "  - dev sec      (bubblewrap, firejail, safe-run, safe-net-run)"
+        echo "  - dev python   (Poetry, Ruff, Pyright, interactive .venv prompt)"
+        echo "  - dev rust     (Cargo, Rustc, Rust-Analyzer, Clippy, Rustfmt)"
+        echo "  - dev go       (Go, Gopls, GolangCI-Lint, Delve)"
+        echo "  - dev cli      (Analytics: ast-grep, hyperfine, tokei, bandwhich)"
+        echo "  - dev build    (C/C++/Rust: GCC, Clang, CMake, Make, Ninja) [alias: dev c]"
+        echo "  - dev sec      (Sandboxing: safe-run offline, safe-net-run online)"
+        echo "  - dev nix      (Nix tools: statix, deadnix, alejandra, nix-check)"
+        echo "  - dev py-rust  (Composite: Python + Rust combined toolchains)"
         exit 0
       fi
 
       ENV_NAME="$1"
       shift
 
+      # 1. Register dynamic GC profile so triggered shells survive future nix-collect-garbage
+      mkdir -p "$HOME/.local/share/dev-roots"
+      nix print-dev-env "path:$FLAKE_PATH#$ENV_NAME" --profile "$HOME/.local/share/dev-roots/$ENV_NAME-profile" > /dev/null 2>&1 || true
+
+      # 2. Enter or execute command inside the isolated environment
       if [ $# -eq 0 ]; then
         echo -e "\033[1;32m🚀 Entering On-Demand DevShell: \033[1;36m$ENV_NAME\033[0m"
-        exec nix develop "$FLAKE_PATH#$ENV_NAME"
+        exec nix develop "path:$FLAKE_PATH#$ENV_NAME"
       else
         echo -e "\033[1;32m⚡ Running command inside On-Demand DevShell: \033[1;36m$ENV_NAME\033[0m"
-        exec nix develop "$FLAKE_PATH#$ENV_NAME" --command "$@"
+        exec nix develop "path:$FLAKE_PATH#$ENV_NAME" --command "$@"
       fi
     '')
   ];

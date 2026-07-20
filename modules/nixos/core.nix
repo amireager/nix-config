@@ -119,35 +119,19 @@
     };
   };
 
-  # === Essential System Packages + GC Protection for Centralized DevShells ===
-  # Registers all central devShell outputs/dependencies as system GC roots so that
-  # nix-collect-garbage never removes them from the Nix store.
-  environment.systemPackages = let
-    devShells = inputs.self.devShells.${pkgs.stdenv.hostPlatform.system} or {};
-    devShellRoots = pkgs.writeText "devshells-gc-roots.json" (
-      builtins.toJSON (
-        pkgs.lib.mapAttrs (name: shell: shell.outPath) devShells
-      )
-    );
-  in
-    with pkgs; [
-      (runCommand "devshells-gc-holder" {} ''
-        mkdir -p $out/share
-        ln -s ${devShellRoots} $out/share/devshells-roots.json
-      '')
-
-      # Core system utilities
-      vim
-      git
-      pciutils
-      usbutils
-      lshw
-      dmidecode
-      smartmontools
-      nvme-cli
-      efibootmgr
-      lm_sensors
-    ];
+  # === Essential System Packages ===
+  environment.systemPackages = with pkgs; [
+    vim
+    git
+    pciutils
+    usbutils
+    lshw
+    dmidecode
+    smartmontools
+    nvme-cli
+    efibootmgr
+    lm_sensors
+  ];
 
   # === NH — NixOS Management Wrapper ===
   programs.nh = {
