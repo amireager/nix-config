@@ -96,11 +96,12 @@ in {
       nvim-lspconfig         # LSP client configs
       conform-nvim           # formatter manager
 
-      # Utilities
+      # Utilities & Git
       mini-nvim              # collection of small plugins
       guess-indent-nvim      # auto-detect indentation
       render-markdown-nvim   # live markdown preview
       gitsigns-nvim          # git change indicators
+      neogit                 # Magit-style keyboard-centric Git interface
       vim-slime              # send code to terminal (REPL)
       plenary-nvim           # utility library (required by many)
 
