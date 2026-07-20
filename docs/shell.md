@@ -1,111 +1,80 @@
-# Shell — Fish & Shell Tools
+# 🐚 راهنمای شل Fish، ترمینال‌ها، Yazi و ناوبری هوشمند (`Shell, Prompt & Terminal Guide`)
 
-## Fish Shell
-Modern interactive shell with auto-suggestions, syntax highlighting, and completions built-in.
-
-### Configuration
-| Setting | Value |
-|---|---|
-| greeting | disabled |
-| autosuggestion | enabled |
-| EDITOR | nvim |
-| PAGER | bat |
-| MANPAGER | bat (colored) |
-
-### Aliases
-| Alias | Command | Purpose |
-|---|---|---|
-| `ls` | `eza --icons --git` | List with icons |
-| `ll` | `eza -l --icons --git --header` | List with details |
-| `la` | `eza -la --icons --git --header` | Include hidden |
-| `lt` | `eza --tree --level=2` | Directory tree |
-| `cat` | `bat --style=plain` | Show file |
-| `grep` | `ripgrep` | Search |
-| `find` | `fd` | Find files |
-| `top` | `btop` | System monitor |
-| `cdi` | `zi` | Smart cd (zoxide) |
-
-### Abbreviations
-| Abbr | Expansion | Purpose |
-|---|---|---|
-| `n` | `nvim` | Open editor |
-| `y` | `yazi` | File manager |
-| `sw` | `nh os switch` | Rebuild system |
-| `tst` | `nh os test` | Test system |
-| `bld` | `nh os build` | Build system |
-| `gs` | `git status` | Git status |
-| `ga` | `git add` | Git add |
-| `gc` | `git commit -m` | Git commit |
-| `gco` | `git checkout` | Git checkout |
-| `gcb` | `git checkout -b` | New branch |
-| `gp` | `git push` | Git push |
-| `gpl` | `git pull --rebase` | Git pull |
-
-### Keybindings
-| Key | Action |
-|---|---|
-| `Ctrl+R` | Search command history (fzf) |
-| `Ctrl+T` | Search files (fzf) |
-| `Alt+C` | Search directories (fzf) |
-| `Ctrl+Space` | Accept autosuggestion |
-| `Ctrl+Alt+P` | Kill process (fzf) |
-| `Ctrl+Alt+G` | Git log interactive |
-| `Ctrl+Alt+B` | Git branch checkout |
-
-### Functions
-| Function | Example | Description |
-|---|---|---|
-| `mkcd` | `mkcd src/api` | Create dir and cd into it |
-| `extract` | `extract file.tar.gz` | Extract any archive format |
-| `backup` | `backup config.nix` | Quick backup with timestamp |
-| `killp` | `killp` | Kill process with fzf |
-| `glog` | `glog` | Interactive git log |
-| `gco_branch` | `gco_branch` | Interactive branch checkout |
-
-### Plugins
-| Plugin | Purpose |
-|---|---|
-| `colored-man-pages` | Colored man pages |
-| `done` | Notification when long command finishes |
-| `fzf-fish` | fzf integration (Ctrl+T, Alt+C) |
-| `autopair` | Auto-close brackets |
-| `forgit` | Git interactive with fzf |
+محیط خط فرمان شما بر پایه شل مدرن **Fish**، پرامپت **Starship**، ابزار ناوبری **Zoxide** و مدیر فایل گرافیکی **Yazi** طراحی شده است تا بیشترین سرعت و زیبایی را بدون نیاز به کانفیگ‌های سنگین Bash/Zsh فراهم کند.
 
 ---
 
-## Starship Prompt
-Fast, minimal prompt with Git integration.
+## 🐟 ۱. شل Fish و مخفف‌های سریع (`Fish Shell & Abbreviations`)
 
-**Shows:**
-- Current directory (blue)
-- Git branch (orange) + status (red/green)
-- Nix shell indicator (snowflake)
-- Command duration
-- Time + battery (right side)
+شل Fish به طور پیش‌فرض به هایلایت سینتکس زنده، پیشنهاد خودکار بر اساس تاریخچه (`Autosuggestions`) و تم رنگی **Catppuccin Mocha** مجهز است.
 
----
+> **💡 نکته کلیدی:** برای پذیرفتن سریع پیشنهاد کم‌رنگی که Fish به شما نشان می‌دهد، کلید ترکیبی **`Ctrl + Space`** را بزنید تا کلمه بعدی کامل شود، یا **`Right Arrow`** را بزنید تا کل خط تایپ شود.
 
-## Zoxide — Smart cd
-`z project` → cd to most used directory matching "project"
-`zi` → interactive selection
+### ⚡ جدول مخفف‌ها و میانبرهای دستوری (`shellAbbrs` & `shellAliases`)
 
----
+| مخفف / الیاس | دستور زیر کاپوت | کاربرد و توضیحات |
+| :--- | :--- | :--- |
+| **`ls`** | `eza --icons --group-directories-first --git` | نمایش لیست فایل‌ها با آیکون و وضعیت گیت |
+| **`ll` / `la`** | `eza -l... / -la...` | نمایش اطلاعات تفصیلی فایل‌ها / فایل‌های مخفی |
+| **`lt` / `tree`**| `eza --tree --level=2 ...` | نمایش درختی پوشه‌ها تا ۲ سطح |
+| **`cat`** | `bat --style=plain` | نمایش محتوای فایل با هایلایت سینتکس |
+| **`gs / ga / gc / gp`** | `git status / add / commit -m / push` | میانبرهای سریع برای عملیات روزمره گیت |
+| **`n`** | `nvim` | اجرای ویرایشگر Neovim |
+| **`sw` / `nrs`** | `nh os switch` | **بیلد و اعمال فوری کانفیگ جدید NixOS** |
+| **`tst` / `nrt`**| `nh os test` | تست خشک کانفیگ جدید بدون ثبت در بوت‌لودر |
+| **`bld` / `nrb`**| `nh os build` | فقط بیلد کردن کانفیگ جهت بررسی خطاها |
+| **`hms`** | `nh home switch` | بیلد و اعمال کانفیگ Home Manager |
 
-## Direnv — Project Environment Loading
-Automatically loads `.envrc` when entering a directory.
-Works with `nix develop` for project-specific shells.
-
----
-
-## FZF — Fuzzy Finder
-| Key | Action |
-|---|---|
-| `Ctrl+T` | Search files (with preview) |
-| `Alt+C` | Search directories (with tree preview) |
-| `Ctrl+R` | Search command history |
-| `Tab` | Multi-select |
+### 🛠️ توابع داخلی شل (`Fish Functions`)
+* **`mkcd <folder>`:** یک دایرکتوری جدید می‌سازد و بلافاصله شما را به داخل آن هدایت می‌کند:
+  `mkcd ~/projects/new-app`
+* **`extract <file>`:** استخراج هوشمند و خودکار انواع فایل‌های فشرده (`.tar.gz`، `.zip`، `.7z`، `.zst`، `.rar` و...) با یک دستور:
+  `extract archive.tar.zst`
 
 ---
 
-## Carapace — Extra Completions
-Auto-completions for 600+ commands. Works silently in background.
+## 🚀 ۲. پرامپت Starship (`Modern Terminal Prompt`)
+
+پرامپت `Starship` وضعیت سیستم و پروژه شما را با رنگ‌های بولد Catppuccin نمایش می‌دهد:
+* **مسیر فعلی و گیت:** نام پوشه به رنگ آبی (`#89b4fa`)، نام برنچ گیت به رنگ نارنجی (`#fab387`) و وضعیت تغییرات ذخیره‌نشده به رنگ قرمز نشان داده می‌شود.
+* **نشانگر شل فعال Nix (`❄️`):** به محض اینکه وارد هر شل `dev <name>` (یا `nix develop`) شوید، آیکون برفی **`❄️`** به پرامپت اضافه می‌شود تا همیشه بدانید در محیط ایزوله هستید.
+* **زمان اجرای دستور (`cmd_duration`):** اگر دستوری بیش از ۱.۵ ثانیه طول بکشد، زمان دقیق اجرای آن با رنگ زرد در کنار پرامپت نمایش داده می‌شود.
+
+---
+
+## ⚡ ۳. ناوبری هوشمند با `Zoxide (z)` در برابر `cd` سنتی
+
+ابزار **`Zoxide`** جایگزین هوشمند `cd` است که الگوی پرش‌های شما را یاد می‌گیرد. دیگر نیازی به تایپ مسیرهای طولانی نیست!
+
+* **پرش فازی به هر پوشه:** اگر قبلاً یک بار وارد پوشه `/home/amir/projects/nix-config/shells/python` شده باشید، از هر کجای سیستم فقط تایپ کنید:
+  ```bash
+  z py
+  # یا: z shells
+  ```
+  و در کسری از ثانیه در آن پوشه خواهید بود!
+* **نمایش لیست و پرش تعاملی:** تایپ کنید `zi` و Enter بزنید؛ لیست تمام پوشه‌های پربازدید شما در `fzf` باز می‌شود و با جهت‌نما به هر کدام می‌پرید.
+
+---
+
+## 🔍 ۴. جستجوی فازی و زنده با `Fzf`
+
+ابزار `Fzf` با تم Catppuccin به طور کامل با Fish ادغام شده و پیش‌نمایش فایل‌ها را با `bat` نشان می‌دهد:
+* **`Ctrl + R`:** جستجوی فازی در تاریخچه تمام دستورات گذشته شل.
+* **`Ctrl + T`:** جستجوی فازی بین فایل‌های دایرکتوری جاری و درج نام فایل در خط فرمان.
+* **`Alt + C`:** پرش فازی به زیرپوشه‌های دایرکتوری فعلی.
+
+---
+
+## 🖼️ ۵. مدیر فایل ترمینالی `Yazi (y)`
+
+ابزار **`Yazi`** سریع‌ترین مدیر فایل ترمینالی در جهان (نوشته‌شده با Rust) است:
+* **اجرا با مخفف `y`:** در ترمینال بزنید `y` (یا میانبر دسکتاپ **`Mod + Shift + E`**).
+* **پیش‌نمایش گرافیکی عکس و ویدیو:** وقتی با کیبورد روی عکس‌ها، فایل‌های PDF یا آرشیوها می‌روید، پیش‌نمایش واقعی آن‌ها (با پروتکل Kitty/Sixel) مستقیماً درون خودِ ترمینال رندر می‌شود!
+* **ادغام شل (`Shell Wrapper`):** وقتی با `y` در پوشه‌ها می‌خزید و در نهایت با کلید `q` از Yazi خارج می‌شوید، ترمینال Fish شما دقیقاً در همان آخرین پوشه‌ای که در Yazi بودید قرار خواهد داشت!
+
+---
+
+## 💻 ۶. ترمینال‌های `Wezterm` و `Kitty`
+
+* **`Kitty` (ترمینال اصلی - `Mod + Return`):** مجهز به شتاب‌دهنده گرافیکی Vulkan، شفافیت ۸۵٪ (`opacity = 0.85`) و فونت `JetBrainsMono Nerd Font` با سایز ۱۲.
+* **`Quick Term` (`Mod + Slash`):** یک نمونه از Kitty با شناسه `quick-term` است که در Niri به صورت **شناور و در مرکز صفحه (Floating 40%x50%)** باز می‌شود تا برای یک دستور سریع (مثل `btop` یا `dev py`) نیازی به کاشی کردن پنجره نباشد.

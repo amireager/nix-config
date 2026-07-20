@@ -1,48 +1,29 @@
-# Documentation — Amir's NixOS Configuration
+# 📚 دیباچه و راهنمای کلان سیستم‌عامل (`Amir's NixOS Documentation`)
 
-## System
-| File | Topic |
-|---|---|
-| [system.md](./system.md) | Core system, kernel, hardware, Nix settings |
-| [nix-workflow.md](./nix-workflow.md) | Nix tools, daily commands, system management |
-| [network.md](./network.md) | DNS, proxy, firewall, network tools |
+به مرجع رسمی مستندات کانفیگ **NixOS** خوش آمدید! این مجموعه مستندات به زبان فارسی و با رویکرد **کاملاً کاربردی، کیبورد‌محور و بهینه‌شده** تدوین شده است تا در هر ثانیه از کار روزمره یا توسعه نرم‌افزار، دقیقاً بدانید هر ابزار چه وظیفه‌ای دارد، با چه کلید میانبری فراخوانی می‌شود و چگونه از حداکثر توان آن استفاده کنید.
 
-## Shell & Terminal
-| File | Topic |
-|---|---|
-| [shell.md](./shell.md) | Fish, Starship, Zoxide, Direnv, FZF, Carapace |
-| [terminal.md](./terminal.md) | Kitty, Tmux (with all keybindings) |
-| [cli-tools.md](./cli-tools.md) | All modern CLI tools (eza, bat, ripgrep, ...) |
+---
 
-## Development & Editor
-| File | Topic |
-|---|---|
-| [editor.md](./editor.md) | Neovim (LSP, Treesitter, keybindings, plugins) |
-| [dev-tools.md](./dev-tools.md) | Dev tools (tokei, watchexec, lazygit, ...) |
+## 🗺️ ساختار مستندات و راهنمای مطالعه
 
-## GUI & Desktop
-| File | Topic |
-|---|---|
-| [desktop.md](./desktop.md) | Niri compositor, Noctalia, Wayland tools |
-| [browser.md](./browser.md) | Browsers (Zen, Qutebrowser, Brave) |
-| [media.md](./media.md) | Media tools, office, camera, screen recording |
-| [git.md](./git.md) | Git, Delta, GitHub CLI |
+این مستندات در **۷ دفتر تخصصی** دسته‌بندی شده است. برای دسترسی سریع به هر موضوع، روی لینک‌های زیر کلیک کنید:
 
-## Philosophy
-- **Light, fast, CLI-first**
-- Modern terminal tools replace classic ones
-- DevShell for specialized tools (direnv auto-loads)
-- Tiling desktop without overhead (Niri)
-- Development with Neovim + Tmux
+| دفتر مستندات | موضوع و دامنه پوشش | مخاطب اصلی |
+| :--- | :--- | :--- |
+| **[۱. ابزارهای خط فرمان و شل‌های تخصصی (`cli.md`)](./cli.md)** | راهنمای کامل ابزارهای ثانیه‌ای شل (`eza`, `bat`, `yazi`) + راهنمای دستور جادویی `dev` و ابزارهای تحلیلی در محیط‌های توسعه (`ast-grep`, `hyperfine`, `bandwhich`, `bwrap`). | تمام کاربران و برنامه‌نویسان |
+| **[۲. ویرایشگر Neovim (`nvim.md`)](./nvim.md)** | راهنمای جامع ادیتور نئوویم، داشبورد ۲‌ستونه، سوئیچ تم‌های ۳‌گانه، مدیریت تب‌ها با `scope.nvim`، پیکرهای `snacks.nvim` و کلیدهای بومی LSP. | توسعه‌دهندگان و کدنویسان |
+| **[۳. دسکتاپ Wayland و کاشی‌کار Niri (`niri.md`)](./niri.md)** | راهنمای مدیریت پنجره‌ها، ادغام تب‌ها در ستون (`Consume/Expel`)، عرض‌های از پیش‌تعیین‌شده (`Mod+R`)، ابزارهای Fuzzel (وای‌فای، ماشین‌حساب) و ضبط صفحه. | کاربران روزمره و دسکتاپ |
+| **[۴. مدیریت گیت، Neogit و درخت زمان (`git.md`)](./git.md)** | راهنمای تفکیک ایموجی‌های اکشن (`⚡ Stage` / `🔥 Reset`)، رابط Magit-style در `Neogit`، دیف‌گیر `Diffview` و بازگشت در زمان با `Undotree`. | توسعه‌دهندگان |
+| **[۵. معماری سیستمی، دیسک NVMe و شبکه (`system.md`)](./system.md)** | توضیحات فنی بهینه‌سازی دیسک (`noatime`)، بافر کرنل (`dirty_ratio`)، رم فشرده (`ZRAM`)، بهینه‌سازی شبکه BBR و اتوماسیون پاکسازی لاگ‌ها. | مدیران سیستم و دیباگرها |
+| **[۶. شل Fish، ترمینال‌ها و ناوبری هوشمند (`shell.md`)](./shell.md)** | راهنمای شل Fish، پرامپت `Starship`، پرش فازی با `Zoxide (z)`، اکسپلورر `Yazi`، توابع کاربردی (`extract` / `mkcd`) و ترمینال‌های `Wezterm/Kitty`. | تمام کاربران |
+| **[۷. مدیریت Flake، دستور `nh` و جریان کار (`workflow.md`)](./workflow.md)** | راهنمای بیلد سیستم با `nh os switch`، بازرسی سلامت با `nix-check`، ریشه‌سازی پویا در برابر Garbage Collector و ساخت پروژه از روی قالب‌ها. | تمام کاربران |
 
-## Quick Reference
-| Item | Value |
-|---|---|
-| User | `amir` |
-| Shell | Fish |
-| Editor | Neovim |
-| Terminal | Kitty |
-| Multiplexer | Tmux (prefix: `Ctrl+A`) |
-| Desktop | Niri (Wayland tiling) |
-| Default browser | Zen Browser |
-| Rebuild command | `nh os switch` |
+---
+
+## 🚀 ۳ اصول طلایی این معماری سیستمی
+
+این سیستم بر پایه سه اصل غیرقابل‌تغییر مهندسی شده است:
+
+1. **کیبورد‌محوری مطلق (`Absolute Keyboard-Centricity`):** از لحظه ورود به دسکتاپ Niri تا اتصال به وای‌فای، محاسبه ریاضی، ویرایش کد، بررسی گیت و ضبط صفحه نمایش، هیچ نیازی به برداشتن دست از روی کیبورد یا استفاده از موس نیست.
+2. **لود پویا و سبک‌سازی سیستم (`Zero-Bloat On-Demand Loading`):** باینری‌های سنگین، کامپایلرهای Go، Rust، C++ و ابزارهای پروفایلینگ از پروفایل دائمی سیستم حذف شده و از طریق دستور **`dev <environment>`** فقط و فقط در لحظه نیاز دانلود و اجرا می‌شوند.
+3. **مقاومت خودکار در برابر زباله‌روب (`Dynamic GC Resilience`):** هر محیط تخصصی که حتی ۱ بار صدا زده شود، به طور خودکار در مسیر `~/.local/share/dev-roots/` ثبت شده و در برابر دستور پاکسازی `nix-collect-garbage` محافظت می‌شود.

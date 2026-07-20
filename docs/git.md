@@ -1,148 +1,64 @@
-# Git — Version Control
+#  راهنمای کنترل نسخه، گیت، Neogit و درخت زمان (`Git Workflow & Undo Tree Guide`)
 
-## Git
-Distributed version control.
-
-### Aliases (defined in config)
-```bash
-git st              # git status -sb (summary)
-git lg              # git log --oneline --graph --decorate --all
-git last            # git log -1 HEAD --stat
-git unstage         # git reset HEAD --
-git amend           # git commit --amend --no-edit
-```
-
-### Shell Aliases (in fish)
-| Alias | Command |
-|---|---|
-| `gst` | `git status --short --branch` |
-| `gaa` | `git add --all` |
-| `gl` | `git log --oneline --graph --decorate` |
-| `gd` | `git diff` |
-| `gds` | `git diff --staged` |
-| `gclean` | `git clean -fd` |
-| `gsta` | `git stash` |
-| `gstp` | `git stash pop` |
-
-### Shell Abbreviations
-| Abbr | Expansion |
-|---|---|
-| `gs` | `git status` |
-| `ga` | `git add` |
-| `gc` | `git commit -m` |
-| `gco` | `git checkout` |
-| `gcb` | `git checkout -b` |
-| `gp` | `git push` |
-| `gpl` | `git pull --rebase` |
-
-### Key Settings
-| Setting | Value | Description |
-|---|---|---|
-| `pull.rebase` | true | pull always rebases |
-| `push.autoSetupRemote` | true | auto-set upstream on first push |
-| `fetch.prune` | true | delete remote-tracking branches |
-| `rebase.autoStash` | true | auto-stash before rebase |
-| `merge.conflictStyle` | zdiff3 | better conflict display |
-| `commit.verbose` | true | show diff in commit message editor |
-| `branch.sort` | -committerdate | sort branches by recent commit |
-| `core.quotePath` | false | handle Persian/Arabic filenames |
-
-### Git Aliases (in git config)
-| Alias | Command |
-|---|---|
-| `st` | `status -sb` |
-| `lg` | `log --oneline --graph --decorate --all` |
-| `last` | `log -1 HEAD --stat` |
-| `unstage` | `reset HEAD --` |
-| `amend` | `commit --amend --no-edit` |
+مدیریت کنترل نسخه در کانفیگ شما به صورت یک گردش کار ۱۰۰٪ کیبورد‌محور و بصری طراحی شده است. ما با ترکیب **`Lazygit`**، **`Neogit` (رابط بومی در نئوویم)**، **`Gitsigns`** و **`Diffview`**، سریع‌ترین تجربه بررسی و ثبت کد را فراهم کرده‌ایم.
 
 ---
 
-## Delta — Beautiful Diff
-Syntax-highlighted diff viewer integrated with git.
+## ⚡ ۱. قانون طلایی تفکیک دستورات: «انجامی‌ها با ایموجی» در برابر «نمایشی‌ها بدون ایموجی»
 
-**Configured:**
-- Line numbers: enabled
-- Side-by-side: disabled
-- Theme: ansi
-- Navigation: enabled
+برای اینکه هنگام فشردن کلید **`<leader>g`** در ویرایشگر Neovim در یک هزارم ثانیه بدانید کدام دستور کد شما را تغییر می‌دهد و کدام دستور صرفاً اطلاعات را نمایش می‌دهد، تمام میانبرهای گیت به دو دسته بصری زیر تقسیم شده‌اند:
 
-**Usage (automatic via git):**
-```bash
-git diff            # → displayed with delta
-git log -p          # → displayed with delta
-git show            # → displayed with delta
-```
+### ⚡ دستورات انجامی و تغییردهنده مخزن (`Mutations / Action Commands`)
+این دستورات فایل‌ها، استیج گیت یا تاریخچه کامیت‌ها را دستکاری می‌کنند و به **ایموجی اکشن** مجهز هستند:
 
-**Keybindings (in delta):**
-| Key | Action |
-|---|---|
-| `n` | Next match |
-| `N` | Previous match |
-| `q` | Quit |
+| میانبر | نام در `which-key` | عملکرد و دستور زیر کاپوت |
+| :--- | :--- | :--- |
+| **`<leader>gn`** | `📝 Neogit UI (Neogit)` | باز کردن رابط کاربری Magit-style بومی در بافر نئوویم |
+| **`<leader>gc`** | `🚀 Commit UI (Neogit)` | باز کردن مستقیم پنجره نوشتن کامیت در Neogit |
+| **`<leader>gg`** | `Lazygit (Snacks)` | باز کردن رابط ترمینالی TUI `lazygit` در پنجره شناور |
+| **`<leader>gs`** | `⚡ Stage hunk (Gitsigns)` | استیج کردن (Add) تکه کد دقیق زیر نشانگر موس |
+| **`<leader>gr`** | `🔥 Reset hunk (Gitsigns)` | ریست کردن و دور ریختن تغییرات تکه کد زیر نشانگر موس |
+| **`<leader>gA`** | `⚡ Stage buffer (Gitsigns)` | استیج کردن تمام تغییرات فایل جاری به صورت یکجا |
+| **`<leader>gR`** | `🔥 Reset buffer (Gitsigns)` | دور ریختن تمام تغییرات فایل جاری و بازگشت به کامیت آخر |
 
----
+### 👓 دستورات نمایشی و فقط‌خواندنی (`Views / Display Commands`)
+این دستورات هیچ تغییری در مخزن ایجاد نمی‌کنند و صرفاً برای بررسی کد هستند (بدون ایموجی و تمیز):
 
-## GitHub CLI — gh
-Command-line interface for GitHub.
-
-**Configured:** `git_protocol = "ssh"`
-
-### Common Commands
-```bash
-gh auth login           # authenticate
-gh repo clone owner/repo # clone repo
-gh pr list              # list pull requests
-gh pr create            # create PR
-gh pr merge 42          # merge PR #42
-gh issue create         # create issue
-gh issue list           # list issues
-gh gist create file     # create gist
-```
+| میانبر | نام در `which-key` | عملکرد و دستور زیر کاپوت |
+| :--- | :--- | :--- |
+| **`<leader>gp`** | `Preview hunk (Gitsigns)` | پیش‌نمایش تغییرات تکه کد جاری در یک پنجره کوچک شناور |
+| **`<leader>gb`** | `Blame line (Gitsigns)` | نمایش نام نویسنده، تاریخ و هش کامیت برای خطی که موس روی آن است |
+| **`<leader>gt`** | `Toggle line blame (Gitsigns)` | روشن/خاموش کردن نمایش بلِیم کم‌رنگ در انتهای تمام خطوط کد |
+| **`<leader>gd`** | `Diff buffer (Gitsigns)` | نمایش مقایسه‌ای (Diff) فایل جاری با آخرین وضعیت کامیت‌شده |
+| **`<leader>gD`** | `Diff vs ~ (Gitsigns)` | نمایش مقایسه‌ای فایل جاری با برنچ اصلی |
+| **`<leader>gv`** | `Diff view open (Diffview)` | باز کردن پنل مقایسه‌ای کل تغییرات و فایل‌های پروژه در `Diffview` |
+| **`<leader>gV`** | `Diff view close (Diffview)` | بستن پنل مقایسه یا تاریخچه `Diffview` |
+| **`<leader>gh`** | `Project history (Diffview)` | بررسی تاریخچه تمام کامیت‌ها و فایل‌های تغییریافته پروژه در طول زمان |
+| **`<leader>gl`** | `Git log (Snacks)` | نمایش لیست کامیت‌های پروژه در پیکر فازی `Snacks` |
+| **`<leader>gB`** | `Git branches (Snacks)` | نمایش و سوئیچ سریع بین برنچ‌های گیت در پیکر فازی |
 
 ---
 
-## Lazygit — Git TUI
-Terminal UI for git. No need to type commands.
+## 📝 ۲. راهنمای کار با Neogit (`Magit-Style Keyboard Interface`)
 
-```bash
-lazygit                 # open lazygit
-```
+پلاگین **`Neogit`** (`<leader>gn`) سریع‌ترین راه برای ثبت تغییرات بدون خروج از ادیتور است. پس از باز شدن پنل Neogit، کلیدهای زیر در اختیار شماست:
 
-### Keybindings
-| Key | Action |
-|---|---|
-| `1-5` | Switch panel |
-| `Space` | Stage/unstage file |
-| `a` | Stage all |
-| `c` | Commit |
-| `C` | Commit with editor |
-| `P` | Push |
-| `p` | Pull |
-| `e` | Open file in editor |
-| `o` | Open in browser |
-| `/` | Search |
-| `q` | Quit |
-
-### Panels
-1. **Status** — current branch, stash, merge state
-2. **Files** — changed files
-3. **Branches** — local branches
-4. **Commits** — commit history
-5. **Stash** — stashes
+* **کلید `s` (Stage):** با موس یا جهت‌نما روی هر فایل یا تکه کد (Hunk) بروید و کلید `s` را بزنید؛ آن بخش فوراً به بخش Staged منتقل می‌شود.
+* **کلید `u` (Unstage):** روی فایل‌های استیج‌شده کلید `u` را بزنید تا خارج شوند.
+* **کلید `x` (Discard):** دور ریختن تغییرات یک فایل یا تکه کد.
+* **کلید `c c` (Commit):** پنجره نوشتن پیام کامیت باز می‌شود. پیام را بنویسید و با **`<Ctrl + c><Ctrl + c>`** (یا `:wq`) کامیت را ثبت کنید.
+* **کلید `P P` (Push):** ارسال فوری تغییرات به سرور گیت‌هاب.
+* **کلید `b b` (Branch):** ساخت یا سوئیچ بین برنچ‌ها.
 
 ---
 
-## gh-dash — GitHub Dashboard TUI
-```bash
-gh-dash               # open dashboard
-```
+## ⏳ ۳. درخت زمان و بازگشت به گذشته (`Undotree & Non-Linear History`)
 
-**Shows:**
-- Your open PRs
-- Assigned issues
-- Notifications
-- GitHub Actions workflows
+آیا تا به حال پیش آمده ساعت‌ها روی یک کد کار کنید، چند تابع را پاک کنید، فایل را ذخیره کنید و بعد پشیمان شوید اما `Ctrl + Z` دیگر کار نکند؟
 
-## Configuration
-File: `modules/home/cli/git.nix`
+به لطف قابلیت **درخت زمان (`Undotree` -> `snacks.picker.undo`)** در کانفیگ شما، تمام تغییرات شما حتی اگر کامیت نشده باشند یا نئوویم بسته شده باشد، قابل بازگشت هستند!
+
+### 💡 نحوه کارکرد درخت زمان و امنیت حافظه
+1. **ذخیره‌سازی بهینه دیسک (`opt.undofile = true`):** نئوویم تاریخچه هر فایل را به صورت یک فایل باینری فشرده (`.un~`) در مسیر `~/.local/state/nvim/undo/` ذخیره می‌کند. حتی با ویرایش هزاران فایل در طول سال‌ها، حجم این دیتابیس به ندرت به ۳۰ مگابایت می‌رسد.
+2. **عدم اشغال رم:** این تاریخچه در کار روزمره در رم لود نمی‌شود. فقط زمانی که کلید **`<leader>fu`** را می‌زنید، فایل باینری در ۵ میلی‌ثانیه خوانده شده و درخت زمان رسم می‌شود.
+3. **پیمایش در گذشته (`<leader>fu`):** با باز شدن این پنجره، تمام شاخه‌های ویرایشی، ثانیه‌ها و ساعت‌های گذشته فایل را می‌بینید. روی هر ثانیه‌ای در گذشته `Enter` بزنید، فایل دقیقاً به همان لحظه بازمی‌گردد!

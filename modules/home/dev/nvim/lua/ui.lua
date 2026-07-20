@@ -53,7 +53,7 @@ if ok_tn then
 end
 
 -- Set default active colorscheme (Nightfox custom #0d131a by default, switch live with <leader>fC)
-vim.cmd.colorscheme("nightfox")
+vim.cmd.colorscheme("catppuccin")
 
 local function lsp_clients()
 	local clients = vim.lsp.get_clients({ bufnr = 0 })
