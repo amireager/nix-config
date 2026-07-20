@@ -34,7 +34,6 @@
 
     # ── Capture & Input ──
     guvcview
-    kooha
 
     # ── Archive & File Management ──
     zip

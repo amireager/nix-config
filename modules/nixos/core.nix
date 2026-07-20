@@ -53,6 +53,12 @@
     ];
   };
 
+  # === Automatic Store Deduplication ===
+  nix.optimise = {
+    automatic = true;
+    dates = ["weekly"];
+  };
+
   # === IPv6 ===
   networking.enableIPv6 = false;
 
@@ -60,9 +66,21 @@
   hardware.enableAllFirmware = true;
   hardware.enableRedistributableFirmware = true;
 
-  # === Kernel ===
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-  boot.initrd.verbose = false;
+  # === Fast & Silent Boot Architecture ===
+  boot = {
+    kernelPackages = pkgs.linuxPackages_latest;
+    initrd.verbose = false;
+    initrd.systemd.enable = true;
+    consoleLogLevel = 3;
+    kernelParams = [
+      "quiet"
+      "splash"
+      "boot.shell_on_fail"
+      "udev.log_level=3"
+      "rd.systemd.show_status=false"
+    ];
+    loader.timeout = 1;
+  };
 
   # === Memory, Swap & I/O Responsiveness (Optimized for ZRAM + NVMe) ===
   boot.kernel.sysctl = {
@@ -85,6 +103,13 @@
     enable = true;
     interval = "weekly";
   };
+
+  # === Journald Log Limitation (Keeps system storage clean) ===
+  services.journald.extraConfig = ''
+    SystemMaxUse=250M
+    SystemMaxFileSize=50M
+    MaxRetentionSec=1month
+  '';
 
   # === Locale & Timezone ===
   time.timeZone = "Asia/Tehran";

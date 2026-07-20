@@ -5,7 +5,7 @@
     dust # Interactive du with tree visualization (very practical)
     fd # Fast, user-friendly find alternative
     eza # Modern ls with git status, icons, and tree support
-    ouch # Simple unified tool for archive compression/decompression
+    # ouch # Simple unified tool for archive compression/decompression
     trash-cli # Safe delete with trash bin (prevents accidental rm)
 
     # === Text, Search and Data Processing ===
@@ -13,12 +13,8 @@
     jq # Powerful JSON processor
     yq-go # YAML processor (jq for YAML)
     sd # Intuitive find & replace (modern sed)
-    jc # Convert any command output to JSON
-    jless # Interactive pager for JSON
 
     # === System Inspection ===
-    procs # Modern ps with better filtering and tree view
-    bandwhich # Real-time bandwidth per process and connection
     lsof # List open files, sockets and ports
 
     # === Network and Transfer ===
@@ -40,20 +36,17 @@
 
     # === Productivity and Helpers ===
     just # Modern, simple command runner (better than make)
-    pueue # Manage long-running background tasks
     glow # Terminal Markdown renderer
-    tailspin # Smart log viewer with highlighting
     gum # Beautiful interactive prompts, spinners, and choosers
-    difftastic # Structural/semantic diff tool
 
     # === Additional Modern Tools ===
-    fx # Interactive & beautiful JSON explorer
     bottom # Advanced system resource monitor
     ugrep # Powerful grep with regex and binary support
+    gh-dash # GitHub dashboard TUI
+    navi # Interactive cheatsheets for commands
 
     # === Additional file managers ===
     superfile # Modern terminal file manager
-    # lla        # ls alternative with nice UI
   ];
 
   # Program configurations

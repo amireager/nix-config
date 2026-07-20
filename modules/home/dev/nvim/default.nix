@@ -64,12 +64,9 @@ in {
       tailwindcss-language-server  # Tailwind CSS LSP
       emmet-language-server        # Emmet LSP (HTML expansion)
 
-      # === Go ===
-      gopls            # Go LSP
-
-      # === Rust ===
-      rust-analyzer    # Rust LSP
-
+      # NOTE: Heavy LSP servers (`rust-analyzer` and `gopls`) are decoupled from
+      # the global Neovim binary and moved to `shells/rust` (`dev rust`) and `shells/go` (`dev go`).
+      # Neovim's `direnv-vim` auto-attaches them instantly when inside a project!
     ];
 
     plugins = with pkgs.vimPlugins; [
