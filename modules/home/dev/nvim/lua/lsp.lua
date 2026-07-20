@@ -35,39 +35,39 @@ local function on_attach(client, bufnr)
 
 	-- Hover documentation
 	if client.supports_method("textDocument/hover") then
-		map("n", "K", vim.lsp.buf.hover, "Hover documentation")
+		map("n", "K", vim.lsp.buf.hover, "Hover documentation (Native LSP)")
 	end
 
 	-- Signature help
 	if client.supports_method("textDocument/signatureHelp") then
-		map("n", "<leader>lk", vim.lsp.buf.signature_help, "Signature help")
+		map("n", "<leader>lk", vim.lsp.buf.signature_help, "Signature help (Native LSP)")
 	end
 
 	-- Rename
 	if client.supports_method("textDocument/rename") then
-		map("n", "<leader>lr", vim.lsp.buf.rename, "Rename symbol")
+		map("n", "<leader>lr", vim.lsp.buf.rename, "Rename symbol (Native LSP)")
 	end
 
 	-- Code action
 	if client.supports_method("textDocument/codeAction") then
-		map({ "n", "v" }, "<leader>la", vim.lsp.buf.code_action, "Code action")
+		map({ "n", "v" }, "<leader>la", vim.lsp.buf.code_action, "Code action (Native LSP)")
 	end
 
 	-- Format
 	if client.supports_method("textDocument/formatting") then
 		map("n", "<leader>lf", function()
 			vim.lsp.buf.format({ async = true })
-		end, "LSP format")
+		end, "Format buffer (Native LSP)")
 	end
 
 	-- LSP info
-	map("n", "<leader>li", "<cmd>LspInfo<CR>", "LSP info")
+	map("n", "<leader>li", "<cmd>LspInfo<CR>", "Server info (Native LSP)")
 
-	-- Diagnostics
-	map("n", "[d", vim.diagnostic.goto_prev, "Previous diagnostic")
-	map("n", "]d", vim.diagnostic.goto_next, "Next diagnostic")
-	map("n", "<leader>dd", vim.diagnostic.open_float, "Line diagnostics")
-	map("n", "<leader>dq", vim.diagnostic.setqflist, "Diagnostics to quickfix")
+	-- Diagnostics navigation & display
+	map("n", "[d", vim.diagnostic.goto_prev, "Previous diagnostic (Native LSP)")
+	map("n", "]d", vim.diagnostic.goto_next, "Next diagnostic (Native LSP)")
+	map("n", "<leader>ld", vim.diagnostic.open_float, "Line diagnostics (Native LSP)")
+	map("n", "<leader>lq", vim.diagnostic.setqflist, "Diagnostics to quickfix (Native LSP)")
 end
 
 -- Only installed servers (via Nix extraPackages in default.nix)

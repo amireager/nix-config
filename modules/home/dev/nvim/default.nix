@@ -102,6 +102,7 @@ in {
       render-markdown-nvim   # live markdown preview
       gitsigns-nvim          # git change indicators
       neogit                 # Magit-style keyboard-centric Git interface
+      direnv-vim             # Auto-connect Neovim LSPs to direnv/devShell environments
       vim-slime              # send code to terminal (REPL)
       plenary-nvim           # utility library (required by many)
 
