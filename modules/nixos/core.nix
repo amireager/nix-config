@@ -156,6 +156,7 @@
     nvme-cli
     efibootmgr
     lm_sensors
+    inputs.agenix.packages.${pkgs.system}.default
   ];
 
   # === NH — NixOS Management Wrapper ===

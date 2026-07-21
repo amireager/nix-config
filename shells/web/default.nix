@@ -6,14 +6,23 @@
     name = "web-env";
 
     packages = with pkgs; [
-      nodejs
-      nodePackages.pnpm
-      bun
-      yarn
-      nodePackages.typescript
-      nodePackages.typescript-language-server
-      nodePackages.eslint
-      nodePackages.prettier
+      # Core Runtimes & Package Managers
+      nodejs_22 # Current stable LTS Node.js runtime
+      bun # Ultra-fast JavaScript/TypeScript all-in-one toolchain
+      pnpm # Efficient alternative package manager
+      yarn # Traditional package manager alternative
+
+      # Languages & NeoVim Language Servers (LSP)
+      typescript # TypeScript compiler (tsc)
+      typescript-language-server # Essential LSP for Neovim TypeScript autocompletion
+      vtsls # High-performance alternative LSP for TypeScript
+      tailwindcss-language-server # Autocomplete and linting for Tailwind CSS classes
+
+      # Linters, Formatters & Quality Assurance
+      eslint # JavaScript/TypeScript pluggable linter
+      prettier # Opinionated code formatter for web stacks
+      # biome # Rust-powered ultra-fast alternative to ESLint/Prettier
+      # vitest # Next-generation blazing fast testing framework
     ];
 
     shellHook = ''
