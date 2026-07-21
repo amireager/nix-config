@@ -3,13 +3,20 @@
 # ============================================================
 {...}: {
   imports = [
+    # ========================================================
+    # 1. Host-Specific & Hardware Layer (Unique to this machine)
+    # ========================================================
     ./hardware.nix
+    ../../modules/nixos/hardware/laptop.nix
+    ../../modules/nixos/hardware/nvidia.nix
+
+    # ========================================================
+    # 2. General System Profile Layer (Shared / Modular)
+    # ========================================================
     ../../modules/nixos/core.nix
     ../../modules/nixos/network.nix
     ../../modules/nixos/security.nix
     ../../modules/nixos/desktop.nix
-    ../../modules/nixos/laptop.nix
-    ../../modules/nixos/nvidia.nix
   ];
 
   # Bootloader (UEFI system)
