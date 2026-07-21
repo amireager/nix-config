@@ -9,6 +9,7 @@
     ./hardware.nix
     ../../modules/nixos/hardware/laptop.nix
     ../../modules/nixos/hardware/nvidia.nix
+    ../../modules/nixos/keyd.nix
 
     # ========================================================
     # 2. General System Profile Layer (Shared / Modular)
