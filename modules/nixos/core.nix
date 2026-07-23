@@ -175,6 +175,12 @@
     binfmt = true;
   };
 
+  # === Dynamic Libraries (NixLD) ===
+  # Allows running unpatched standard Linux binaries (like downloaded precompiled tools)
+  programs.nix-ld = {
+    enable = true;
+  };
+
   boot.kernelModules = ["fuse"];
 
   # Set to your actual installed NixOS version; do not change after installation.

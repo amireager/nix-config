@@ -127,10 +127,52 @@
       nrb = "nh os build";
       hms = "nh home switch";
       hmb = "nh home build";
+
+      # === Proxy Management ===
+      myip = "curl ip.me";
     };
 
     functions = {
       mkcd = "mkdir -p $argv[1] && cd $argv[1]";
+
+      # === On-Demand Dynamic Proxy (Per Terminal Tab) ===
+      proxy_on = {
+        description = "Enable proxy for the current shell session";
+        body = ''
+          set -l port 1819
+          if test (count $argv) -gt 0
+            set port $argv[1]
+          end
+          set -gx ALL_PROXY "socks5h://127.0.0.1:$port"
+          set -gx HTTP_PROXY "socks5h://127.0.0.1:$port"
+          set -gx HTTPS_PROXY "socks5h://127.0.0.1:$port"
+          echo -e "\033[1;32m[+] Proxy Enabled in this terminal (127.0.0.1:$port)\033[0m"
+        '';
+      };
+
+      proxy_off = {
+        description = "Disable proxy for the current shell session";
+        body = ''
+          set -e ALL_PROXY HTTP_PROXY HTTPS_PROXY
+          echo -e "\033[1;31m[-] Proxy Disabled\033[0m"
+        '';
+      };
+
+      # === Dynamic Proxychains Wrapper ===
+      px = {
+        description = "Run a command with proxychains, ignoring hardcoded port if PROXY_PORT is set";
+        body = ''
+          if set -q PROXY_PORT
+            # Temporarily rewrite proxychains config in tmp using the dynamic port
+            set tmp_conf "/tmp/proxychains_dynamic.conf"
+            cat /etc/proxychains.conf | sed -E "s/socks5 \+127.0.0.1 \+[0-9]+/socks5  127.0.0.1  $PROXY_PORT/" > $tmp_conf
+            proxychains4 -f $tmp_conf $argv
+          else
+            proxychains4 -q $argv
+          end
+        '';
+      };
+
       extract = {
         description = "Extract any archive format";
         body = ''

@@ -26,6 +26,7 @@
     "net.ipv4.tcp_rmem" = "4096 87380 16777216";
     "net.ipv4.tcp_wmem" = "4096 65536 16777216";
     "net.ipv4.tcp_mtu_probing" = 1;
+    "net.ipv4.ip_forward" = 1; # Required for tun2proxy / sing-box TUN interfaces
   };
 
   # === Encrypted DNS (dnscrypt-proxy) ===
@@ -63,15 +64,28 @@
   '';
   networking.nameservers = ["127.0.0.1"];
 
-  # === Proxy Management ===
-  services.v2raya.enable = true;
+  # === Proxychains Configuration ===
+  # Allows proxying specific commands that don't respect HTTP_PROXY
+  programs.proxychains = {
+    enable = true;
+    proxies = {
+      default = {
+        enable = true;
+        type = "socks5";
+        host = "127.0.0.1";
+        port = 1819; # Default Aether port. Use custom config in ~/.config/proxychains for others.
+      };
+    };
+  };
 
   # === Network System Packages ===
   environment.systemPackages = with pkgs; [
     sing-box
+    tun2proxy
+    proxychains-ng
     byedpi
-    spoofdpi
-    wgcf
+    xray # Modern core for v2rayA (Vless/Reality)
+    v2rayn # Desktop alternative
     wireguard-tools
     iproute2
     tor
