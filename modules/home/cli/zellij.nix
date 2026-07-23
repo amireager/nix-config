@@ -22,4 +22,25 @@
       ui.pane_frames.rounded_corners = true;
     };
   };
+
+  # Remap Zellij Prefix from Ctrl+b to Ctrl+a to match Tmux workflow
+  xdg.configFile."zellij/config.kdl".text = ''
+    keybinds clear-defaults=true {
+      normal {
+          bind "Ctrl a" { SwitchToMode "Tmux"; }
+      }
+      tmux clear-defaults=true {
+          bind "Ctrl a" { Write 2; SwitchToMode "Normal"; }
+          bind "Esc" { SwitchToMode "Normal"; }
+          bind "g" { SwitchToMode "Locked"; }
+          bind "p" { SwitchToMode "Pane"; }
+          bind "t" { SwitchToMode "Tab"; }
+          bind "n" { SwitchToMode "Resize"; }
+          bind "h" { SwitchToMode "Move"; }
+          bind "s" { SwitchToMode "Scroll"; }
+          bind "o" { SwitchToMode "Session"; }
+          bind "q" { Quit; }
+      }
+    }
+  '';
 }

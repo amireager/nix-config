@@ -54,9 +54,18 @@ opt.listchars = {
 	precedes = "‹",
 	nbsp = "␣",
 }
--- Add parsi
+
+-- === Parsi / Persian Keyboard Flow ===
+-- 1. Display text correctly
 opt.termbidi = true
 opt.arabicshape = true
+
+-- 2. Langmap (The Holy Grail for Persian Devs)
+-- This allows Vim commands (like h, j, k, l, w, b, d, y) to work flawlessly
+-- EVEN WHEN your keyboard layout is set to Persian (فارسی).
+opt.langmap =
+	[[ضq,صw,ثe,قr,فt,غy,عu,هi,خo,حp,ج[,چ],شa,سs,یd,بf,لg,اh,تj,نk,مl,ک\;,گ',ظz,طx,زc,رv,ذb,دn,پm,و\,./]]
+
 -- Disable unused providers to reduce startup overhead.
 -- Note: withNodeJs/withPython3 are set in default.nix
 -- Only disable providers you're SURE you don't need.
