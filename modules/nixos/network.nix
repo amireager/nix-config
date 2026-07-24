@@ -37,7 +37,7 @@
       bootstrap_resolvers = ["9.9.9.9:53" "1.1.1.1:53"];
       ignore_system_dns = true;
       netprobe_address = "1.1.1.1:53";
-      netprobe_timeout = 30;
+      netprobe_timeout = 5;
       require_dnssec = true;
       require_nolog = true;
       require_nofilter = true;
@@ -63,6 +63,9 @@
     nameserver 127.0.0.1
   '';
   networking.nameservers = ["127.0.0.1"];
+
+  # Prevent dnscrypt-proxy from delaying shutdown
+  systemd.services.dnscrypt-proxy.serviceConfig.TimeoutStopSec = "5";
 
   # === Proxychains Configuration ===
   # Allows proxying specific commands that don't respect HTTP_PROXY

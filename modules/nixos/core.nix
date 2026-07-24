@@ -71,16 +71,24 @@
     kernelPackages = pkgs.linuxPackages_latest;
     initrd.verbose = false;
     initrd.systemd.enable = true;
-    consoleLogLevel = 3;
+    consoleLogLevel = 4;      # Show KERN_WARNING + errors so we can see hangs
     kernelParams = [
       "quiet"
       "splash"
       "boot.shell_on_fail"
       "udev.log_level=3"
-      "rd.systemd.show_status=false"
+      # systemd.show_status keeps the boot log visible even behind splash,
+      # so we can diagnose where the boot hangs.
+      "systemd.show_status=true"
     ];
     loader.timeout = 1;
   };
+
+  # === Service & Shutdown Timeouts ===
+  # Speed up shutdown: default 90s -> 10s, prevent 2-minute stalls.
+  systemd.settings.Manager.DefaultTimeoutStopSec = "10s";
+  # Do not wait for network at boot -- services that need it will wait on their own.
+  systemd.services.NetworkManager-wait-online.enable = false;
 
   # === Memory, Swap & I/O Responsiveness (Optimized for ZRAM + NVMe) ===
   boot.kernel.sysctl = {
@@ -156,7 +164,7 @@
     nvme-cli
     efibootmgr
     lm_sensors
-    inputs.agenix.packages.${pkgs.system}.default
+    inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 
   # === NH — NixOS Management Wrapper ===

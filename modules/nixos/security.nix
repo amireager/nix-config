@@ -23,10 +23,13 @@
   };
 
   # === AppArmor (Kernel Sandboxing) ===
-  # Extremely powerful for isolating processes
+  # NOTE: killUnconfinedConfinables is set to false to prevent system services
+  # (NetworkManager, udev, dhcpcd, dnscrypt-proxy) from being killed when their
+  # AppArmor profiles are defined but not yet confined after an update/reboot.
+  # This avoids unexpected USB / network failures on cold boot.
   security.apparmor = {
     enable = true;
-    killUnconfinedConfinables = true;
+    killUnconfinedConfinables = false;
   };
 
   # === Firejail (Application Sandboxing) ===
@@ -37,26 +40,38 @@
   };
 
   # === USB Protection (USBGuard) ===
-  # Prevents BadUSB attacks by implicitly denying new devices while screen is locked.
-  # We use 'allow' policy for present devices so you don't lock yourself out on boot.
   services.usbguard = {
     enable = true;
-    # Allow all devices plugged in during boot.
     presentDevicePolicy = "allow";
     rules = ''
-      # Explicitly allow standard USB Mass Storage, Keyboards, and Mice
-      allow with-interface equals { 08:*:* }
-      allow with-interface equals { 03:*:* }
-      # Reject highly suspicious dual-interface devices (e.g. Storage that is also a Keyboard)
+      # ── Standard peripherals ──
+      allow with-interface equals { 08:*:* }     # Mass Storage (USB drives, etc.)
+      allow with-interface equals { 03:*:* }     # HID (Keyboards, Mice)
+
+      # ── Phone & Mobile connectivity ──
+      allow with-interface equals { 06:*:* }     # Still Image Capture (MTP / PTP mode)
+      allow with-interface equals { 02:*:* }     # Communications (USB Tethering control / ECM / RNDIS)
+      allow with-interface equals { 0A:*:* }     # CDC Data (USB Tethering data channel)
+      allow with-interface equals { FF:*:* }     # Vendor Specific (ADB, custom phone MTP, firmware)
+
+      # ── Bluetooth ──
+      allow with-interface equals { E0:*:* }     # Wireless Controller (Bluetooth dongles)
+
+      # ── Reject BadUSB: devices that pretend to be both Storage AND Keyboard ──
       reject with-interface all-of { 08:*:* 03:00:* }
       reject with-interface all-of { 08:*:* 03:01:* }
+
+      # ── Catch-all: allow any other device not explicitly rejected above.
+      #     Rules are top-down; first match wins, so BadUSB rejects still fire.
+      allow
     '';
   };
 
   # === Kernel Sysctl Hardening ===
+  # NOTE: rp_filter is intentionally omitted — delegated to
+  # networking.firewall.checkReversePath = "loose" so that USB tethering,
+  # VPN interfaces (tun2proxy, sing-box) and multi-homing work reliably.
   boot.kernel.sysctl = {
-    # Prevent IP spoofing
-    "net.ipv4.conf.all.rp_filter" = 1;
     # Ignore ICMP broadcasts (prevents smurf attacks)
     "net.ipv4.icmp_echo_ignore_broadcasts" = 1;
     # Restrict viewing kernel pointers (helps prevent kernel exploits)
