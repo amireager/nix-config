@@ -13,10 +13,12 @@
     package = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
   };
 
-  # Display manager
+  # Display manager — SDDM with Catppuccin Mocha dark theme
   services.displayManager.sddm = {
     enable = true;
     wayland.enable = true;
+    package = pkgs.kdePackages.sddm;
+    theme = "catppuccin-mocha-mauve";
   };
 
   # Audio
@@ -79,5 +81,15 @@
     wayland-utils
     glib
     gsettings-desktop-schemas
+
+    # Catppuccin SDDM dark theme — matches system Catppuccin Mocha
+    (pkgs.catppuccin-sddm.override {
+      flavor = "mocha";
+      accent = "mauve";
+      font = "JetBrainsMono Nerd Font";
+      fontSize = "10";
+      # background = "${../../backgrounds/sddm-dark.png}";
+      loginBackground = true;
+    })
   ];
 }
