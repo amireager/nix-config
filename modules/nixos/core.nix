@@ -16,8 +16,8 @@
     experimental-features = ["nix-command" "flakes"];
 
     # GC resilience: keep build outputs and derivations of live profiles/devShells from being collected.
-    keep-outputs = true;
-    keep-derivations = true;
+    keep-outputs = false;
+    keep-derivations = false;
 
     # Store optimization: deduplicate identical files in /nix/store.
     auto-optimise-store = true;
@@ -89,6 +89,10 @@
   systemd.settings.Manager.DefaultTimeoutStopSec = "10s";
   # Do not wait for network at boot -- services that need it will wait on their own.
   systemd.services.NetworkManager-wait-online.enable = false;
+
+  # === OOM Daemon ===
+  systemd.oomd.enable = true;
+  systemd.oomd.enableUserSlices = true;
 
   # === Memory, Swap & I/O Responsiveness (Optimized for ZRAM + NVMe) ===
   boot.kernel.sysctl = {

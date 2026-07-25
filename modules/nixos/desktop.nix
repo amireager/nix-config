@@ -37,13 +37,9 @@
     extraPackages = with pkgs; [
       libva
       libva-utils
-      libvdpau-va-gl
-      libva-vdpau-driver
-    ];
+                ];
     extraPackages32 = with pkgs.pkgsi686Linux; [
       libva
-      libvdpau-va-gl
-      libva-vdpau-driver
     ];
   };
 
