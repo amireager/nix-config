@@ -39,6 +39,10 @@
     enable = true;
   };
 
+  # === Application Firewall (OpenSnitch) ===
+  # Interactive app-level firewall. Prompts on new outbound connections.
+  services.opensnitch.enable = true;
+
   # === USB Protection (USBGuard) ===
   services.usbguard = {
     enable = true;
@@ -89,5 +93,6 @@
   environment.systemPackages = with pkgs; [
     bubblewrap # Unprivileged sandboxing tool for manual isolation
     gocryptfs # Encrypted filesystem for securing specific project folders
+    opensnitch-ui # Interactive app firewall GUI
   ];
 }

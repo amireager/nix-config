@@ -130,6 +130,10 @@
 
       # === Proxy Management ===
       myip = "curl ip.me";
+
+      # === Sandbox (Firejail) ===
+      fj  = "firejail --private=. --whitelist=$(pwd)";
+      fjx = "firejail --private=. --net=none --whitelist=$(pwd)";
     };
 
     functions = {

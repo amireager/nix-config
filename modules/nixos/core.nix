@@ -71,7 +71,7 @@
     kernelPackages = pkgs.linuxPackages_latest;
     initrd.verbose = false;
     initrd.systemd.enable = true;
-    consoleLogLevel = 4;      # Show KERN_WARNING + errors so we can see hangs
+    consoleLogLevel = 4; # Show KERN_WARNING + errors so we can see hangs
     kernelParams = [
       "quiet"
       "splash"
@@ -197,4 +197,11 @@
 
   # Set to your actual installed NixOS version; do not change after installation.
   system.stateVersion = "26.05";
+
+  # === Container Runtime (Podman) ===
+  # Daemonless rootless container engine for isolated test environments.
+  virtualisation.podman = {
+    enable = true;
+    dockerCompat = true;
+  };
 }

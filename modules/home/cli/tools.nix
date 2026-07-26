@@ -69,6 +69,11 @@
     tt # Minimalist terminal typing test
     cmus # Small, fast and powerful console music player
     yt-dlp # Command-line audio/video downloader
+
+    # ──────────────────────────────────────────────
+    # 🔐 Secrets & Passwords
+    # ──────────────────────────────────────────────
+    bitwarden-cli # Bitwarden CLI for API key & password management
   ];
 
   # ============================================================

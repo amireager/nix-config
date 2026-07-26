@@ -1,76 +1,55 @@
 # ==============================================================================
-# SECURITY & SANDBOX SHELL — Isolated Sandboxing for Untrusted Binaries & Scripts
+# SECURITY SHELL — ابزارهای منحصربه‌فرد (تکرار fj/fjx نمی‌کنه)
+# ==============================================================================
+# safe-crypt  gocryptfs volume manager (~/pub/crypt/)
+# safe-test   podman container برای تست اسکریپت ناشناس
 # ==============================================================================
 {pkgs, ...}: {
   default = pkgs.mkShell {
     name = "sec-env";
 
     packages = with pkgs; [
-      # Sandboxing Engines
-      bubblewrap         # Lightweight user-space namespace sandboxing
-      firejail           # Security profile sandboxing
+      bubblewrap
+      firejail
 
-      # 1. Isolated Sandbox WITHOUT Internet (Safe Execution / Interactive Shell)
-      (writeShellScriptBin "safe-run" ''
-        if [ $# -eq 0 ]; then
-          echo -e "\033[1;33m🛡️ Entering Interactive Sandbox (Network Disabled | Home Restricted to $(pwd))...\033[0m"
-          exec ${bubblewrap}/bin/bwrap \
-            --ro-bind /usr /usr \
-            --ro-bind /nix /nix \
-            --ro-bind /etc /etc \
-            --proc /proc \
-            --dev /dev \
-            --bind . /home/$USER \
-            --unshare-net \
-            "$SHELL"
-        else
-          echo -e "\033[1;33m🛡️ Launching inside Bubblewrap Sandbox (Network Disabled | Home Restricted to Current Dir)...\033[0m"
-          exec ${bubblewrap}/bin/bwrap \
-            --ro-bind /usr /usr \
-            --ro-bind /nix /nix \
-            --ro-bind /etc /etc \
-            --proc /proc \
-            --dev /dev \
-            --bind . /home/$USER \
-            --unshare-net \
-            "$@"
-        fi
+      # ── 1. safe-crypt: gocryptfs volume manager ──
+      (pkgs.writeShellScriptBin "safe-crypt" ''
+        set -eu
+        C="$HOME/pub/crypt"
+        _h() { echo "Usage: safe-crypt init|mount|umount|list <name>"; exit 0; }
+        [ $# -ge 1 ] || _h
+        a="$1"; n="''${2:-}"
+        case "$a" in
+          init)  mkdir -p "$C/$n" "$C/$n.open" && ${pkgs.gocryptfs}/bin/gocryptfs -init "$C/$n" ;;
+          mount) mkdir -p "$C/$n.open" && ${pkgs.gocryptfs}/bin/gocryptfs "$C/$n" "$C/$n.open" ;;
+          umount) fusermount -u "$C/$n.open" 2>/dev/null || sudo umount "$C/$n.open" ;;
+          list)  for d in "$C"/*/; do
+                   [ -f "$d/gocryptfs.conf" ] || continue
+                   n="$(basename "$d")"
+                   mountpoint -q "$C/$n.open" && echo "  🔓 $n" || echo "  🔒 $n"
+                 done ;;
+          *) _h ;;
+        esac
       '')
 
-      # 2. Isolated Sandbox WITH Internet (For Online Installers & GitHub Tools)
-      (writeShellScriptBin "safe-net-run" ''
-        if [ $# -eq 0 ]; then
-          echo -e "\033[1;33m🌐 Entering Interactive Sandbox (Network ENABLED | Home Restricted to $(pwd))...\033[0m"
-          exec ${bubblewrap}/bin/bwrap \
-            --ro-bind /usr /usr \
-            --ro-bind /nix /nix \
-            --ro-bind /etc /etc \
-            --proc /proc \
-            --dev /dev \
-            --bind . /home/$USER \
-            "$SHELL"
-        else
-          echo -e "\033[1;33m🌐 Launching inside Bubblewrap Sandbox (Network ENABLED | Home Restricted to Current Dir)...\033[0m"
-          exec ${bubblewrap}/bin/bwrap \
-            --ro-bind /usr /usr \
-            --ro-bind /nix /nix \
-            --ro-bind /etc /etc \
-            --proc /proc \
-            --dev /dev \
-            --bind . /home/$USER \
-            "$@"
-        fi
+      # ── 2. safe-test: podman یکبار مصرف ──
+      (pkgs.writeShellScriptBin "safe-test" ''
+        set -eu
+        [ $# -gt 0 ] || { echo "Usage: safe-test [--image img] <cmd>"; exit 1; }
+        IMG="docker.io/library/alpine:latest"
+        [ "''${1}" = "--image" ] && { IMG="''${2}"; shift 2; }
+        ${pkgs.podman}/bin/podman run --rm -v "$(pwd)":/ws:ro -w /ws --name "st-$$" "$IMG" "$@"
       '')
     ];
 
     shellHook = ''
-      echo -e "\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m"
-      echo -e "\033[1;36m│ \033[1;32m🛡️ Security & Sandboxing Shell (Bubblewrap, Firejail)       \033[1;36m│\033[0m"
-      echo -e "\033[1;36m├────────────────────────────────────────────────────────────┤\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• safe-run [bin]    :\033[0m Run offline sandbox (no internet | restricted home)\033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• safe-net-run [bin]:\033[0m Run online sandbox  (with internet | restricted home)\033[1;36m│\033[0m"
-      echo -e "\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m"
-
+      echo -e "\033[1;36m╭──────────────────────────────╮\033[0m"
+      echo -e "\033[1;36m│ \033[1;32m🛡️  Security Shell            \033[1;36m│\033[0m"
+      echo -e "\033[1;36m├──────────────────────────────┤\033[0m"
+      echo -e "\033[1;36m│ \033[1;33msafe-crypt\033[0m  gocryptfs      \033[1;36m│\033[0m"
+      echo -e "\033[1;36m│ \033[1;33msafe-test\033[0m   podman         \033[1;36m│\033[0m"
+      echo -e "\033[1;36m╰──────────────────────────────╯\033[0m"
+      echo -e "💡 For sandbox: \033[1;33mfj\033[0m <cmd>  or  \033[1;33mfjx\033[0m <cmd>"
       export DEVSHELL_ACTIVE="true"
       export DEVSHELL_NAME="sec"
     '';
