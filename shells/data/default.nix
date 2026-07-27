@@ -1,30 +1,23 @@
-# ==============================================================================
-# DATA DEV SHELL — Python Data Science, DuckDB, Jupyter & Analytics
-# ==============================================================================
-{pkgs, ...}: {
-  default = pkgs.mkShell {
-    name = "data-env";
+{mkDevShell, pkgs, ...}:
+mkDevShell {
+  name = "data";
+  icon = "📊";
+  description = "Pandas, NumPy, DuckDB, Jupyter";
 
-    packages = with pkgs; [
-      python3
-      python3Packages.pandas
-      python3Packages.numpy
-      python3Packages.ipython
-      python3Packages.jupyterlab
-      duckdb
-      sqlite
-      jq
-    ];
+  packages = with pkgs; [
+    python3
+    python3Packages.pandas
+    python3Packages.numpy
+    python3Packages.ipython
+    python3Packages.jupyterlab
+    duckdb
+    sqlite
+    jq
+  ];
 
-    shellHook = ''
-      echo -e "\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m"
-      echo -e "\033[1;36m│ \033[1;32m📊 Data Science & Analytics Shell (Pandas, DuckDB, Jupyter)\033[1;36m│\033[0m"
-      echo -e "\033[1;36m├────────────────────────────────────────────────────────────┤\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Jupyter Lab   : \033[0mjupyter lab                              \033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• DuckDB / SQL  : \033[0mduckdb / sqlite3                         \033[1;36m│\033[0m"
-      echo -e "\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m"
-      export DEVSHELL_ACTIVE="true"
-      export DEVSHELL_NAME="data"
-    '';
-  };
+  tips = [
+    {key = "Jupyter Lab"; cmd = "jupyter lab";}
+    {key = "DuckDB / SQL"; cmd = "duckdb / sqlite3";}
+    {key = "REPL"; cmd = "ipython";}
+  ];
 }

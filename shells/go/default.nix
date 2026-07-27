@@ -1,29 +1,19 @@
-# ==============================================================================
-# GO DEV SHELL — Specialized Go Development Environment
-# ==============================================================================
-{pkgs, ...}: {
-  default = pkgs.mkShell {
-    name = "go-env";
+{mkDevShell, pkgs, ...}:
+mkDevShell {
+  name = "go";
+  icon = "🐹";
+  description = "Go, Gopls, GolangCI-Lint, Delve";
 
-    packages = with pkgs; [
-      # Go Toolchain
-      go
-      gopls
-      golangci-lint
-      delve # Go debugger
-    ];
+  packages = with pkgs; [
+    go
+    gopls
+    golangci-lint
+    delve # Go debugger
+  ];
 
-    shellHook = ''
-      echo -e "\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m"
-      echo -e "\033[1;36m│ \033[1;36m🐹 Go Development Shell (Go, Gopls, GolangCI-Lint, Delve)  \033[1;36m│\033[0m"
-      echo -e "\033[1;36m├────────────────────────────────────────────────────────────┤\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Run & Build:\033[0m go run . / go build                         \033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Lint Code  :\033[0m golangci-lint run                           \033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Test Suite :\033[0m go test ./...                               \033[1;36m│\033[0m"
-      echo -e "\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m"
-
-      export DEVSHELL_ACTIVE="true"
-      export DEVSHELL_NAME="go"
-    '';
-  };
+  tips = [
+    {key = "Run & Build"; cmd = "go run . / go build";}
+    {key = "Lint"; cmd = "golangci-lint run";}
+    {key = "Test"; cmd = "go test ./...";}
+  ];
 }

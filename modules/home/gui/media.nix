@@ -30,10 +30,6 @@
     # ── Document & Reading ──
     zathura
     inlyne
-    marker
-
-    # ── Capture & Input ──
-    guvcview
 
     # ── Archive & File Management ──
     zip
@@ -45,14 +41,17 @@
     libnotify
 
     # ── Media Processing ──
+    # ffmpeg stays: mpv, ffmpegthumbnailer and the file manager preview
+    # pipeline all link against it. Removing it frees nothing and breaks
+    # thumbnails. The heavyweight `ffmpeg-full` lives in `dev media`.
     ffmpeg
     ffmpegthumbnailer
-    yt-dlp
-    imagemagick
 
     # ── Image / PDF tools ──
-    pinta
-    poppler-utils
-    pdfarranger
+    poppler-utils # pdftotext/pdfinfo — used by previewers and scripts
+
+    # Moved to `dev media` (rarely used, heavy GTK/Qt closures):
+    #   imagemagick, vips, pinta, pdfarranger, marker, guvcview
+    # yt-dlp is declared once in cli/tools.nix instead of twice.
   ];
 }

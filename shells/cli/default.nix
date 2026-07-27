@@ -1,53 +1,50 @@
-# ==============================================================================
-# ADVANCED CLI DEVSHELL — On-Demand Analytical & Specialized CLI Tooling
-# ==============================================================================
-{pkgs, ...}: {
-  default = pkgs.mkShell {
-    name = "cli-env";
+{mkDevShell, pkgs, ...}:
+mkDevShell {
+  name = "cli";
+  icon = "⚡";
+  description = "Analytics, profiling & inspection tooling";
 
-    packages = with pkgs; [
-      # Structural Search & Code Refactoring
-      ast-grep # AST-based structural code search & refactoring
-      difftastic # Structural/semantic diff tool
-      htop
+  packages = with pkgs; [
+    # Structural search & refactoring
+    ast-grep # AST-based structural code search & refactoring
+    difftastic # Structural/semantic diff
 
-      # Benchmarking & Execution Watching
-      hyperfine # High-precision command-line benchmarking
-      watchexec # Execute commands when monitored files change
+    # Benchmarking & execution watching
+    hyperfine # High-precision command-line benchmarking
+    watchexec # Run commands when files change
 
-      # Code Analysis & Inspection
-      tokei # Fast codebase statistics & line counters
-      hexyl # Colorful and readable hex viewer
-      dasel # Query and edit JSON/YAML/TOML/XML structures
-      grex # Auto-generate regex patterns from sample text
-      erdtree # Modern fast tree and disk usage analyzer
+    # Code analysis & inspection
+    tokei # Fast codebase statistics
+    hexyl # Colorful hex viewer
+    dasel # Query/edit JSON, YAML, TOML, XML
+    grex # Generate regex from examples
+    erdtree # Modern tree + disk usage analyzer
 
-      # Process & Network Profiling
-      procs # Modern ps alternative with process tree & filtering
-      bandwhich # Real-time per-process and per-connection bandwidth
+    # Process & network profiling
+    procs # Modern ps with tree & filtering
+    bandwhich # Per-process bandwidth in real time
 
-      # Data & Log Exploration
-      fx # Interactive JSON explorer
-      jc # Convert command outputs to JSON
-      jless # Interactive pager for JSON
-      tailspin # Smart log viewer with syntax highlighting
-      pueue # Long-running task and background job manager
+    # Data & log exploration
+    fx # Interactive JSON explorer
+    jc # Convert command output to JSON
+    jless # Interactive JSON pager
+    tailspin # Log viewer with syntax highlighting
+    pueue # Background job manager
 
-      # File Transfer & Sync
-      rclone # Cloud & server synchronization
-      magic-wormhole # Secure P2P file transfer
-    ];
+    # Git & GitHub workflows
+    gh-dash # GitHub PR/issue dashboard (TUI)
 
-    shellHook = ''
-      echo -e "\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m⚡ Advanced CLI Tooling Shell (Analytics & Inspection)     \033[1;36m│\033[0m"
-      echo -e "\033[1;36m├────────────────────────────────────────────────────────────┤\033[0m"
-      echo -e "\033[1;36m│ \033[1;32m• Profiling & Logs:\033[0m bandwhich / procs / tailspin / hyperfine  \033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;32m• Data Processing :\033[0m fx / dasel / jless / jc / ast-grep        \033[1;36m│\033[0m"
-      echo -e "\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m"
+    # File management
+    superfile # TUI file manager (yazi stays at system level)
 
-      export DEVSHELL_ACTIVE="true"
-      export DEVSHELL_NAME="cli"
-    '';
-  };
+    # Transfer & sync
+    rclone # Cloud & remote sync
+    magic-wormhole # Secure P2P file transfer
+  ];
+
+  tips = [
+    {key = "Profiling"; cmd = "hyperfine / bandwhich / procs";}
+    {key = "Data"; cmd = "fx / dasel / jless / jc";}
+    {key = "Code search"; cmd = "ast-grep / tokei / difft";}
+  ];
 }

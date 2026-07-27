@@ -26,6 +26,11 @@ in
             backupFileExtension = "backup";
             extraSpecialArgs = {inherit inputs hostname system flakePath;};
             users = userHomeModules;
+
+            # Modules applied to every user of this host.
+            sharedModules = [
+              inputs.nix-index-database.homeModules.nix-index
+            ];
           };
         }
       ];

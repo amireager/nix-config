@@ -1,57 +1,57 @@
-# ==============================================================================
-# PYTHON DEV SHELL — Specialized Python Development Environment
-# ==============================================================================
-{pkgs, ...}: {
-  default = pkgs.mkShell {
-    name = "python-env";
+{mkDevShell, pkgs, ...}:
+mkDevShell {
+  name = "python";
+  icon = "🐍";
+  description = "uv, Poetry, Ruff, Pyright, IPython";
 
-    packages = with pkgs; [
-      # Core Python & Packaging
-      python3
-      python3Packages.pip
-      python3Packages.virtualenv
-      python3Packages.ipython # Enhanced interactive REPL
-      poetry
+  packages = with pkgs; [
+    # Core Python & packaging
+    python3
+    uv # Resolver/installer/venv manager — replaces pip + virtualenv
+    poetry # Kept for existing pyproject-based projects
+    python3Packages.ipython # Enhanced interactive REPL
 
-      # Linters, Formatters & Type Checkers
-      ruff
-      pyright
+    # Linters, formatters & type checkers
+    ruff
+    pyright
 
-      # Dev Utilities
-      jq
-    ];
+    # Dev utilities
+    jq
+  ];
 
-    PIP_REQUIRE_VIRTUALENV = "true";
+  env = {
     PYTHONUNBUFFERED = "1";
-
-    shellHook = ''
-      echo -e "\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m"
-      echo -e "\033[1;36m│ \033[1;32m🐍 Python Development Shell (Poetry, Ruff, Pyright, REPL)  \033[1;36m│\033[0m"
-      echo -e "\033[1;36m├────────────────────────────────────────────────────────────┤\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Interactive REPL:\033[0m ipython                                \033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Fast Lint/Format:\033[0m ruff check . / ruff format .         \033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Package Manager :\033[0m poetry run / poetry add              \033[1;36m│\033[0m"
-      echo -e "\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m"
-
-      export DEVSHELL_ACTIVE="true"
-      export DEVSHELL_NAME="python"
-
-      # Interactive Virtual Environment Prompt (Ask before creating .venv)
-      if [ ! -d .venv ] && [ -t 0 ]; then
-        echo -ne "\033[1;33m📦 No .venv detected in $(pwd). Create local virtualenv now? [y/N]: \033[0m"
-        read -r response
-        if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-          echo -e "\n📦 Initializing local virtualenv inside .venv..."
-          python3 -m venv .venv
-          source .venv/bin/activate
-          echo -e "\033[1;32m✅ Virtualenv created and activated!\033[0m"
-        else
-          echo -e "\033[1;30m⏭️ Skipping .venv creation. (To create anytime: python3 -m venv .venv && source .venv/bin/activate)\033[0m"
-        fi
-      elif [ -d .venv ]; then
-        source .venv/bin/activate
-        echo -e "\033[1;32m✅ Activated existing local virtual environment (.venv)!\033[0m"
-      fi
-    '';
+    UV_PYTHON_DOWNLOADS = "never"; # Use the Nix interpreter, never fetch one
   };
+
+  tips = [
+    {key = "Interactive REPL"; cmd = "ipython";}
+    {key = "Lint / Format"; cmd = "ruff check . / ruff format .";}
+    {key = "Fast venv+deps"; cmd = "uv venv / uv pip install -r req.txt";}
+    {key = "Legacy projects"; cmd = "poetry run / poetry add";}
+  ];
+
+  # Real logic, not decoration: offer to create/activate a local virtualenv.
+  extraHook = ''
+    if [ -d .venv ]; then
+      # shellcheck disable=SC1091
+      source .venv/bin/activate
+      printf '\033[1;32m✅ Activated existing .venv\033[0m\n'
+    elif [ -t 0 ] && [ -z "''${DEVSHELL_QUIET:-}" ]; then
+      printf '\033[1;33m📦 No .venv in %s. Create one now? [y/N]: \033[0m' "$(pwd)"
+      read -r _ds_reply
+      case "$_ds_reply" in
+        [yY] | [yY][eE][sS])
+          uv venv .venv
+          # shellcheck disable=SC1091
+          source .venv/bin/activate
+          printf '\033[1;32m✅ Virtualenv created and activated\033[0m\n'
+          ;;
+        *)
+          printf '\033[1;30m⏭  Skipped. Create later with: uv venv && source .venv/bin/activate\033[0m\n'
+          ;;
+      esac
+      unset _ds_reply
+    fi
+  '';
 }

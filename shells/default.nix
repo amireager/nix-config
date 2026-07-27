@@ -1,49 +1,77 @@
 # ==============================================================================
 # DEVSHELLS REGISTRY — Central Hub for Modular On-Demand Environments
 # ==============================================================================
+# Every subdirectory here is a self-contained environment, realised only when
+# it is actually entered (`dev <name>` / `nix develop .#<name>`).
+#
+# Adding a shell:
+#   1. cp -r shells/_template shells/<name>
+#   2. add one line to `shellDirs` below
+# ==============================================================================
 {
   inputs,
   pkgs,
   system ? "x86_64-linux",
   ...
 }: let
-  pythonShell = import ./python {inherit pkgs;};
-  rustShell = import ./rust {inherit pkgs;};
-  goShell = import ./go {inherit pkgs;};
-  cliShell = import ./cli {inherit pkgs;};
-  buildShell = import ./build {inherit pkgs;};
-  secShell = import ./sec {inherit pkgs;};
-  nixShell = import ./nix {inherit pkgs;};
-  webShell = import ./web {inherit pkgs;};
-  dataShell = import ./data {inherit pkgs;};
-  aiShell = import ./ai {inherit pkgs;};
-in {
-  # Default environment triggered by running `dev` without args or `nix develop`
-  default = nixShell.default;
+  inherit (pkgs) lib;
 
-  # Named environments for quick invocation (`dev python`, `dev web`, `dev ai`, etc.)
-  python = pythonShell.default;
-  rust = rustShell.default;
-  go = goShell.default;
-  cli = cliShell.default;
-  build = buildShell.default;
-  c = buildShell.default; # Alias `dev c` -> `dev build`
-  sec = secShell.default;
-  nix = nixShell.default;
-  web = webShell.default;
-  data = dataShell.default;
-  ai = aiShell.default;
+  # The builder from lib/, already applied to this pkgs.
+  mkDevShell = (import ../lib {inherit inputs;}).mkDevShellFor pkgs;
 
-  # Composite testing & multi-environment shell (`dev test`) containing multiple toolchains
-  test = pkgs.mkShell {
-    name = "test-env";
-    inputsFrom = [pythonShell.default rustShell.default];
-    shellHook = ''
-      echo -e "\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m"
-      echo -e "\033[1;36m│ \033[1;35m🧪 Test & Composite DevShell Loaded: Python + Rust         \033[1;36m│\033[0m"
-      echo -e "\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m"
-      export DEVSHELL_ACTIVE="true"
-      export DEVSHELL_NAME="test"
-    '';
-  };
-}
+  # Arguments handed to every shell module. A shell may ignore any of them.
+  shellArgs = {inherit mkDevShell pkgs inputs system lib;};
+
+  # Registered environments. `_template` is deliberately excluded.
+  shellDirs = [
+    "ai"
+    "build"
+    "cli"
+    "data"
+    "go"
+    "media"
+    "nix"
+    "python"
+    "rust"
+    "sec"
+    "web"
+  ];
+
+  # Import a shell directory. Supports both shapes:
+  #   • mkDevShell { ... }              -> a derivation
+  #   • { default = pkgs.mkShell {...}; } -> the legacy/escape-hatch shape
+  importShell = name: let
+    result = import (./. + "/${name}") shellArgs;
+  in
+    if lib.isDerivation result
+    then result
+    else result.default;
+
+  shells = lib.genAttrs shellDirs importShell;
+in
+  shells
+  // {
+    # `nix develop` with no argument, and `dev` with no argument.
+    default = shells.nix;
+
+    # Alias: `dev c` -> `dev build`
+    c = shells.build;
+
+    # Composite environment for cross-language work.
+    test = mkDevShell {
+      name = "test";
+      icon = "🧪";
+      description = "Composite: Python + Rust toolchains";
+      inputsFrom = [shells.python shells.rust];
+      tips = [
+        {
+          key = "Python";
+          cmd = "pytest / ruff check .";
+        }
+        {
+          key = "Rust";
+          cmd = "cargo test";
+        }
+      ];
+    };
+  }

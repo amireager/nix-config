@@ -5,7 +5,6 @@
     # ──────────────────────────────────────────────
     eza # Modern ls with git status, icons, and tree support
     fd # Fast, user-friendly find alternative
-    superfile # Modern terminal file manager
     trash-cli # Safe delete with trash bin (prevents accidental rm)
     # ouch     # Simple unified tool for archive compression/decompression
 
@@ -14,14 +13,13 @@
     # ──────────────────────────────────────────────
     duf # Modern df with beautiful, readable output
     dust # Interactive du with tree visualization (very practical)
-    bottom # Advanced system resource monitor
     lsof # List open files, sockets and ports
 
     # ──────────────────────────────────────────────
     # 🔎 Search, Text & Data Processing
     # ──────────────────────────────────────────────
     ripgrep # Extremely fast grep with regex support
-    ugrep # Powerful grep with regex and binary support
+    ripgrep-all # `rga`: ripgrep across PDF/zip/sqlite/docx/media metadata
     sd # Intuitive find & replace (modern sed)
     jq # Powerful JSON processor
     yq-go # YAML processor (jq for YAML)
@@ -44,14 +42,13 @@
     gping # Ping with beautiful live graph
     whois # Domain and IP ownership lookup
     vnstat # Lightweight network traffic history
-    speedtest-cli # Official internet speed testing
+    librespeed-cli # Speed test via free LibreSpeed servers (Go, no Ookla)
     ipcalc # IP address and subnet calculations
 
     # ──────────────────────────────────────────────
     # 🛠️ Git, API & Development
     # ──────────────────────────────────────────────
     just # Modern, simple command runner (better than make)
-    gh-dash # GitHub dashboard TUI
     delta # Syntax-highlighting pager for git diff/grep output
 
     # ──────────────────────────────────────────────

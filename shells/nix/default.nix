@@ -1,45 +1,64 @@
-# ==============================================================================
-# NIX DEV SHELL — Specialized Environment for Nix Code Inspection & Debugging
-# ==============================================================================
-{pkgs, ...}: {
-  default = pkgs.mkShell {
-    name = "nix-env";
+{mkDevShell, pkgs, ...}:
+# Deliberate split:
+#   • statix / deadnix / alejandra / nixd / nix-tree / nix-diff live at SYSTEM
+#     level (modules/home/dev/nix-tools.nix). They are used constantly, on
+#     .nix files outside this repo, and are what you reach for when something
+#     is already broken.
+#   • Everything below is packaging/review work: a few times a month, large
+#     closures. On-demand is the right trade.
+mkDevShell {
+  name = "nix";
+  icon = "❄️";
+  description = "Packaging, review & closure analysis";
 
-    packages = with pkgs; [
-      # Linters & Formatters
-      statix             # Anti-pattern and syntax checking
-      deadnix            # Find unused code and variables
-      alejandra          # Official code formatter
+  packages = with pkgs; [
+    # Writing new packages
+    nurl # Generate a fetcher expression from a repo URL
+    nix-init # Scaffold a derivation from a URL
+    nix-update # Bump version + hashes automatically
+    nix-prefetch # Compute hashes for arbitrary fetchers
+    nix-prefetch-git # Same, specialised for git sources
 
-      # LSP & Analysis Tools
-      nixd               # Neovim & editor LSP server
-      nix-tree           # Interactive dependency tree explorer
-      nvd                # Generation diff viewer
+    # Reviewing & testing
+    nixpkgs-review # Build and report on a nixpkgs PR
+    nix-fast-build # Parallel builds across a flake\'s outputs
 
-      # Unified configuration health & syntax check helper
-      (writeShellScriptBin "nix-check" ''
-        echo -e "\033[1;36m[1/3] 🔍 Running Statix (Syntax & Anti-pattern Check)...\033[0m"
-        ${statix}/bin/statix check . || true
+    # Search & exploration
+    nix-search-tv # Interactive fuzzy nixpkgs search (TUI)
 
-        echo -e "\n\033[1;33m[2/3] 💀 Running Deadnix (Unused Code Check)...\033[0m"
-        ${deadnix}/bin/deadnix . || true
+    # Unified health check. Uses the system-level linters so the shell stays small.
+    (writeShellScriptBin "nix-check" ''
+      set -u
+      echo -e "\033[1;36m[1/3] 🔍 Statix (anti-patterns)..."
+      ${statix}/bin/statix check . || true
 
-        echo -e "\n\033[1;35m[3/3] ❄️ Running Flake Evaluation (nix flake check --no-build)...\033[0m"
-        nix flake check --no-build "$@"
-      '')
-    ];
+      echo -e "\n\033[1;33m[2/3] 💀 Deadnix (unused bindings)..."
+      ${deadnix}/bin/deadnix . || true
 
-    shellHook = ''
-      echo -e "\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m"
-      echo -e "\033[1;36m│ \033[1;36m❄️ Nix Development Shell (Statix, Deadnix, Alejandra, Nixd) \033[1;36m│\033[0m"
-      echo -e "\033[1;36m├────────────────────────────────────────────────────────────┤\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Check Health     :\033[0m nix-check (statix + deadnix + flake) \033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Format Code      :\033[0m alejandra .                          \033[1;36m│\033[0m"
-      echo -e "\033[1;36m│ \033[1;33m• Inspect Store Tree:\033[0m nix-tree                             \033[1;36m│\033[0m"
-      echo -e "\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m"
+      echo -e "\n\033[1;35m[3/3] ❄️  Flake evaluation..."
+      nix flake check --no-build "$@"
+    '')
 
-      export DEVSHELL_ACTIVE="true"
-      export DEVSHELL_NAME="nix"
-    '';
-  };
+    # "Did my change actually make the system bigger?"
+    (writeShellScriptBin "nix-size" ''
+      set -eu
+      TARGET="''${1:-/run/current-system}"
+      echo -e "\033[1;36mClosure size of $TARGET:"
+      nix path-info -Sh "$TARGET"
+      echo
+      echo -e "\033[1;36mTop 25 contributors:"
+      nix path-info -rSh "$TARGET" | sort -k2 -hr | head -25 \
+        | awk '{n=$1; sub(/.*store\/[a-z0-9]*-/,"",n); printf "  %-9s %s\n", $2, n}'
+    '')
+  ];
+
+  tips = [
+    {key = "New package"; cmd = "nix-init / nurl <url>";}
+    {key = "Bump version"; cmd = "nix-update <attr>";}
+    {key = "Review a PR"; cmd = "nixpkgs-review pr <number>";}
+    {key = "Health check"; cmd = "nix-check";}
+    {key = "Closure size"; cmd = "nix-size [path]";}
+  ];
+
+  notes = ["statix, deadnix, alejandra, nixd, nix-tree, nix-diff are system-level"];
 }
