@@ -36,7 +36,18 @@ blink.setup({
     window = { border = "rounded" },
   },
   sources = {
-    default = { "lsp", "path", "snippets", "buffer" },
+    -- lazydev is listed first and scored above everything else so that
+    -- `require("...")` completes plugin module names while editing the Neovim
+    -- config. Without this provider the LSP only offers modules already
+    -- loaded in the current session.
+    default = { "lazydev", "lsp", "path", "snippets", "buffer" },
+    providers = {
+      lazydev = {
+        name = "LazyDev",
+        module = "lazydev.integrations.blink",
+        score_offset = 100,
+      },
+    },
   },
   fuzzy = {
     implementation = "prefer_rust_with_warning",

@@ -31,8 +31,9 @@ map("n", "<C-Left>", "<cmd>vertical resize -2<CR>", { desc = "Decrease window wi
 map("n", "<C-Right>", "<cmd>vertical resize +2<CR>", { desc = "Increase window width" })
 
 -- Buffers.
-map("n", "<S-h>", "<cmd>bprevious<CR>", { desc = "Previous buffer" })
-map("n", "<S-l>", "<cmd>bnext<CR>", { desc = "Next buffer" })
+-- Buffer switching lives on <Tab>/<S-Tab> in navigation.lua. It used to be on
+-- H/L, which shadowed the built-in "top of screen" and "bottom of screen"
+-- motions — only M still worked, because only M was left unmapped.
 map("n", "<leader>bb", "<cmd>buffer #<CR>", { desc = "Alternate buffer" })
 map("n", "<leader>bn", "<cmd>bnext<CR>", { desc = "Next buffer" })
 map("n", "<leader>bp", "<cmd>bprevious<CR>", { desc = "Previous buffer" })

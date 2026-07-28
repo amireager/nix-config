@@ -84,10 +84,13 @@ in {
       # Treesitter & syntax
       treesitterGrammars     # syntax highlighting for all languages
       nvim-ts-autotag        # auto close/rename HTML tags
+      nvim-treesitter-context      # sticky header: which function/class am I in
+      nvim-treesitter-textobjects  # daf/vic/]f — operate on functions and classes
 
       # Completion & snippets
       blink-cmp              # completion engine
       friendly-snippets      # snippet collection
+      lazydev-nvim           # LuaLS types for the Neovim API itself
 
       # LSP & formatting
       nvim-lspconfig         # LSP client configs
@@ -112,6 +115,7 @@ in {
       # nvim-dap-python        # Python debug adapter
 
       # UX Enhancements
+      flash-nvim             # query-driven jumps (replaces mini.jump2d)
       todo-comments-nvim     # TODO/FIXME/HACK highlighting
       trouble-nvim           # diagnostics list
       diffview-nvim          # git diff view
@@ -128,6 +132,7 @@ in {
       ${builtins.readFile ./lua/format-lint.lua}
       ${builtins.readFile ./lua/git.lua}
       ${builtins.readFile ./lua/productivity.lua}
+      ${builtins.readFile ./lua/navigation.lua}
       ${builtins.readFile ./lua/run.lua}
       ${builtins.readFile ./lua/markdown.lua}
       ${builtins.readFile ./lua/dap.lua}

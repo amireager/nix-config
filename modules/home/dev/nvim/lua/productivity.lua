@@ -61,13 +61,11 @@ if ok_bracketed then
   })
 end
 
-local ok_jump2d, jump2d = pcall(require, "mini.jump2d")
-if ok_jump2d then
-  jump2d.setup({
-    mappings = { start_jumping = "s" },
-    view = { dim = true, n_steps_ahead = 1 },
-  })
-end
+-- mini.jump2d is deliberately not enabled. It labels every match of its
+-- spotter across the whole window without ever asking what you are looking
+-- for, which is why `s` produced a screenful of labels. flash.nvim takes the
+-- search characters first and only labels what still matches — see
+-- navigation.lua.
 
 local ok_bufremove, bufremove = pcall(require, "mini.bufremove")
 if ok_bufremove then bufremove.setup() end
