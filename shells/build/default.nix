@@ -22,6 +22,12 @@ mkDevShell {
     cargo
     rustc
     python3
+
+    # Debuggers. lldb drags in libclang (~849 MiB together), which is why it
+    # lives here rather than beside Neovim — direnv attaches it on entering
+    # the project.
+    lldb # provides lldb-dap, the adapter nvim talks to
+    gdb # fallback where lldb struggles
   ];
 
   tips = [

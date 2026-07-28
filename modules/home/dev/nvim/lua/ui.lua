@@ -126,7 +126,7 @@ if ok_which then
 	which_key.add({
 		{ "<leader>b", group = "📑 Buffers (Bufferline)" },
 		{ "<leader>c", group = "⚡ Code & Rename (LSP)" },
-		{ "<leader>d", group = "🐞 Debug (DAP) — disabled" },
+		{ "<leader>d", group = "🐞 Debug (DAP)" },
 		{ "<leader>e", group = " Explorer (Snacks)" },
 		{ "<leader>f", group = "🔍 Find Pickers (Snacks)" },
 		{ "<leader>g", group = " Git & Undo (Neogit + Gitsigns)" },

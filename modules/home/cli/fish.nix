@@ -160,6 +160,73 @@
         '';
       };
 
+      # === Proxy for nix builds ===
+      # Separate from proxy_on because it solves a different problem.
+      # proxy_on sets variables in this shell; `nix build` does not download
+      # anything in this shell. It asks nix-daemon, a system service that
+      # cannot see the shell environment, so the proxy has to go on the
+      # daemon's unit.
+      #
+      # This is not in the NixOS configuration on purpose. Any port written
+      # there is stale the moment the proxy moves, and changing it would need
+      # a rebuild — which itself needs the proxy. Passing the port as an
+      # argument keeps it current.
+      #
+      # Safe for source fetches: every download in Nix is a fixed-output
+      # derivation whose hash is in the package definition, so tampered
+      # content fails the build rather than being trusted.
+      nix_proxy = {
+        description = "Route nix-daemon downloads through a local proxy (until reboot)";
+        body = ''
+          set -l dir /run/systemd/system/nix-daemon.service.d
+          set -l conf $dir/zz-nix-proxy.conf
+
+          switch "$argv[1]"
+            case off
+              sudo rm -f $conf
+              sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
+              sudo systemctl daemon-reload
+              sudo systemctl restart nix-daemon
+              echo -e "\033[1;31m[-] nix-daemon: direct\033[0m"
+
+            case status ""
+              if test -f $conf
+                echo -e "\033[1;32m[+] nix-daemon: proxied\033[0m"
+                grep -o 'all_proxy=[^"]*' $conf | sed 's/^/    /'
+              else
+                echo -e "\033[1;30m[-] nix-daemon: direct\033[0m"
+              end
+              echo "    usage: nix_proxy <port> | nix_proxy off | nix_proxy status"
+
+            case '*'
+              set -l port $argv[1]
+              if not string match -qr '^[0-9]+$' -- $port
+                echo -e "\033[1;31mnix_proxy: '$port' is not a port number\033[0m" >&2
+                echo "    usage: nix_proxy <port> | nix_proxy off | nix_proxy status" >&2
+                return 1
+              end
+              set -l url "socks5h://127.0.0.1:$port"
+
+              # /run rather than /etc: a forgotten proxy cannot survive a
+              # reboot. cache.nixos.org bypasses it — the binary cache is not
+              # blocked and is CDN-served, so proxying it only adds latency.
+              sudo mkdir -p $dir
+              printf '%s\n' \
+                "[Service]" \
+                "Environment=\"http_proxy=$url\"" \
+                "Environment=\"https_proxy=$url\"" \
+                "Environment=\"all_proxy=$url\"" \
+                "Environment=\"no_proxy=127.0.0.1,localhost,::1,cache.nixos.org\"" \
+                | sudo tee $conf >/dev/null
+
+              sudo systemctl daemon-reload
+              sudo systemctl restart nix-daemon
+              echo -e "\033[1;32m[+] nix-daemon proxied via $url\033[0m"
+              echo -e "\033[1;30m    until reboot, or: nix_proxy off\033[0m"
+          end
+        '';
+      };
+
       proxy_off = {
         description = "Disable proxy for the current shell session";
         body = ''

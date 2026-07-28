@@ -15,6 +15,10 @@ mkDevShell {
     # Standard build dependencies for common crates
     pkg-config
     openssl
+
+    # Debugger. dap.lua loads rustc's pretty-printers from the sysroot, so
+    # Vec and String display as values rather than raw pointers.
+    lldb
   ];
 
   env.RUST_BACKTRACE = "1";

@@ -48,6 +48,22 @@ in {
       shellcheck       # Bash linter
       shfmt            # Shell formatter
 
+      # === Debug adapters ===
+      # Only Python is global. It is the everyday language here, and debugpy
+      # is 21 MiB.
+      #
+      # The others are deliberately absent, because they are project tools and
+      # they are not cheap:
+      #   lldb   pulls libclang -> +849 MiB   -> dev build, dev rust
+      #   gdb                       +49 MiB   -> dev build
+      #   delve                     +30 MiB   -> dev go (already there)
+      #
+      # direnv-vim attaches them to Neovim on entering the project, the same
+      # way rust-analyzer and gopls already work. Nothing breaks without them:
+      # dap.lua names the adapter binaries, so a missing one only errors when
+      # you start a session for that language.
+      python3Packages.debugpy # Python
+
       # === Markup & config ===
       taplo            # TOML LSP & formatter
       yaml-language-server   # YAML LSP
@@ -107,12 +123,15 @@ in {
       plenary-nvim           # utility library (required by many)
 
       # DAP (Debug Adapter Protocol)
-      # Commented out — codeberg.org blocked in Iran (TLS error)
-      # Uncomment after first build with proxy, or use alternative source
-      # nvim-dap               # core debugger
-      # nvim-dap-ui            # debugger UI
-      # nvim-dap-virtual-text  # inline variable values
-      # nvim-dap-python        # Python debug adapter
+      # nvim-dap and nvim-dap-python are fetched from codeberg.org, which is
+      # unreachable from here. Build them once behind the proxy:
+      #   nix_proxy 1819 && nh os switch && nix_proxy off
+      # After that they are in the store and rebuild without it.
+      nvim-dap # core debugger
+      nvim-dap-ui # panels: scopes, stacks, breakpoints, repl
+      nvim-dap-virtual-text # variable values inline, next to the code
+      nvim-dap-python # Python adapter (debugpy)
+      one-small-step-for-vimkind # Lua adapter — debug this config itself
 
       # UX Enhancements
       flash-nvim             # query-driven jumps (replaces mini.jump2d)

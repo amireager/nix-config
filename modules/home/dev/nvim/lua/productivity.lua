@@ -1,6 +1,15 @@
 -- Mini modules provide small, fast, focused editing tools.
-local ok_pairs, pairs = pcall(require, "mini.pairs")
-if ok_pairs then pairs.setup() end
+--
+-- NOTE: the local below is `mini_pairs`, not `pairs`. All of these lua files
+-- are concatenated by builtins.readFile into a single init.lua, so a `local
+-- pairs` here shadows the global `pairs` for every line that follows —
+-- including other files. That produced:
+--   E5113: attempt to call local 'pairs' (a table value)
+-- as soon as a later file iterated a table.
+local ok_pairs, mini_pairs = pcall(require, "mini.pairs")
+if ok_pairs then
+	mini_pairs.setup()
+end
 
 local ok_ai, ai = pcall(require, "mini.ai")
 if ok_ai then ai.setup({ n_lines = 500 }) end
