@@ -62,7 +62,9 @@ opt.arabicshape = true
 
 -- 2. Langmap (The Holy Grail for Persian Devs)
 -- This allows Vim commands (like h, j, k, l, w, b, d, y) to work flawlessly
--- EVEN WHEN your keyboard layout is set to Persian (فارسی).
+-- EVEN WHEN the keyboard layout is switched to Persian.
+-- The mapping below is data, not prose: each Persian character is paired with
+-- the Latin key in the same physical position, so do not "translate" it.
 opt.langmap =
 	[[ضq,صw,ثe,قr,فt,غy,عu,هi,خo,حp,ج[,چ],شa,سs,یd,بf,لg,اh,تj,نk,مl,ک\;,گ',ظz,طx,زc,رv,ذb,دn,پm,و\,./]]
 

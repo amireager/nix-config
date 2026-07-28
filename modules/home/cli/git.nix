@@ -25,7 +25,7 @@
 
       # Core settings
       init.defaultBranch = "main";
-      core.quotePath = false; # پشتیبانی صحیح از فارسی و یونیکد
+      core.quotePath = false; # Show UTF-8 filenames (e.g. Persian) literally instead of \NNN escapes
 
       # Workflow
       pull.rebase = true;
@@ -51,7 +51,7 @@
         followTags = true;
       };
 
-      # Aliases - مجموعه حرفه‌ای و کاربردی
+      # Aliases — a practical everyday set
       alias = {
         # Status & Info
         st = "status -sb";

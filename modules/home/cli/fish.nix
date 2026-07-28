@@ -125,8 +125,13 @@
       nrs = "nh os switch";
       nrt = "nh os test";
       nrb = "nh os build";
-      hms = "nh home switch";
-      hmb = "nh home build";
+
+      # No hms/hmb here on purpose. Home Manager is wired as a NixOS module
+      # (see lib/mkHost.nix), so the flake exposes no `homeConfigurations`
+      # output and `nh home switch` fails with:
+      #   error: flake ... does not provide attribute
+      #   'packages.x86_64-linux.homeConfigurations' ...
+      # `sw` / `nrs` rebuild the home directory along with the system.
 
       # === Proxy Management ===
       myip = "curl ip.me";
