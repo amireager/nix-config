@@ -11,12 +11,18 @@
   userHomeModules = mapAttrs (name: path: import (path + "/home.nix")) users;
 in
   inputs.nixpkgs.lib.nixosSystem {
-    inherit system;
+    # `system` is deliberately NOT passed here. nixosSystem's own `system`
+    # argument is deprecated and triggers:
+    #   evaluation warning: 'system' has been renamed to/replaced by
+    #   'stdenv.hostPlatform.system'
+    # Setting nixpkgs.hostPlatform in a module is the supported way, and it
+    # is what the deprecated argument does internally anyway.
     specialArgs = {inherit inputs hostname system flakePath;};
     modules =
       hostModules
       ++ userSystemModules
       ++ [
+        {nixpkgs.hostPlatform = system;}
         inputs.agenix.nixosModules.default
         inputs.home-manager.nixosModules.home-manager
         {

@@ -119,17 +119,34 @@
       ENV_NAME="$1"
       shift
 
-      # 1. Asynchronously register dynamic GC profile in background so it never blocks evaluation or hangs
       mkdir -p "$HOME/.local/share/dev-roots"
-      (nix print-dev-env "$FLAKE_PATH#$ENV_NAME" --profile "$HOME/.local/share/dev-roots/$ENV_NAME-profile" > /dev/null 2>&1 &)
+      ROOT_PROFILE="$HOME/.local/share/dev-roots/$ENV_NAME-profile"
 
-      # 2. Enter interactive Fish shell or execute specific task/module inside the isolated environment
+      # The GC root is registered AFTER the shell exits, not concurrently with
+      # it. Running `nix print-dev-env` in the background while `nix develop`
+      # evaluates makes both processes write to the same eval cache, which
+      # produces:
+      #   error (ignored): SQLite database '…/eval-cache-v6/….sqlite' is busy
+      # Harmless, but it printed on every single `dev` invocation. Sequencing
+      # them removes the contention, and by then the evaluation is cached so
+      # registering the root is nearly instant.
+      _register_root() {
+        nix print-dev-env "$FLAKE_PATH#$ENV_NAME" \
+          --profile "$ROOT_PROFILE" >/dev/null 2>&1 || true
+      }
+
       if [ $# -eq 0 ]; then
         echo -e "\033[1;32m⏳ Evaluating & launching On-Demand DevShell: \033[1;36m$ENV_NAME \033[1;32m(Default shell: Fish)\033[0m"
-        exec nix develop "$FLAKE_PATH#$ENV_NAME" --command fish
+        nix develop "$FLAKE_PATH#$ENV_NAME" --command fish
+        STATUS=$?
+        _register_root
+        exit $STATUS
       else
         echo -e "\033[1;32m⚡ Executing task inside On-Demand DevShell \033[1;36m$ENV_NAME\033[1;32m: \033[1;33m$*\033[0m"
-        exec nix develop "$FLAKE_PATH#$ENV_NAME" --command fish -c "$*"
+        nix develop "$FLAKE_PATH#$ENV_NAME" --command fish -c "$*"
+        STATUS=$?
+        _register_root
+        exit $STATUS
       fi
     '')
   ];

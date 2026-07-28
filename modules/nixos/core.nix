@@ -136,23 +136,72 @@
   # === Fonts & Typography ===
   fonts = {
     packages = with pkgs; [
-      vazirmatn
+      # Latin
       nerd-fonts.jetbrains-mono
       nerd-fonts.fira-code
+      inter
+
+      # Persian
+      # Vazirmatn is the better UI face, Sahel is noticeably heavier and so
+      # reads better as terminal fallback — see the note under fontconfig.
+      vazirmatn
+      sahel-fonts
+      samim-fonts
+
+      # Coverage
       noto-fonts
       noto-fonts-cjk-sans
       twitter-color-emoji
-      inter
     ];
 
     fontconfig = {
       enable = true;
       defaultFonts = {
-        monospace = ["JetBrainsMono Nerd Font" "Vazirmatn" "Noto Sans Mono"];
+        # No true Persian monospace exists — Vazir Code was discontinued and
+        # is not in nixpkgs. Every Persian face here is proportional, so the
+        # terminal squeezes it into fixed cells and thin weights come out
+        # hollow. Sahel is the heaviest of the maintained families, which is
+        # why it leads the monospace fallback rather than Vazirmatn.
+        monospace = [
+          "JetBrainsMono Nerd Font"
+          "Sahel"
+          "Vazirmatn"
+          "Noto Sans Mono"
+        ];
         sansSerif = ["Inter" "Vazirmatn" "Noto Sans"];
         serif = ["Noto Serif" "Vazirmatn"];
         emoji = ["Twitter Color Emoji"];
       };
+
+      # No global matrix scaling here on purpose. An earlier version scaled
+      # Sahel 1.15x at the fontconfig level, which applied everywhere — GTK,
+      # the browser, the editor — and compounded with the per-font `scale`
+      # WezTerm already applies, leaving Latin looking small next to it.
+      # Size matching belongs in the terminal config, where the cell grid is.
+      localConf = ''
+        <?xml version="1.0"?>
+        <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+        <fontconfig>
+          <!-- Hinting and antialiasing matter more for Persian than Latin:
+               the strokes are thinner and the curves tighter. -->
+          <match target="font">
+            <edit name="antialias" mode="assign"><bool>true</bool></edit>
+            <edit name="hinting" mode="assign"><bool>true</bool></edit>
+            <edit name="hintstyle" mode="assign"><const>hintslight</const></edit>
+            <edit name="rgba" mode="assign"><const>rgb</const></edit>
+            <edit name="lcdfilter" mode="assign"><const>lcddefault</const></edit>
+            <edit name="autohint" mode="assign"><bool>false</bool></edit>
+          </match>
+
+          <!-- Persian text should never fall back to a Latin-only face. -->
+          <match target="pattern">
+            <test name="lang" compare="contains"><string>fa</string></test>
+            <edit name="family" mode="prepend" binding="strong">
+              <string>Sahel</string>
+            </edit>
+          </match>
+        </fontconfig>
+      '';
     };
   };
 

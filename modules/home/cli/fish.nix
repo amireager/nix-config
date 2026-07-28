@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   hostname,
   flakePath,
   ...
@@ -228,33 +229,273 @@
     };
   };
 
-  # Starship Prompt
+  # ============================================================
+  # STARSHIP PROMPT
+  # ============================================================
+  # Layout:
+  #   ~/p/nix-config  main !2  ❄️ dev:python  .venv  py 3.13    1.2s
+  #   ❯
+  #
+  # Left  — where am I, and what context am I in
+  # Right — how long did that take, what time is it, battery
+  #
+  # Language modules only appear inside a matching project, so the prompt
+  # stays short in an ordinary directory.
   programs.starship = {
     enable = true;
     enableFishIntegration = true;
     settings = {
-      add_newline = false;
-      command_timeout = 500;
-      format = "$directory$git_branch$git_status$nix_shell$fill$cmd_duration$line_break$character";
-      right_format = "$time$battery";
+      add_newline = false; # no blank line — keeps scrollback dense
+      command_timeout = 1000; # 500 was too tight for cold git status on big repos
+      scan_timeout = 30;
 
-      directory.style = "bold #89b4fa";
-      git_branch.style = "bold #fab387";
-      git_status.style = "bold #f38ba8";
+      # The environment modules are wrapped in a bracketed group so they
+      # read as one block rather than a flat run of symbols. The group
+      # collapses entirely when nothing matches, so an ordinary directory
+      # still gets a short prompt.
+      format = lib.concatStrings [
+        "$directory"
+        "$git_branch$git_state$git_status"
+        "([\\(](#585b70)"
+        "$nix_shell$direnv"
+        "$python$nodejs$rust$golang$java$lua$package"
+        "$container$docker_context"
+        "[\\)](#585b70) )"
+        "$fill"
+        "$jobs$cmd_duration"
+        "$line_break"
+        "$character"
+      ];
 
-      nix_shell.symbol = "❄️ ";
-      nix_shell.style = "bold #89b4fa";
+      right_format = "$status$time$battery";
 
-      cmd_duration.min_time = 1500;
-      cmd_duration.format = "[$duration](bold #f9e2af) ";
+      # ── Location ──────────────────────────────────────────────────────
+      directory = {
+        style = "bold #89b4fa";
+        truncation_length = 3;
+        truncate_to_repo = true;
+        truncation_symbol = "…/";
+        read_only = " ";
+        read_only_style = "bold #f38ba8";
+        format = "[$path]($style)[$read_only]($read_only_style) ";
+        substitutions = {
+          "~/projects" = "󰲋 ";
+          "~/Documents" = "󰈙 ";
+          "~/Downloads" = "󰇚 ";
+        };
+      };
 
-      time.disabled = false;
-      time.format = "[$time]($style) ";
-      time.style = "bold #6c7086";
-      time.time_format = "%R";
+      # ── Git ───────────────────────────────────────────────────────────
+      git_branch = {
+        symbol = " ";
+        style = "bold #fab387";
+        format = "[$symbol$branch]($style) ";
+        truncation_length = 24;
+        truncation_symbol = "…";
+      };
 
-      character.success_symbol = "[❯](bold #a6e3a1)";
-      character.error_symbol = "[❯](bold #f38ba8)";
+      # Shows what git is in the middle of: rebase, merge, cherry-pick.
+      # Easy to lose track of an interrupted rebase without this.
+      git_state = {
+        style = "bold #f5c2e7";
+        format = "([$state( $progress_current/$progress_total)]($style)) ";
+        rebase = "REBASE";
+        merge = "MERGE";
+        revert = "REVERT";
+        cherry_pick = "PICK";
+        bisect = "BISECT";
+      };
+
+      git_status = {
+        style = "bold #f38ba8";
+        format = "([$all_status$ahead_behind]($style)) ";
+        conflicted = "=$count";
+        ahead = "⇡$count";
+        behind = "⇣$count";
+        diverged = "⇕⇡$ahead_count⇣$behind_count";
+        untracked = "?$count";
+        stashed = "*$count";
+        modified = "!$count";
+        staged = "+$count";
+        renamed = "»$count";
+        deleted = "✘$count";
+      };
+
+      # ── Nix ───────────────────────────────────────────────────────────
+      # heuristic catches `nix shell` and `nix develop`, not just nix-shell.
+      # $state (pure/impure) is left out of the format: every shell here is
+      # entered through `dev`, so the answer is always the same and the word
+      # only costs width. The shell name is the useful part.
+      nix_shell = {
+        symbol = "❄️ ";
+        style = "bold #89b4fa";
+        format = "[$symbol( $name)]($style) ";
+        heuristic = true;
+      };
+
+      direnv = {
+        disabled = false;
+        symbol = "󰚩 ";
+        style = "#a6adc8";
+        format = "[$symbol$loaded/$allowed]($style) ";
+        allowed_msg = "";
+        not_allowed_msg = "!";
+        denied_msg = "✘";
+        loaded_msg = "";
+        unloaded_msg = "○";
+      };
+
+      # ── Languages ─────────────────────────────────────────────────────
+      # The venv name matters far more than the interpreter version, so it
+      # is shown first and the version is dimmed.
+      python = {
+        symbol = " ";
+        style = "#f9e2af";
+        format = "[\${symbol}(\($virtualenv\) )]($style)[$version](dimmed #f9e2af) ";
+        detect_extensions = ["py" "ipynb"];
+        detect_files = [
+          "requirements.txt"
+          "pyproject.toml"
+          "setup.py"
+          "uv.lock"
+          "poetry.lock"
+          "Pipfile"
+          "tox.ini"
+          ".python-version"
+        ];
+        detect_folders = [".venv" "venv"];
+        python_binary = ["python3" "python"];
+      };
+
+      nodejs = {
+        symbol = " ";
+        style = "#a6e3a1";
+        format = "[$symbol]($style)[$version](dimmed #a6e3a1) ";
+        detect_files = ["package.json" ".nvmrc" "bun.lockb" "pnpm-lock.yaml"];
+        detect_folders = ["node_modules"];
+      };
+
+      rust = {
+        symbol = " ";
+        style = "#fab387";
+        format = "[$symbol]($style)[$version](dimmed #fab387) ";
+      };
+
+      golang = {
+        symbol = " ";
+        style = "#94e2d5";
+        format = "[$symbol]($style)[$version](dimmed #94e2d5) ";
+      };
+
+      java = {
+        symbol = " ";
+        style = "#eba0ac";
+        format = "[$symbol]($style)[$version](dimmed #eba0ac) ";
+      };
+
+      lua = {
+        symbol = " ";
+        style = "#89b4fa";
+        format = "[$symbol]($style)[$version](dimmed #89b4fa) ";
+      };
+
+      # Project version from package.json/Cargo.toml — useful before a release.
+      package = {
+        symbol = "󰏗 ";
+        style = "#cba6f7";
+        format = "[$symbol$version]($style) ";
+        display_private = false;
+      };
+
+      # ── Containers ────────────────────────────────────────────────────
+      container = {
+        symbol = "󰡨 ";
+        style = "bold #f9e2af";
+        format = "[$symbol\[$name\]]($style) ";
+      };
+
+      docker_context = {
+        symbol = " ";
+        style = "#89b4fa";
+        format = "[$symbol$context]($style) ";
+        only_with_files = true;
+      };
+
+      # ── Right side ────────────────────────────────────────────────────
+      fill.symbol = " ";
+
+      # Background jobs are easy to forget about.
+      jobs = {
+        symbol = "󰜎 ";
+        style = "bold #cba6f7";
+        format = "[$symbol$number]($style) ";
+        number_threshold = 1;
+        symbol_threshold = 1;
+      };
+
+      cmd_duration = {
+        min_time = 1500;
+        style = "bold #f9e2af";
+        format = "[󱑈 $duration]($style) ";
+        show_milliseconds = false;
+      };
+
+      # Only renders on failure, so successful commands stay quiet.
+      status = {
+        disabled = false;
+        style = "bold #f38ba8";
+        symbol = "✘";
+        not_found_symbol = "󰍉";
+        not_executable_symbol = "󰌾";
+        sigint_symbol = "󰂭";
+        signal_symbol = "󱐋";
+        format = "[$symbol$common_meaning$signal_name$maybe_int]($style) ";
+        map_symbol = true;
+        pipestatus = true;
+      };
+
+      time = {
+        disabled = false;
+        style = "#6c7086";
+        format = "[$time]($style) ";
+        time_format = "%R";
+      };
+
+      battery = {
+        format = "[$symbol$percentage]($style) ";
+        full_symbol = "󰁹 ";
+        charging_symbol = "󰂄 ";
+        discharging_symbol = "󰂃 ";
+        unknown_symbol = "󰂑 ";
+        empty_symbol = "󰂎 ";
+        display = [
+          {
+            threshold = 15;
+            style = "bold #f38ba8";
+          }
+          {
+            threshold = 30;
+            style = "bold #fab387";
+          }
+        ];
+      };
+
+      # ── Prompt character ──────────────────────────────────────────────
+      character = {
+        success_symbol = "[❯](bold #a6e3a1)";
+        error_symbol = "[❯](bold #f38ba8)";
+        vimcmd_symbol = "[❮](bold #cba6f7)";
+      };
+
+      # ── Off ───────────────────────────────────────────────────────────
+      # Hostname and username belong on servers, not on a laptop where the
+      # answer never changes.
+      hostname.ssh_only = true;
+      username.show_always = false;
+      shell.disabled = true;
+      memory_usage.disabled = true;
+      aws.disabled = true;
+      gcloud.disabled = true;
     };
   };
 
