@@ -84,6 +84,14 @@
     "kernel.dmesg_restrict" = 1;
     # Disable magic SysRq keys (prevents physical access attacks)
     "kernel.sysrq" = 0;
+
+    # Block TIOCSTI keystroke injection into the controlling terminal.
+    # Disabled by default since Linux 6.2, but pinned explicitly because the
+    # `box` sandbox deliberately omits bwrap's --new-session: setsid() breaks
+    # every interactive TUI (fish refuses to start, agent chat UIs never
+    # draw). The kernel-level block replaces that protection, so a boxed
+    # program still cannot push characters into the outer shell.
+    "dev.tty.legacy_tiocsti" = 0;
   };
 
   # === Clean /tmp on boot (prevents stale secrets from persisting) ===

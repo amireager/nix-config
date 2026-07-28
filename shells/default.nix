@@ -25,6 +25,7 @@
   # Registered environments. `_template` is deliberately excluded.
   shellDirs = [
     "ai"
+    "box"
     "build"
     "cli"
     "data"
