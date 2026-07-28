@@ -120,7 +120,11 @@ in
     mkDevShell (${name}): `env` may not contain ${lib.concatStringsSep ", " clashes}.
     Use the dedicated argument instead of passing it through `env`.
   '';
-    pkgs.mkShell ({
+  # passthru carries the description out of the derivation so that the `dev`
+  # launcher can build its menu from the shells themselves. Without this the
+  # menu is a hand-written list that silently goes stale every time a shell is
+  # added or renamed — which is exactly what happened to `box` and `sec`.
+    (pkgs.mkShell ({
         name = "${name}-env";
         inherit packages inputsFrom;
 
@@ -132,4 +136,11 @@ in
           ${extraHook}
         '';
       }
-      // env)
+      // env))
+    .overrideAttrs (old: {
+      passthru =
+        (old.passthru or {})
+        // {
+          devShellMeta = {inherit name icon description;};
+        };
+    })

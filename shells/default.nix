@@ -7,6 +7,9 @@
 # Adding a shell:
 #   1. cp -r shells/_template shells/<name>
 #   2. add one line to `shellDirs` below
+#
+# The `dev` launcher builds its menu from `devShellMeta`, exported below, so
+# a new shell shows up there automatically — no second list to update.
 # ==============================================================================
 {
   inputs,
@@ -25,6 +28,7 @@
   # Registered environments. `_template` is deliberately excluded.
   shellDirs = [
     "ai"
+    "audit"
     "box"
     "build"
     "cli"
@@ -34,7 +38,6 @@
     "nix"
     "python"
     "rust"
-    "sec"
     "web"
   ];
 
@@ -49,6 +52,52 @@
     else result.default;
 
   shells = lib.genAttrs shellDirs importShell;
+
+  # Grouping is presentation only: it decides the headings the `dev` menu
+  # prints. A shell missing from every group still appears, under "Other".
+  groups = [
+    {
+      title = "Languages & Runtimes";
+      members = ["python" "rust" "go" "web"];
+    }
+    {
+      title = "Data & AI";
+      members = ["data" "ai"];
+    }
+    {
+      title = "Media & Content";
+      members = ["media"];
+    }
+    {
+      title = "System, Build & QA";
+      members = ["cli" "build" "nix"];
+    }
+    {
+      title = "Security";
+      members = ["box" "audit"];
+    }
+  ];
+
+  # Machine-readable description of every shell, consumed by the `dev`
+  # launcher. Aliases are listed separately so the menu can mention them
+  # without implying they are separate environments.
+  meta = {
+    shells =
+      lib.mapAttrs
+      (n: drv: drv.passthru.devShellMeta or {name = n; icon = "📦"; description = "";})
+      shells;
+    inherit groups;
+    aliases = {
+      c = "build";
+      default = "nix";
+    };
+    extra = {
+      test = {
+        icon = "🧪";
+        description = "Composite: Python + Rust toolchains";
+      };
+    };
+  };
 in
   shells
   // {
@@ -75,4 +124,9 @@ in
         }
       ];
     };
+
+    # Not a shell: metadata for the `dev` launcher's menu.
+    # Hidden from `nix flake show` output by convention (leading underscore
+    # would break genAttrs consumers, so it is documented instead).
+    devShellsMeta = meta;
   }

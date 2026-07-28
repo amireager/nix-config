@@ -67,29 +67,52 @@
 
       if [ $# -eq 0 ]; then
         echo -e "\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m"
-        echo -e "\033[1;36m│ \033[1;35m🚀 Centralized On-Demand DevShell Manager                \033[1;36m│\033[0m"
+        echo -e "\033[1;36m│ \033[1;35m🚀 On-Demand DevShell Manager                            \033[1;36m│\033[0m"
         echo -e "\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m"
         echo -e "\033[1;36m💡 Usage: dev <environment> [command/task...]\033[0m"
-        echo -e "\033[1;33m📦 Available centralized environments ($FLAKE_PATH):\033[0m"
-        echo "  [ Languages & Runtimes ]"
-        echo "  - dev python   (uv, Poetry, Ruff, Pyright, interactive .venv prompt)"
-        echo "  - dev rust     (Cargo, Rustc, Rust-Analyzer, Clippy, Rustfmt)"
-        echo "  - dev go       (Go, Gopls, GolangCI-Lint, Delve)"
-        echo "  - dev web      (Node.js, Bun, pnpm, TypeScript, ESLint, Prettier)"
-        echo ""
-        echo "  [ Data & AI ]"
-        echo "  - dev data     (Pandas, Polars, DuckDB, Jupyter Lab, SQLite)"
-        echo "  - dev ai       (LLM APIs, OpenCode, 9router/Omnirouter, Agentic Runtimes)"
-        echo ""
-        echo "  [ Media & Content ]"
-        echo "  - dev media    (ffmpeg-full, vips, ImageMagick, PDF & image editors)"
-        echo ""
-        echo "  [ System, Build & QA ]"
-        echo "  - dev cli      (Analytics: ast-grep, hyperfine, tokei, bandwhich)"
-        echo "  - dev build    (C/C++/Rust: GCC, Clang, CMake, Make, Ninja) [alias: dev c]"
-        echo "  - dev sec      (Sandboxing: safe-crypt, safe-test, vulnix)"
-        echo "  - dev nix      (Packaging: nurl, nix-init, nix-update, nixpkgs-review)"
-        echo "  - dev test     (Composite test runner: Python + Rust combined toolchains)"
+        echo -e "\033[1;33m📦 Environments in $FLAKE_PATH:\033[0m"
+        echo
+
+        # The menu is generated from devShellsMeta, which mkDevShell fills in
+        # for every shell. Adding a shell updates this list automatically —
+        # the hand-written version went stale every single time (box was
+        # missing, sec still advertised tools it no longer had).
+        #
+        # Nix emits plain JSON here and jq does the formatting: keeping the
+        # presentation logic in bash avoids a fragile Nix expression nested
+        # inside a shell string inside a Nix string.
+        if META="$(nix eval --json \
+              "$FLAKE_PATH#devShells.${system}.devShellsMeta" 2>/dev/null)"; then
+          printf '%s' "$META" | ${pkgs.jq}/bin/jq -r '
+            (.shells + .extra) as $all
+            | ( .groups[]
+              | "  [ \(.title) ]",
+                ( .members[]
+                  | select($all[.] != null)
+                  | "  \($all[.].icon // "📦")  dev \(. + "            "
+                      | .[0:12])  \($all[.].description // "")"
+                ),
+                ""
+              ),
+              ( ($all | keys) - ([.groups[].members] | flatten) ) as $rest
+              | select(($rest | length) > 0)
+              | "  [ Other ]",
+                ( $rest[] | "  \($all[.].icon // "📦")  dev \(. + "            " | .[0:12])  \($all[.].description // "")" ),
+                ""
+          '
+          printf '%s' "$META" | ${pkgs.jq}/bin/jq -r '
+            "  aliases: " + ([.aliases | to_entries[] | "dev \(.key) → dev \(.value)"] | join(", "))
+          '
+        else
+          # Fallback when metadata cannot be evaluated (older checkout, or an
+          # error in the flake): list directories rather than printing nothing.
+          echo "  (metadata unavailable — listing shell directories)"
+          for d in "$FLAKE_PATH"/shells/*/; do
+            n="$(basename "$d")"
+            case "$n" in _*) continue ;; esac
+            echo "  - dev $n"
+          done
+        fi
         exit 0
       fi
 

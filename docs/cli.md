@@ -126,42 +126,82 @@ pueue log 0
 
 ---
 
-## 🛡️ بخش چهارم: راهنمای شل امنیتی و جعبه‌شنی (`dev sec`)
+## 🛡️ بخش چهارم: اجرای امن و بازرسی (`dev box` و `dev audit`)
 
-محیط `dev sec` بر پایه موتور قدرتمند **`Bubblewrap (bwrap)`** مهندسی شده و دارای ۴ اسکریپت دفاعی برای تست باینری‌ها و اسکریپت‌های ناشناخته است:
+دو فعالیت متفاوت که قبلاً هر دو زیر نام `sec` بودند و حالا از هم جدا شده‌اند:
 
-### ۱. محیط تعاملی محدود به پوشه جاری (`dir-sandbox`)
-با اجرای دستور `dir-sandbox` درون این شل، یک ترمینال جدید باز می‌شود که در آن کل فایل‌های سیستم‌عامل (`/usr`, `/etc`, `/nix`) به صورت **فقط‌خواندنی (Read-Only)** هستند، اینترنت کاملاً قطع است (`--unshare-net`)، و پوشه خانه شما (`/home/amir`) **منحصراً به همان دایرکتوری جاری که در آن حضور دارید محدود شده است!** هیچ برنامه‌ای نمی‌تواند از این پوشه خارج شود یا به کلیدهای SSH دسترسی پیدا کند.
+| | `dev box` | `dev audit` |
+|---|---|---|
+| کار | **اجرا** کن، ولی محدود | **بررسی** کن، چیزی اجرا نکن |
+| زمان | حین اجرا | تحلیل ایستا |
 
-### ۲. اجرای آفلاین باینری ناشناخته (`safe-run`)
-برای تست فوری یک فایل اجرایی ناشناخته بدون اینترنت و با دسترسی خواندن/نوشتن محدود به پوشه جاری:
+### 📦 `dev box` — اجرای ابزار بدون دادن خانه
+
+هسته‌ی کار: پوشه‌ی پروفایل **روی مسیر خانه‌ی واقعی** mount می‌شود. یعنی داخل جعبه `/home/amir` وجود دارد و قابل نوشتن است، ولی محتوایش پروفایل است و خانه‌ی واقعی اصلاً در namespace نیست. `~/.ssh` نه «ممنوع» است، بلکه **وجود ندارد**.
+
+این با تغییر متغیر (`XDG_CONFIG_HOME=…`) فرق دارد: آنجا ابزار همچنان می‌تواند `$HOME` را بخواند. اینجا syscall با `ENOENT` برمی‌گردد.
+
 ```bash
-safe-run ./unknown-binary --test-flag
-# یا اگر بدون آرگومان بزنید، وارد شل تعاملی آفلاین می‌شود
-safe-run
+box dev <cmd>     # سیستم فقط‌خواندنی، خانه عوض‌شده  ← حالت معمول
+box run <cmd>     # فقط /nix/store — سفت‌ترین، ولی اسکریپت‌ها کار نمی‌کنند
+box net <cmd>     # مثل dev، بدون شبکه
+box exec <cmd>    # غیرتعاملی، کاملاً سخت‌شده
+box vm <cmd>      # podman، ریشه‌ی جدا
+box shell         # فیش تعاملی داخل جعبه
+box limit <cmd>   # سقف رم/سی‌پی‌یو (BOX_MEM=4G)
+box inspect <cmd> # ببین ابزار واقعاً چه مسیرهایی می‌خواهد
+box ls / box clean
 ```
 
-### ۳. اجرای آنلاین باینری ناشناخته (`safe-net-run`)
-برای اجرای اسکریپت‌های نصب‌کننده آنلاین (`curl | sh`) یا ابزارهای اینترنتی که نیاز به دانلود دارند اما نباید به اسناد شخصی یا کلیدهای امنیتی شما دسترسی داشته باشند:
+**پروفایل‌های چندگانه** — هر پروژه می‌تواند چند هویت مستقل داشته باشد:
+
 ```bash
-safe-net-run ./online-installer.sh
+box -p work dev hermes chat
+box -p test dev hermes chat    # کاملاً جدا، همدیگر را نمی‌بینند
 ```
 
-### ۴. مسدودکننده اینترنت برای برنامه‌های عادی (`net-block`)
-اگر می‌خواهید یک برنامه معمولی (که دسترسی کامل به فایل‌های عادی نیاز دارد) را اجرا کنید اما **کارت شبکه و اینترنت آن به طور کامل قطع شود**:
+پروفایل‌ها در `./.box/profiles/<name>/` می‌مانند، پس `box clean` یعنی حذف کامل.
+
+**`box dev` در برابر `box run`:** حالت `dev` کل سیستم را فقط‌خواندنی نشان می‌دهد، پس اسکریپت‌های `#!/bin/bash` و باینری‌های دانلودی کار می‌کنند (`nix-ld` هم عبور داده شده). حالت `run` فقط `/nix/store` را می‌بیند — سفت‌تر، ولی بیشتر اسکریپت‌ها بالا نمی‌آیند.
+
+> ⚠️ `bwrap` کرنل را با میزبان شریک است. برای «نرم‌افزار بررسی‌نشده» و «جلوگیری از کثیف‌کاری» درست است، برای بدافزار عمدی نه — آنجا `box vm` یا ماشین مجازی لازم است.
+
+### 🔎 `dev audit` — بررسی آنچه دارید
+
 ```bash
-net-block ./my-local-tool --work-offline
+audit-system            # vulnix روی closure + بررسی permittedInsecurePackages
+audit-repo [path]       # gitleaks (تاریخچه‌ی گیت) + osv-scanner (lockfileها)
+lynis audit system      # نمره به سخت‌سازی همین ماشین
+trivy image <ref>       # اسکن ایمیج کانتینر
+dive <ref>              # مرور لایه‌به‌لایه‌ی ایمیج
+syft dir:. -o json | grype   # SBOM بساز و آسیب‌پذیری پیدا کن
+trufflehog filesystem . # رازهای نشت‌شده، با تأیید فعال بودن
 ```
 
 ---
 
-## 📦 خلاصه شل‌های باقیمانده در `dev`
+## 📦 فهرست کامل شل‌ها
 
-| دستور فراخوانی | ابزارهای موجود و کاربرد اصلی | اتوماسیون و راهنما |
-| :--- | :--- | :--- |
-| `dev python` | `python3`, `poetry`, `ruff`, `pyright`, `ipython`, `virtualenv` | سوال تعاملی `y/N` برای ساخت `.venv` قبل از ورود. |
-| `dev rust` | `cargo`, `rustc`, `rust-analyzer`, `clippy`, `rustfmt`, `pkg-config`, `openssl` | اتصال خودکار نئوویم به LSP از طریق `direnv-vim`. |
-| `dev go` | `go`, `gopls`, `golangci-lint`, `delve` | اتصال خودکار نئوویم به LSP و ابزار دیباگ. |
-| `dev build` (`dev c`) | `gcc`, `clang`, `cmake`, `make`, `ninja`, `pkg-config`, `openssl`, `cargo` | محیط کامل کامپایل پروژه‌های C/C++/Rust کلون‌شده از گیت‌هاب. |
-| `dev nix` | `statix`, `deadnix`, `alejandra`, `nixd`, `nix-tree`, `nvd`, `nix-check` | بازرسی سلامت سینتکس و ارزیابی Flake. |
-| `dev py-rust` | ترکیب هم‌زمان تمام پکیج‌های پایتون و راست در یک ترمینال واحد | مناسب پروژه‌های چندزبانه. |
+فهرست زیر دستی نگهداری **نمی‌شود** — با `dev` بدون آرگومان، منو مستقیماً از خود شل‌ها ساخته می‌شود:
+
+```bash
+dev        # منوی خودکار، همیشه به‌روز
+```
+
+| دستور | کاربرد |
+| :--- | :--- |
+| `dev python` | `uv`, `poetry`, `ruff`, `pyright`, `ipython` — با پرسش تعاملی ساخت `.venv` |
+| `dev rust` | `cargo`, `rustc`, `rust-analyzer`, `clippy`, `rustfmt` |
+| `dev go` | `go`, `gopls`, `golangci-lint`, `delve` |
+| `dev web` | `nodejs_22`, `bun`, `pnpm`, `typescript`, `eslint`, `prettier` |
+| `dev data` | `pandas`, `numpy`, `duckdb`, `jupyterlab`, `sqlite` |
+| `dev ai` | `opencode`, `qwen-code`, `gemini-cli`, `httpx`, `pydantic` |
+| `dev media` | `ffmpeg-full`, `vips`, `imagemagick`, `ocrmypdf`, `pdfarranger` |
+| `dev cli` | `ast-grep`, `hyperfine`, `tokei`, `bandwhich`, `jless`, `gh-dash` |
+| `dev build` (`dev c`) | `gcc`, `clang`, `cmake`, `ninja`, `pkg-config` |
+| `dev nix` | `nurl`, `nix-init`, `nix-update`, `nixpkgs-review`, `nix-check`, `nix-size` |
+| `dev box` | اجرای محصور — بالا توضیح داده شد |
+| `dev audit` | بازرسی امنیتی — بالا توضیح داده شد |
+| `dev test` | ترکیب پایتون + راست برای پروژه‌های چندزبانه |
+
+**ابزارهای Nix که عمداً در سطح سیستم‌اند** (نه در شل): `statix`, `deadnix`, `alejandra`, `nixd`, `nix-tree`, `nix-diff`, `nix-du`, `nix-melt`, `comma`, `nh`. دلیل: وقتی به آن‌ها نیاز پیدا می‌کنید معمولاً وسط یک مشکل هستید — ابزار عیب‌یابی که اول باید build شود، ابزاری است که ندارید.
