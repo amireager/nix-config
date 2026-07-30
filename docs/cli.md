@@ -61,7 +61,28 @@ dev rust
 
 # اجرای مستقیم یک دستور درون محیط تخصصی (بدون ورود تعاملی)
 dev cli hyperfine --warmup 3 'python3 script.py' 'pypy3 script.py'
+
+# دیدن اینکه داخل یک محیط دقیقاً چه چیزی هست — بدون ورود به آن
+dev -w python
+dev --what cli
 ```
+
+### ⌨️ تکمیل خودکار
+
+`dev <TAB>` نام محیط‌ها را با آیکون و توضیحشان می‌دهد. `dev python <TAB>`
+دستورهای معمولی را می‌دهد، چون آنجا دیگر نام محیط نمی‌آید.
+
+هر سه شل: fish، bash، zsh.
+
+**بدون نیاز به `exec fish`.** `dev` در پروفایل home-manager نصب می‌شود و
+`share/` آن پروفایل از قبل روی `XDG_DATA_DIRS` هر شل ورودی هست — برخلاف
+یک devShell که هیچ چیز مسیرش را آنجا نمی‌گذارد. یعنی از لحظه‌ی لاگین
+کار می‌کند.
+
+فهرست محیط‌ها برای تکمیل خودکار **مستقیم از `shells/*/` خوانده می‌شود**،
+نه از `nix eval`. دلیل: `nix eval` روی کش سرد چند ثانیه طول می‌کشد و
+تکمیلی که ترمینال را قفل کند بدتر از نداشتنش است. اندازه‌گیری‌شده: ۴۳
+میلی‌ثانیه.
 
 ---
 
@@ -195,7 +216,6 @@ dev        # منوی خودکار، همیشه به‌روز
 | `dev go` | `go`, `gopls`, `golangci-lint`, `delve` |
 | `dev web` | `nodejs_22`, `bun`, `pnpm`, `typescript`, `eslint`, `prettier` |
 | `dev data` | `pandas`, `numpy`, `duckdb`, `jupyterlab`, `sqlite` |
-| `dev ai` | `opencode`, `qwen-code`, `gemini-cli`, `httpx`, `pydantic` |
 | `dev media` | `ffmpeg-full`, `vips`, `imagemagick`, `ocrmypdf`, `pdfarranger` |
 | `dev cli` | `ast-grep`, `hyperfine`, `tokei`, `bandwhich`, `jless`, `gh-dash` |
 | `dev build` (`dev c`) | `gcc`, `clang`, `cmake`, `ninja`, `pkg-config` |
@@ -203,5 +223,11 @@ dev        # منوی خودکار، همیشه به‌روز
 | `dev box` | اجرای محصور — بالا توضیح داده شد |
 | `dev audit` | بازرسی امنیتی — بالا توضیح داده شد |
 | `dev test` | ترکیب پایتون + راست برای پروژه‌های چندزبانه |
+
+> **`dev ai` حذف شد.** همان سه agent را می‌داد ولی بدون sandbox و با
+> دسترسی به کلیدهای واقعی محیط. جایش [`nix-agent`](https://github.com/amireager/nix-agent)
+> است: همان agentها به‌علاوه‌ی hermes و aider، در یک namespace جدا که
+> `~/.ssh` و `~/.gnupg` در آن **وجود ندارند**. راهش:
+> `cd ~/dev/nix-agent && ag -m hermes proj`
 
 **ابزارهای Nix که عمداً در سطح سیستم‌اند** (نه در شل): `statix`, `deadnix`, `alejandra`, `nixd`, `nix-tree`, `nix-diff`, `nix-du`, `nix-melt`, `comma`, `nh`. دلیل: وقتی به آن‌ها نیاز پیدا می‌کنید معمولاً وسط یک مشکل هستید — ابزار عیب‌یابی که اول باید build شود، ابزاری است که ندارید.

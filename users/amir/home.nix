@@ -14,6 +14,7 @@
     # ==========================================
     ../../modules/home/dev/nvim
     ../../modules/home/dev/nix-tools.nix
+    ../../modules/home/dev/dev-launcher.nix
 
     # ==========================================
     # 3. GUI & Wayland / Niri Desktop Environment

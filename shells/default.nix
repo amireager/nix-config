@@ -27,7 +27,6 @@
 
   # Registered environments. `_template` is deliberately excluded.
   shellDirs = [
-    "ai"
     "audit"
     "box"
     "build"
@@ -61,8 +60,8 @@
       members = ["python" "rust" "go" "web"];
     }
     {
-      title = "Data & AI";
-      members = ["data" "ai"];
+      title = "Data";
+      members = ["data"];
     }
     {
       title = "Media & Content";
