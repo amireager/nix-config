@@ -133,6 +133,12 @@ in {
       nvim-dap-python # Python adapter (debugpy)
       one-small-step-for-vimkind # Lua adapter — debug this config itself
 
+      # AI — see lua/ai.lua. Inert until a <leader>a key is pressed: nothing
+      # connects to anything at startup, and there is no as-you-type
+      # completion.
+      codecompanion-nvim     # chat, inline edits, @{agent} tools
+      codecompanion-history-nvim # saved chats, browsable with gh
+
       # UX Enhancements
       flash-nvim             # query-driven jumps (replaces mini.jump2d)
       todo-comments-nvim     # TODO/FIXME/HACK highlighting
@@ -155,6 +161,7 @@ in {
       ${builtins.readFile ./lua/run.lua}
       ${builtins.readFile ./lua/markdown.lua}
       ${builtins.readFile ./lua/dap.lua}
+      ${builtins.readFile ./lua/ai.lua}
       ${builtins.readFile ./lua/ux.lua}
     '';
   };

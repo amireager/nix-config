@@ -17,9 +17,15 @@ if ok_todo then
 		},
 	})
 
-	-- Keymaps
-	vim.keymap.set("n", "<leader>ft", "<cmd>TodoTrouble<cr>", { desc = "TODO list (Trouble)" })
-	vim.keymap.set("n", "<leader>fT", "<cmd>TodoTelescope<cr>", { desc = "TODO search (Telescope)" })
+	-- Under <leader>x (Trouble), not <leader>f (Snacks pickers). Both files
+	-- bound <leader>ft and ux.lua loads last, so it silently won and
+	-- snacks.picker.todo_comments() was unreachable. They are different tools
+	-- worth keeping apart: the picker fuzzy-finds one TODO, Trouble lists all
+	-- of them in a pane you work through.
+	--
+	-- <leader>fT called :TodoTelescope and is gone: telescope is not installed
+	-- here, so the key only ever raised "not an editor command".
+	vim.keymap.set("n", "<leader>xt", "<cmd>TodoTrouble<cr>", { desc = "TODO list (Trouble)" })
 end
 
 -- ── TROUBLE (diagnostics list) ──

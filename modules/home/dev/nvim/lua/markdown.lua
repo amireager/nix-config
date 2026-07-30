@@ -7,6 +7,11 @@ end
 render_markdown.setup({
 	-- Render in normal, visual, and command modes (not insert)
 	enabled = true,
+	-- `codecompanion` is the filetype of the AI chat buffer. Its content is
+	-- markdown and the plugin registers the markdown parser for it, but
+	-- render-markdown only attaches to filetypes named here — without this the
+	-- answers arrive as raw markdown while every other buffer is rendered.
+	file_types = { "markdown", "codecompanion" },
 	max_file_size = 10.0, -- MB, skip rendering for huge files
 	latex = { enabled = false }, -- disable LaTeX rendering (enable if needed)
 	-- Heading icons

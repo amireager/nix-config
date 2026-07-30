@@ -18,7 +18,27 @@
   # which is why plain `comma` / `nix-index` are NOT in home.packages below.
   programs.nix-index = {
     enable = true;
-    enableFishIntegration = true;
+
+    # false — and this is the whole point of the option.
+    #
+    # The integration is not "nix-index is available in fish". It installs a
+    # fish_command_not_found handler, so every typo becomes a database search:
+    #
+    #     $ caler
+    #     (pause while nix-locate walks the index)
+    #
+    # For a typo that is the wrong answer twice over. It is slow, and it
+    # answers a question that was not asked — `clear` was misspelled, no
+    # package needs installing. The useful case, "which package provides this
+    # binary", is a thing you go and ask for deliberately:
+    #
+    #     nix-locate --minimal --whole-name bin/rg     which package has it
+    #     , rg                                          run it once, no install
+    #
+    # Both still work. Only the automatic hijack of every failed command is
+    # gone, and fish falls back to its own handler: "Unknown command: caler".
+    enableFishIntegration = false;
+
     # The DB is fetched as a flake input; no local indexing, no stale cache.
     symlinkToCacheHome = true;
   };

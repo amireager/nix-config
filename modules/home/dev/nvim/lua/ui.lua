@@ -124,6 +124,7 @@ if ok_which then
 	})
 
 	which_key.add({
+		{ "<leader>a", group = "🤖 AI (CodeCompanion)" },
 		{ "<leader>b", group = "📑 Buffers (Bufferline)" },
 		{ "<leader>c", group = "⚡ Code & Rename (LSP)" },
 		{ "<leader>d", group = "🐞 Debug (DAP)" },

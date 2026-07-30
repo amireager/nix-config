@@ -242,6 +242,21 @@
     enable = true;
   };
 
+  # === A typo is a typo ===
+  # Off explicitly, not left to its default. The default is
+  # `pathExists programs.sqlite`, which is true whenever nixpkgs arrives as a
+  # channel tarball — so this can switch itself on from underneath you.
+  #
+  # It installs the same kind of command_not_found handler as the nix-index
+  # fish integration (disabled in modules/home/dev/nix-tools.nix), and fish
+  # explicitly looks for /run/current-system/sw/bin/command-not-found. Turning
+  # off one and leaving the other would just move the pause somewhere else.
+  #
+  # With both off, a mistyped command says so and stops:
+  #     $ caler
+  #     fish: Unknown command: caler
+  programs.command-not-found.enable = false;
+
   boot.kernelModules = ["fuse"];
 
   # Set to your actual installed NixOS version; do not change after installation.

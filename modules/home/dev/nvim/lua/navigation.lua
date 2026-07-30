@@ -220,8 +220,12 @@ if ok_ts then
 			-- Swap an argument with its neighbour without touching the commas.
 			swap = {
 				enable = true,
-				swap_next = { ["<leader>na"] = "@parameter.inner" },
-				swap_previous = { ["<leader>pa"] = "@parameter.inner" },
+				-- <leader>c, not <leader>n: snacks.lua binds <leader>n on its
+				-- own for the notification history, and a single-key mapping
+				-- fires immediately — so <leader>na could never be typed. A
+				-- swap is a code edit, which is what <leader>c already means.
+				swap_next = { ["<leader>cs"] = "@parameter.inner" },
+				swap_previous = { ["<leader>cS"] = "@parameter.inner" },
 			},
 		},
 	})

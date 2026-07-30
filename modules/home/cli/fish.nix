@@ -143,6 +143,40 @@
     };
 
     functions = {
+      # === A typo is a typo ===
+      # Defining this by name is the only reliable way to stop it.
+      #
+      # Disabling the two Nix-side integrations was not enough, and the
+      # reason is in fish's own fish_command_not_found.fish: it is a chain
+      # of `else if` probes run at startup, and NixOS is one of several
+      # branches it can land on:
+      #
+      #     else if test -f /run/current-system/sw/bin/command-not-found
+      #     else if type -q command-not-found        # <- anything on PATH
+      #     else if type -q pkgfile
+      #
+      # So every switch only removes one branch and lets fish fall to the
+      # next. Any `command-not-found` binary reachable on PATH — from a
+      # devShell, a stray profile, a leftover generation — puts the pause
+      # straight back. That file's own first line says the supported way
+      # out is to define the function, which short-circuits the whole
+      # chain before a single probe runs.
+      #
+      # The message is fish's own wording, not the "$cmd: command not
+      # found" printed by nix-index's handler. That difference is how you
+      # tell which one answered.
+      #
+      # Deliberate lookups are untouched:
+      #     nix-locate --minimal --whole-name bin/rg
+      #     , rg
+      fish_command_not_found = {
+        description = "Report a typo and stop — no package database search";
+        body = ''
+          printf "fish: Unknown command: %s\n" (string escape -- $argv[1]) >&2
+          return 127
+        '';
+      };
+
       mkcd = "mkdir -p $argv[1] && cd $argv[1]";
 
       # === On-Demand Dynamic Proxy (Per Terminal Tab) ===
