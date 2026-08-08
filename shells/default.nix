@@ -8,7 +8,7 @@
 #   1. cp -r shells/_template shells/<name>
 #   2. add one line to `shellDirs` below
 #
-# The `dev` launcher builds its menu from `devShellMeta`, exported below, so
+# The `dev` launcher builds its menu from `devShellsMeta`, exported below, so
 # a new shell shows up there automatically — no second list to update.
 # ==============================================================================
 {
@@ -27,11 +27,11 @@
 
   # Registered environments. `_template` is deliberately excluded.
   shellDirs = [
+    "agent"
     "audit"
     "box"
     "build"
     "cli"
-    "data"
     "go"
     "media"
     "nix"
@@ -56,12 +56,12 @@
   # prints. A shell missing from every group still appears, under "Other".
   groups = [
     {
-      title = "Languages & Runtimes";
-      members = ["python" "rust" "go" "web"];
+      title = "AI & Autonomous Agents";
+      members = ["agent"];
     }
     {
-      title = "Data";
-      members = ["data"];
+      title = "Languages, Data & Runtimes";
+      members = ["python" "rust" "go" "web"];
     }
     {
       title = "Media & Content";
@@ -72,7 +72,7 @@
       members = ["cli" "build" "nix"];
     }
     {
-      title = "Security";
+      title = "Security & Isolation";
       members = ["box" "audit"];
     }
   ];
@@ -92,8 +92,10 @@
       shells;
     inherit groups;
     aliases = {
+      ai = "agent";
       c = "build";
       default = "nix";
+      data = "python"; # Data workflow merged into modern Python shell
     };
     extra = {
       test = {
@@ -108,8 +110,10 @@ in
     # `nix develop` with no argument, and `dev` with no argument.
     default = shells.nix;
 
-    # Alias: `dev c` -> `dev build`
+    # Aliases
+    ai = shells.agent;
     c = shells.build;
+    data = shells.python;
 
     # Composite environment for cross-language work.
     test = mkDevShell {
@@ -130,7 +134,5 @@ in
     };
 
     # Not a shell: metadata for the `dev` launcher's menu.
-    # Hidden from `nix flake show` output by convention (leading underscore
-    # would break genAttrs consumers, so it is documented instead).
     devShellsMeta = meta;
   }

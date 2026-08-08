@@ -161,15 +161,17 @@ go test ./...
 pnpm install / bun install
 pnpm dev / bun run dev
 tsc --noEmit
+biome check --write .
 eslint . / prettier -w .
 ```
 
-### `dev data`
+### `dev python` (همراه با ابزارهای داده)
 
 ```sh
-jupyter lab
-duckdb / sqlite3
-ipython
+ipython / marimo edit notebook.py
+duckdb / jupyter lab
+ruff check . / ruff format .
+uv venv / uv pip install -r req.txt
 ```
 
 ### `dev media`

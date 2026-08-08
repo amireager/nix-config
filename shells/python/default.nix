@@ -6,32 +6,45 @@
 mkDevShell {
   name = "python";
   icon = "🐍";
-  description = "uv, Poetry, Ruff, Pyright, IPython";
+  description = "uv, Ruff, Pyright, Data & AI (Polars, Pandas, DuckDB, Marimo)";
 
   packages = with pkgs; [
-    # Core Python & packaging
+    # Core Python runtime & package managers
     python3
-    uv # Resolver/installer/venv manager — replaces pip + virtualenv
+    uv # Fast resolver/installer/venv manager (replaces pip + virtualenv)
     poetry # Kept for existing pyproject-based projects
     python3Packages.ipython # Enhanced interactive REPL
 
-    # Linters, formatters & type checkers
-    ruff
-    pyright
+    # Data Science, Analysis & Notebooks (Integrated)
+    python3Packages.numpy
+    python3Packages.pandas
+    python3Packages.polars # High-performance multi-threaded DataFrame engine (Rust)
+    marimo # Next-generation reactive Python notebook
+    python3Packages.jupyterlab # Classical interactive lab environment
+    duckdb # In-process SQL OLAP database
+    sqlite # Local relational database
 
-    # Dev utilities
+    # Linters, formatters & type checkers
+    ruff # Extremely fast Python linter and code formatter (Rust)
+    pyright # Static type checker and LSP
+
+    # Dev & JSON utilities
     jq
   ];
 
   env = {
     PYTHONUNBUFFERED = "1";
-    UV_PYTHON_DOWNLOADS = "never"; # Use the Nix interpreter, never fetch one
+    UV_PYTHON_DOWNLOADS = "never"; # Use the Nix interpreter, never fetch external ones
   };
 
   tips = [
     {
       key = "Interactive REPL";
-      cmd = "ipython";
+      cmd = "ipython / marimo edit notebook.py";
+    }
+    {
+      key = "Data & SQL";
+      cmd = "duckdb / jupyter lab";
     }
     {
       key = "Lint / Format";
@@ -39,11 +52,11 @@ mkDevShell {
     }
     {
       key = "Fast venv+deps";
-      cmd = "uv venv / uv pip install -r req.txt";
+      cmd = "uv venv / uv pip install -r requirements.txt";
     }
     {
       key = "Legacy projects";
-      cmd = "poetry run / poetry add";
+      cmd = "poetry run / poetry add <pkg>";
     }
   ];
 

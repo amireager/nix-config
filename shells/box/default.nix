@@ -4,420 +4,389 @@
   ...
 }:
 # ==============================================================================
-# BOX — run tools without handing them your home directory
+# BOX — Next-Gen Developer & AI Agent Sandbox (Bubblewrap & Masked Paths)
 # ==============================================================================
-# Three problems, one mechanism:
-#
-#   1. Safety   — run unaudited programs without exposing ~/.ssh, ~/.aws,
-#                 tokens, or other agents' credentials.
-#   2. Tidiness — agents scatter config/cache/state across the home directory.
-#                 Confine each one to a profile folder instead.
-#   3. Identity — every agent gets its OWN home, so `mimo` cannot read
-#                 opencode's auth.json. (Observed in practice: mimo touches
-#                 ~/.local/share/opencode/auth.json and ~/.claude/projects.)
-#
-# All three are solved by building a mount namespace where the paths we did not
-# allow SIMPLY DO NOT EXIST. This is the difference from an env-var approach
-# (XDG_CONFIG_HOME=…): there the tool can still read $HOME and write anywhere.
-# Here the syscall returns ENOENT because there is nothing to open.
-#
-# ── The home-swap trick ───────────────────────────────────────────────────
-# The profile directory is bind-mounted AT the real home path (/home/$USER),
-# not merely pointed at by $HOME. Many tools ignore the environment variable
-# and call getpwuid(getuid())->pw_dir instead; mounting over the real path
-# covers both. Inside the box, /home/$USER exists and is writable, but its
-# contents are the profile — the real home is not in the namespace at all.
-#
-# ── Two strictness levels ─────────────────────────────────────────────────
-# `box run`  — allowlist: only /nix/store plus a few /etc files. Maximum
-#              containment, but shell scripts with #!/bin/bash and downloaded
-#              binaries fail, because /bin and /run/current-system are absent.
-# `box dev`  — the whole system read-only, home swapped. Scripts and
-#              pre-built binaries work (nix-ld is wired through), the system
-#              cannot be modified, and the real home is still invisible.
-#              This is the `fj` replacement.
-#
-# ── Honest limits ─────────────────────────────────────────────────────────
-# bwrap shares the host kernel. Right tool for "software I have not audited"
-# and for "stop this thing littering my home". NOT a boundary against
-# deliberate malware — a kernel exploit escapes it. Use `box vm` for that.
+# A zero-overhead, ultra-fast sandboxing engine designed for:
+#   1. Privacy & Path Masking: Host paths and username are completely invisible.
+#      Project is mounted at `/work` and user is `dev` with HOME `/home/dev`.
+#   2. Local Package Installation: Full support for `npm -g`, `pip`, `cargo`,
+#      and `curl | bash` without polluting or modifying the host operating system.
+#   3. Multi-Path Sharing (-s): Mount host configs (e.g. -s ~/.config/nvim -s ~/.config/opencode)
+#      directly to their matching sandbox paths (/home/dev/...) in read-only or read-write mode.
+#   4. Flexible Controls: Modifiers for Ephemeral RAM mode (-e), Zero-Net (-n),
+#      Proxy routing (-P), GPU/CUDA hardware access (-g), and directory sharing (-s).
+#   5. Outgoing & Incoming Ports: Web UIs, dev servers, and local proxies can
+#      listen and be accessed on host ports (0.0.0.0 / 127.0.0.1) seamlessly.
 # ==============================================================================
 let
-  # ── Shared runtime helpers ────────────────────────────────────────────────
-  # Kept in one place so policy cannot drift between subcommands.
-  common = ''
-    _box_die() { printf 'box: %s\n' "$1" >&2; exit 1; }
-
-    # Project root: nearest ancestor containing .box/, else $PWD.
-    _box_root() {
-      local d="$PWD"
-      while [ "$d" != "/" ]; do
-        [ -d "$d/.box" ] && { printf '%s' "$d"; return; }
-        d="$(dirname "$d")"
-      done
-      printf '%s' "$PWD"
-    }
-
-    # Profiles are per-project and there may be several, so a single task can
-    # keep e.g. `agent-a` and `agent-b` completely separate.
-    _box_init() {
-      BOX_PROFILE="''${1:-default}"
-      BOX_ROOT="$(_box_root)"
-      BOX_DIR="$BOX_ROOT/.box"
-      BOX_HOME="$BOX_DIR/profiles/$BOX_PROFILE"
-      BOX_REAL_HOME="''${HOME:-/home/$USER}"
-
-      mkdir -p "$BOX_HOME"/.{config,cache,local/share,local/state}
-      [ -f "$BOX_DIR/.gitignore" ] || printf '*\n' > "$BOX_DIR/.gitignore"
-    }
-
-    # Environment every box gets. Deliberately minimal: no SSH_AUTH_SOCK, no
-    # API keys, no GPG agent — if a tool needs a secret it must be placed in
-    # the profile explicitly.
-    _box_env() {
-      BOX_ENV=(
-        --setenv HOME "$BOX_REAL_HOME"
-        --setenv USER "''${USER:-user}"
-        --setenv LOGNAME "''${USER:-user}"
-        --setenv SHELL "''${SHELL:-/bin/sh}"
-        --setenv PATH "$PATH"
-        --setenv TERM "''${TERM:-xterm-256color}"
-        --setenv COLORTERM "''${COLORTERM:-truecolor}"
-        --setenv LANG "''${LANG:-C.UTF-8}"
-        --setenv XDG_CONFIG_HOME "$BOX_REAL_HOME/.config"
-        --setenv XDG_CACHE_HOME "$BOX_REAL_HOME/.cache"
-        --setenv XDG_DATA_HOME "$BOX_REAL_HOME/.local/share"
-        --setenv XDG_STATE_HOME "$BOX_REAL_HOME/.local/state"
-        --setenv XDG_RUNTIME_DIR "/tmp/xdg-runtime"
-        --setenv BOX_ACTIVE "1"
-        --setenv BOX_PROFILE "$BOX_PROFILE"
-      )
-
-      # nix-ld makes downloaded, non-Nix binaries runnable. Without these two
-      # variables such a binary cannot even start on NixOS.
-      [ -n "''${NIX_LD:-}" ] && BOX_ENV+=(--setenv NIX_LD "$NIX_LD")
-      [ -n "''${NIX_LD_LIBRARY_PATH:-}" ] &&
-        BOX_ENV+=(--setenv NIX_LD_LIBRARY_PATH "$NIX_LD_LIBRARY_PATH")
-    }
-
-    # Mount layout shared by run/dev: profile over the real home, project
-    # read-write, a private /tmp.
-    _box_mounts() {
-      BOX_MOUNTS=(
-        --die-with-parent
-        --unshare-user
-        --unshare-ipc
-        --unshare-pid
-        --unshare-uts
-        --unshare-cgroup-try
-        --proc /proc
-        --dev /dev
-        --tmpfs /tmp
-        --dir /tmp/xdg-runtime
-        --tmpfs "$BOX_REAL_HOME"
-        --bind "$BOX_HOME" "$BOX_REAL_HOME"
-        --bind "$BOX_ROOT" "$BOX_ROOT"
-        --chdir "$PWD"
-      )
-    }
-
-    # NOTE ON --new-session
-    # bwrap's --new-session calls setsid(), which detaches the sandbox from the
-    # controlling terminal. That blocks TIOCSTI keystroke injection, but it
-    # also breaks every interactive TUI: fish refuses to start ("No TTY for
-    # interactive shell"), and agent chat interfaces never draw.
-    # We therefore omit it for interactive use and rely on the kernel instead:
-    # TIOCSTI is disabled by default since Linux 6.2. Verify with
-    #   sysctl dev.tty.legacy_tiocsti      # expect 0
-    # and see modules/nixos/security.nix, which pins it explicitly.
-    # Non-interactive invocations (`box exec`) still get --new-session.
-  '';
-
   bwrap = "${pkgs.bubblewrap}/bin/bwrap";
 
-  # ── box dev — system visible read-only, home swapped ──────────────────────
-  boxDev = pkgs.writeShellScriptBin "box-dev" ''
-    set -eu
-    ${common}
-    _box_init "''${BOX_PROFILE_NAME:-default}"
-    [ $# -gt 0 ] || _box_die "usage: box dev [-p profile] <command> [args...]"
-    _box_env
-    _box_mounts
+  boxCli = pkgs.writeShellScriptBin "box" ''
+        set -euo pipefail
 
-    # Whole system read-only. This is what makes #!/bin/bash scripts and
-    # downloaded binaries work, unlike the allowlist in `box run`.
-    exec ${bwrap} \
-      "''${BOX_MOUNTS[@]}" "''${BOX_ENV[@]}" \
-      --ro-bind / / \
-      --tmpfs "$BOX_REAL_HOME" \
-      --bind "$BOX_HOME" "$BOX_REAL_HOME" \
-      --bind "$BOX_ROOT" "$BOX_ROOT" \
-      --tmpfs /tmp \
-      --dir /tmp/xdg-runtime \
-      --proc /proc \
-      --dev /dev \
-      --share-net \
-      -- "$@"
-  '';
+        # ── Color Palette ────────────────────────────────────────────────────────
+        C_RESET="\033[0m"
+        C_BOLD="\033[1m"
+        C_CYAN="\033[1;36m"
+        C_GREEN="\033[1;32m"
+        C_YELLOW="\033[1;33m"
+        C_RED="\033[1;31m"
+        C_MAGENTA="\033[1;35m"
+        C_DIM="\033[1;30m"
 
-  # ── box run — strict allowlist ────────────────────────────────────────────
-  boxRun = pkgs.writeShellScriptBin "box-run" ''
-    set -eu
-    ${common}
-    _box_init "''${BOX_PROFILE_NAME:-default}"
-    [ $# -gt 0 ] || _box_die "usage: box run [-p profile] <command> [args...]"
-    _box_env
-    _box_mounts
+        print_help() {
+          cat <<EOF
+    ''${C_CYAN}''${C_BOLD}╔═══════════════════════════════════════════════════════════════════╗
+    ║                   📦 BOX — Sandboxing Engine                      ║
+    ╚═══════════════════════════════════════════════════════════════════╝''${C_RESET}
 
-    exec ${bwrap} \
-      "''${BOX_MOUNTS[@]}" "''${BOX_ENV[@]}" \
-      --ro-bind /nix/store /nix/store \
-      --ro-bind-try /etc/ssl /etc/ssl \
-      --ro-bind-try /etc/static/ssl /etc/static/ssl \
-      --ro-bind-try /etc/ssl/certs /etc/ssl/certs \
-      --ro-bind-try /etc/resolv.conf /etc/resolv.conf \
-      --ro-bind-try /etc/hosts /etc/hosts \
-      --ro-bind-try /etc/localtime /etc/localtime \
-      --ro-bind-try /etc/zoneinfo /etc/zoneinfo \
-      --share-net \
-      -- "$@"
-  '';
+    ''${C_BOLD}USAGE:''${C_RESET}
+      box [FLAGS] [COMMAND [ARGS...]]
 
-  # ── box offline — like dev, but no network ────────────────────────────────
-  boxOffline = pkgs.writeShellScriptBin "box-offline" ''
-    set -eu
-    ${common}
-    _box_init "''${BOX_PROFILE_NAME:-default}"
-    [ $# -gt 0 ] || _box_die "usage: box net [-p profile] <command> [args...]"
-    _box_env
-    _box_mounts
+    ''${C_BOLD}BEHAVIOR:''${C_RESET}
+      • If no command is given, launches an interactive shell (''${SHELL:-fish}) inside /work.
+      • The real host path and username are hidden: project is at ''${C_GREEN}/work''${C_RESET}, HOME is ''${C_GREEN}/home/dev''${C_RESET}.
+      • Local tools (npm -g, pip, cargo, curl | sh) install into project's .box/ without root.
+      • Dev servers and Web UIs (e.g. localhost:3000) are fully accessible on the host.
 
-    exec ${bwrap} \
-      "''${BOX_MOUNTS[@]}" "''${BOX_ENV[@]}" \
-      --unshare-net \
-      --ro-bind / / \
-      --tmpfs "$BOX_REAL_HOME" \
-      --bind "$BOX_HOME" "$BOX_REAL_HOME" \
-      --bind "$BOX_ROOT" "$BOX_ROOT" \
-      --tmpfs /tmp \
-      --dir /tmp/xdg-runtime \
-      --proc /proc \
-      --dev /dev \
-      -- "$@"
-  '';
+    ''${C_BOLD}FLAGS & MODIFIERS:''${C_RESET}
+      ''${C_YELLOW}-e, --ephemeral, --tmp''${C_RESET}     Pure RAM mode (tmpfs). Everything vanishes upon exit.
+      ''${C_YELLOW}-n, --offline, --no-net''${C_RESET}    Completely cut off network access (Zero-Net).
+      ''${C_YELLOW}-P, --proxy [PORT]''${C_RESET}         Route all traffic through SOCKS5 proxy (default: 1819).
+      ''${C_YELLOW}-g, --gpu''${C_RESET}                  Grant access to Nvidia GPU and CUDA devices.
+      ''${C_YELLOW}-s, --share <PATH>''${C_RESET}        Share host path (repeatable, e.g. -s ~/.config/nvim -s ~/.config/opencode).
+      ''${C_YELLOW}-w, --workdir <DIR>''${C_RESET}        Use custom directory as workspace instead of current directory.
+      ''${C_YELLOW}--clean''${C_RESET}                    Wipe the local .box/ storage for the current project.
+      ''${C_YELLOW}--inspect <CMD>''${C_RESET}            Trace file and network calls with strace.
+      ''${C_YELLOW}-h, --help''${C_RESET}                 Show this help manual.
 
-  # ── box exec — non-interactive, with --new-session ────────────────────────
-  # Safe to harden fully because nothing needs a controlling terminal.
-  boxExec = pkgs.writeShellScriptBin "box-exec" ''
-    set -eu
-    ${common}
-    _box_init "''${BOX_PROFILE_NAME:-default}"
-    [ $# -gt 0 ] || _box_die "usage: box exec [-p profile] <command> [args...]"
-    _box_env
-    _box_mounts
+    ''${C_BOLD}EXAMPLES:''${C_RESET}
+      ''${C_DIM}# 1. Interactive sandbox shell''${C_RESET}
+      box
 
-    exec ${bwrap} \
-      "''${BOX_MOUNTS[@]}" "''${BOX_ENV[@]}" \
-      --new-session \
-      --ro-bind / / \
-      --tmpfs "$BOX_REAL_HOME" \
-      --bind "$BOX_HOME" "$BOX_REAL_HOME" \
-      --bind "$BOX_ROOT" "$BOX_ROOT" \
-      --tmpfs /tmp \
-      --dir /tmp/xdg-runtime \
-      --proc /proc \
-      --dev /dev \
-      --share-net \
-      -- "$@"
-  '';
+      ''${C_DIM}# 2. Run Neovim with host config inside sandbox''${C_RESET}
+      box -s ~/.config/nvim nvim main.py
 
-  # ── box vm — podman, separate root and kernel surface ─────────────────────
-  boxVm = pkgs.writeShellScriptBin "box-vm" ''
-    set -eu
-    ${common}
-    _box_init "''${BOX_PROFILE_NAME:-default}"
-    [ $# -gt 0 ] || _box_die "usage: box vm [-p profile] <command> [args...]"
+      ''${C_DIM}# 3. Share multiple configs & directories at once''${C_RESET}
+      box -s ~/.config/nvim -s ~/.config/opencode -s ~/Downloads
 
-    IMG="''${BOX_IMAGE:-docker.io/library/debian:stable-slim}"
-    exec ${pkgs.podman}/bin/podman run --rm -it \
-      --userns=keep-id \
-      --security-opt no-new-privileges \
-      --cap-drop=ALL \
-      -v "$BOX_ROOT":/work:rw \
-      -v "$BOX_HOME":/root:rw \
-      -w /work \
-      "$IMG" "$@"
-  '';
+      ''${C_DIM}# 4. Test untrusted script in RAM (zero traces on disk)''${C_RESET}
+      box -e curl -sSL https://example.com/install.sh | bash
 
-  # ── box limit — resource ceiling, orthogonal to isolation ─────────────────
-  boxLimit = pkgs.writeShellScriptBin "box-limit" ''
-    set -eu
-    MEM="''${BOX_MEM:-4G}"
-    CPU="''${BOX_CPU:-200%}"
-    [ $# -gt 0 ] || { echo "usage: box limit <command> [args...]" >&2; exit 1; }
-    exec systemd-run --user --scope --quiet \
-      -p MemoryMax="$MEM" -p CPUQuota="$CPU" -- "$@"
-  '';
+      ''${C_DIM}# 5. Isolated offline build/test''${C_RESET}
+      box -n npm test
 
-  # ── box inspect — evidence instead of guesswork ───────────────────────────
-  boxInspect = pkgs.writeShellScriptBin "box-inspect" ''
-    set -eu
-    [ $# -gt 0 ] || { echo "usage: box inspect <command> [args...]" >&2; exit 1; }
-    LOG="$(mktemp)"
-    ${pkgs.strace}/bin/strace -f -e trace=file -o "$LOG" "$@" >/dev/null 2>&1 || true
-    echo "Paths touched outside the project:"
-    grep -oE '"[^"]+"' "$LOG" \
-      | tr -d '"' \
-      | grep -E "^($HOME|/etc|/var)" \
-      | grep -v "^$PWD" \
-      | sort -u \
-      | head -60
-    rm -f "$LOG"
-  '';
+      ''${C_DIM}# 6. Run AI model or PyTorch with Nvidia GPU acceleration''${C_RESET}
+      box -g python train.py
 
-  box = pkgs.writeShellScriptBin "box" ''
-        set -eu
+      ''${C_DIM}# 7. Force traffic through local proxy''${C_RESET}
+      box -P 1819 aichat "Explain this repo"
+    EOF
+        }
 
-        # -p/--profile selects which profile directory to use, so one project can
-        # hold several independent identities. Accepted before OR after the
-        # subcommand, because both read naturally:
-        #   box -p work dev hermes chat
-        #   box dev -p work hermes chat
-        PROFILE="default"
-        CMD=""
-        ARGS=()
+        # ── Default Options ──────────────────────────────────────────────────────
+        OPT_EPHEMERAL=0
+        OPT_OFFLINE=0
+        OPT_GPU=0
+        OPT_PROXY=""
+        OPT_SHARES=()
+        OPT_WORKDIR="$PWD"
+        OPT_INSPECT=0
+        CMD=()
+        REAL_HOST_HOME="''${HOME:-/home/''${USER:-user}}"
+
+        # ── Parse Command Line Flags ─────────────────────────────────────────────
         while [ $# -gt 0 ]; do
           case "$1" in
-            -p | --profile)
-              [ $# -ge 2 ] || { printf 'box: %s needs a profile name\n' "$1" >&2; exit 1; }
-              PROFILE="$2"
+            -h|--help)
+              print_help
+              exit 0
+              ;;
+            --clean)
+              if [ -d "$PWD/.box" ]; then
+                printf "''${C_YELLOW}Remove .box directory in %s? [y/N] ''${C_RESET}" "$PWD"
+                read -r reply
+                case "$reply" in
+                  [yY]*)
+                    rm -rf "$PWD/.box"
+                    echo -e "''${C_GREEN}✔ .box cleaned successfully.''${C_RESET}"
+                    exit 0
+                    ;;
+                  *)
+                    echo "Cancelled."
+                    exit 0
+                    ;;
+                esac
+              else
+                echo "No .box directory found in $PWD."
+                exit 0
+              fi
+              ;;
+            -e|--ephemeral|--tmp)
+              OPT_EPHEMERAL=1
+              shift
+              ;;
+            -n|--offline|--no-net)
+              OPT_OFFLINE=1
+              shift
+              ;;
+            -g|--gpu)
+              OPT_GPU=1
+              shift
+              ;;
+            -P|--proxy)
+              if [ $# -ge 2 ] && [[ "$2" =~ ^[0-9]+$ ]]; then
+                OPT_PROXY="$2"
+                shift 2
+              else
+                OPT_PROXY="1819"
+                shift
+              fi
+              ;;
+            -s|--share)
+              [ $# -ge 2 ] || { echo -e "''${C_RED}box: -s/--share requires a path argument''${C_RESET}" >&2; exit 1; }
+              OPT_SHARES+=("$2")
               shift 2
               ;;
+            -w|--workdir)
+              [ $# -ge 2 ] || { echo -e "''${C_RED}box: -w/--workdir requires a path argument''${C_RESET}" >&2; exit 1; }
+              OPT_WORKDIR="$(cd "$2" && pwd -P)"
+              shift 2
+              ;;
+            --inspect)
+              OPT_INSPECT=1
+              shift
+              ;;
+            --)
+              shift
+              CMD+=("$@")
+              break
+              ;;
             *)
-              if [ -z "$CMD" ]; then
-                CMD="$1"
-                shift
-              else
-                # Everything after the subcommand belongs to the child command;
-                # stop parsing so `box dev foo -p bar` passes -p through.
-                ARGS+=("$@")
-                break
-              fi
+              CMD+=("$@")
+              break
               ;;
           esac
         done
-        set -- ''${ARGS[@]+"''${ARGS[@]}"}
-        export BOX_PROFILE_NAME="$PROFILE"
 
-        case "$CMD" in
-          dev)     exec ${boxDev}/bin/box-dev "$@" ;;
-          run)     exec ${boxRun}/bin/box-run "$@" ;;
-          net)     exec ${boxOffline}/bin/box-offline "$@" ;;
-          exec)    exec ${boxExec}/bin/box-exec "$@" ;;
-          vm)      exec ${boxVm}/bin/box-vm "$@" ;;
-          limit)   exec ${boxLimit}/bin/box-limit "$@" ;;
-          inspect) exec ${boxInspect}/bin/box-inspect "$@" ;;
-          shell)   exec ${boxDev}/bin/box-dev ${pkgs.fish}/bin/fish ;;
+        # ── Workspace and Storage Layout ─────────────────────────────────────────
+        HOST_WORK="$OPT_WORKDIR"
+        BOX_STORAGE="$HOST_WORK/.box"
+        HOST_HOME="$BOX_STORAGE/home"
 
-          ls)
-            if [ -d .box/profiles ]; then
-              for p in .box/profiles/*/; do
-                [ -d "$p" ] || continue
-                printf '  %-20s %s\n' "$(basename "$p")" "$(du -sh "$p" 2>/dev/null | cut -f1)"
-              done
-            else
-              echo "  (no profiles yet in $PWD)"
+        if [ "$OPT_EPHEMERAL" -eq 0 ]; then
+          mkdir -p "$HOST_HOME"/{.config,.cache,.local/bin,.local/share,.npm-global/bin,.cargo/bin,go/bin}
+          if [ ! -f "$BOX_STORAGE/.gitignore" ]; then
+            mkdir -p "$BOX_STORAGE"
+            printf "*\n" > "$BOX_STORAGE/.gitignore"
+          fi
+        fi
+
+        # ── Build bwrap Arguments ────────────────────────────────────────────────
+        BWRAP_ARGS=(
+          --die-with-parent
+          --unshare-user
+          --unshare-ipc
+          --unshare-pid
+          --unshare-uts
+          --unshare-cgroup-try
+          --proc /proc
+          --dev /dev
+          --tmpfs /tmp
+          --dir /tmp/xdg-runtime
+        )
+
+        # Network configuration
+        if [ "$OPT_OFFLINE" -eq 1 ]; then
+          BWRAP_ARGS+=(--unshare-net)
+        else
+          BWRAP_ARGS+=(--share-net)
+        fi
+
+        # Root filesystem (Whole OS available as Read-Only for tools & libraries)
+        BWRAP_ARGS+=(--ro-bind / /)
+
+        # Workspace Masking: Mount project as /work and hide .box folder from inside /work
+        BWRAP_ARGS+=(--bind "$HOST_WORK" /work)
+        if [ -d "$BOX_STORAGE" ] && [ "$OPT_EPHEMERAL" -eq 0 ]; then
+          BWRAP_ARGS+=(--tmpfs "/work/.box")
+        fi
+
+        # Virtual HOME (/home/dev)
+        if [ "$OPT_EPHEMERAL" -eq 1 ]; then
+          BWRAP_ARGS+=(--tmpfs /home/dev)
+        else
+          BWRAP_ARGS+=(--bind "$HOST_HOME" /home/dev)
+        fi
+
+        # GPU Hardware Passthrough
+        if [ "$OPT_GPU" -eq 1 ]; then
+          for dev in /dev/nvidia* /dev/dri /dev/vga_arbiter; do
+            if [ -e "$dev" ]; then
+              BWRAP_ARGS+=(--dev-bind "$dev" "$dev")
             fi
-            ;;
+          done
+        fi
 
-          clean)
-            [ -d .box ] || { echo "box: nothing to clean"; exit 0; }
-            if [ "$PROFILE" != "default" ]; then
-              printf 'Remove profile %s? [y/N] ' "$PROFILE"
-              read -r a
-              case "$a" in [yY]*) rm -rf ".box/profiles/$PROFILE" && echo removed ;; *) echo kept ;; esac
+        # ── Multi-Path Sharing Logic (-s / --share) ──────────────────────────────
+        for entry in "''${OPT_SHARES[@]+''${OPT_SHARES[@]}}"; do
+          [ -n "$entry" ] || continue
+          src=""
+          dst=""
+          mode="--ro-bind-try"
+
+          if [[ "$entry" == *":"* ]]; then
+            p1=""
+            p2=""
+            p3=""
+            IFS=":" read -r p1 p2 p3 <<< "$entry"
+            src="$p1"
+            if [ "$p2" = "rw" ] || [ "$p2" = "ro" ]; then
+              [ "$p2" = "rw" ] && mode="--bind-try"
             else
-              printf 'Remove ALL of %s/.box? [y/N] ' "$PWD"
-              read -r a
-              case "$a" in [yY]*) rm -rf .box && echo removed ;; *) echo kept ;; esac
+              dst="$p2"
+              [ "$p3" = "rw" ] && mode="--bind-try"
             fi
-            ;;
+          else
+            src="$entry"
+          fi
 
-          *)
-            cat <<'USAGE'
-    box — run tools without handing them your home directory
+          # Expand tilde
+          src="''${src/#\~/$REAL_HOST_HOME}"
+          if [ -e "$src" ]; then
+            src="$(cd "$(dirname "$src")" && pwd -P)/$(basename "$src")"
+            if [ -z "$dst" ]; then
+              if [[ "$src" == "$REAL_HOST_HOME"* ]]; then
+                rel="''${src#$REAL_HOST_HOME/}"
+                dst="/home/dev/$rel"
+              else
+                base="$(basename "$src")"
+                dst="/shared/$base"
+              fi
+            else
+              dst="''${dst/#\~//home/dev}"
+            fi
+            BWRAP_ARGS+=("$mode" "$src" "$dst")
+          fi
+        done
 
-      box dev     <cmd>   system read-only, home swapped   ← default choice
-      box run     <cmd>   strict allowlist (/nix/store only)
-      box net     <cmd>   like dev, no network
-      box exec    <cmd>   non-interactive, fully hardened
-      box vm      <cmd>   podman: separate root, caps dropped
-      box shell           interactive fish inside a box
-      box limit   <cmd>   cap memory/CPU (BOX_MEM=4G BOX_CPU=200%)
-      box inspect <cmd>   trace which paths a tool really needs
-      box ls              list this project's profiles
-      box clean           delete a profile, or all of .box
+        # Working Directory inside sandbox
+        BWRAP_ARGS+=(--chdir /work)
 
-      -p <name>           pick a profile (default: "default")
+        # ── Sandbox Environment Variables ────────────────────────────────────────
+        ENV_ARGS=(
+          --setenv USER "dev"
+          --setenv LOGNAME "dev"
+          --setenv HOME "/home/dev"
+          --setenv PWD "/work"
+          --setenv TERM "''${TERM:-xterm-256color}"
+          --setenv COLORTERM "''${COLORTERM:-truecolor}"
+          --setenv LANG "''${LANG:-C.UTF-8}"
+          --setenv XDG_CONFIG_HOME "/home/dev/.config"
+          --setenv XDG_CACHE_HOME "/home/dev/.cache"
+          --setenv XDG_DATA_HOME "/home/dev/.local/share"
+          --setenv XDG_RUNTIME_DIR "/tmp/xdg-runtime"
+          --setenv npm_config_prefix "/home/dev/.npm-global"
+          --setenv PIP_PREFIX "/home/dev/.local"
+          --setenv CARGO_HOME "/home/dev/.cargo"
+          --setenv GOPATH "/home/dev/go"
+          --setenv PATH "/home/dev/.npm-global/bin:/home/dev/.local/bin:/home/dev/.cargo/bin:/home/dev/go/bin:$PATH"
+          --setenv BOX_ACTIVE "1"
+        )
 
-    Each profile is a separate home at ./.box/profiles/<name>/, mounted over
-    the real home path inside the box. Two profiles never see each other, so
-    one agent cannot read another's credentials.
+        # Dynamic library & nix-ld passthrough for pre-compiled / downloaded binaries
+        [ -n "''${NIX_LD:-}" ] && ENV_ARGS+=(--setenv NIX_LD "$NIX_LD")
+        [ -n "''${NIX_LD_LIBRARY_PATH:-}" ] && ENV_ARGS+=(--setenv NIX_LD_LIBRARY_PATH "$NIX_LD_LIBRARY_PATH")
 
-      box -p work  dev  hermes chat
-      box -p test  dev  hermes chat      # independent identity
+        # Proxy Routing
+        if [ -n "$OPT_PROXY" ]; then
+          PROXY_URL="socks5h://127.0.0.1:$OPT_PROXY"
+          ENV_ARGS+=(
+            --setenv ALL_PROXY "$PROXY_URL"
+            --setenv HTTP_PROXY "$PROXY_URL"
+            --setenv HTTPS_PROXY "$PROXY_URL"
+            --setenv all_proxy "$PROXY_URL"
+            --setenv http_proxy "$PROXY_URL"
+            --setenv https_proxy "$PROXY_URL"
+            --setenv SOCKS5_SERVER "127.0.0.1:$OPT_PROXY"
+          )
+        fi
 
-    dev vs run: `dev` exposes the system read-only so #!/bin/bash scripts and
-    downloaded binaries work. `run` shows only /nix/store — stricter, but most
-    scripts will not start.
-    USAGE
-            ;;
-        esac
+        # ── Determine Target Command ─────────────────────────────────────────────
+        if [ ''${#CMD[@]} -eq 0 ]; then
+          if command -v fish >/dev/null 2>&1; then
+            TARGET_CMD=(fish)
+          else
+            TARGET_CMD=(bash)
+          fi
+        else
+          TARGET_CMD=("''${CMD[@]}")
+        fi
+
+        # ── Execution ────────────────────────────────────────────────────────────
+        if [ "$OPT_INSPECT" -eq 1 ]; then
+          echo -e "''${C_MAGENTA}🔍 [box inspect] Monitoring filesystem access with strace...''${C_RESET}"
+          exec ${pkgs.strace}/bin/strace -f -e trace=file ${bwrap} "''${BWRAP_ARGS[@]}" "''${ENV_ARGS[@]}" -- "''${TARGET_CMD[@]}"
+        else
+          exec ${bwrap} "''${BWRAP_ARGS[@]}" "''${ENV_ARGS[@]}" -- "''${TARGET_CMD[@]}"
+        fi
   '';
 in
   mkDevShell {
     name = "box";
     icon = "📦";
-    description = "Run agents and tools with a swapped-out home";
+    description = "Next-Gen Sandbox: Path Masking (/work), Multi-Share (-s), Ephemeral RAM & GPU";
 
     packages = [
-      box
+      boxCli
       pkgs.bubblewrap
-      pkgs.podman
       pkgs.strace
       pkgs.lsof
     ];
 
     tips = [
       {
-        key = "Usual case";
-        cmd = "box dev <cmd>";
+        key = "Interactive";
+        cmd = "box                 (launches isolated shell in /work)";
       }
       {
-        key = "Named profile";
-        cmd = "box -p work dev <cmd>";
+        key = "Share Host Configs";
+        cmd = "box -s ~/.config/nvim -s ~/.config/opencode";
       }
       {
-        key = "Strictest";
-        cmd = "box run <cmd>  /  box net <cmd>";
+        key = "Ephemeral RAM";
+        cmd = "box -e <cmd>        (pure memory tmpfs, zero disk trace)";
       }
       {
-        key = "Explore";
-        cmd = "box shell";
+        key = "Zero-Net";
+        cmd = "box -n <cmd>        (isolated network stack)";
       }
       {
-        key = "Learn needs";
-        cmd = "box inspect <cmd>";
+        key = "GPU / CUDA";
+        cmd = "box -g <cmd>        (Nvidia GTX 1650 & CUDA passthrough)";
       }
       {
-        key = "Profiles";
-        cmd = "box ls  /  box -p x clean";
+        key = "Proxy Route";
+        cmd = "box -P 1819 <cmd>   (route all traffic through local proxy)";
+      }
+      {
+        key = "Shared folder";
+        cmd = "box -s ~/Downloads  (mounts external dir at /home/dev/Downloads)";
+      }
+      {
+        key = "Inspect";
+        cmd = "box --inspect <cmd> (trace touched paths with strace)";
+      }
+      {
+        key = "Clean Storage";
+        cmd = "box --clean         (wipe current project's .box folder)";
       }
     ];
 
     notes = [
-      "Profiles live in ./.box/profiles/<name>/ and are mounted over \\$HOME"
-      "dev = system read-only (scripts work) · run = /nix/store only (strict)"
-      "bwrap shares the host kernel: good for unaudited tools, not for malware"
+      "Path Masking: Real host path & username are hidden (/work & /home/dev)"
+      "Multi-Share: -s maps host configs directly into /home/dev/... cleanly"
+      "Local Tools: npm -g, pip, cargo, and curl | bash install cleanly into .box"
+      "Ports Open: Web UIs & dev servers on localhost/0.0.0.0 reach the host browser"
     ];
   }

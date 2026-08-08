@@ -6,7 +6,7 @@
 mkDevShell {
   name = "web";
   icon = "🌐";
-  description = "Node.js, Bun, pnpm, TypeScript, Lint";
+  description = "Node.js, Bun, pnpm, TypeScript, Biome, Tailwind";
 
   packages = with pkgs; [
     # Core runtimes & package managers
@@ -15,20 +15,25 @@ mkDevShell {
     pnpm # Efficient alternative package manager
     yarn # Traditional package manager alternative
 
+    # Ultra-fast Rust-powered Linter & Formatter
+    biome # One toolchain to format & lint JS/TS/JSON/CSS with 25x speed
+
     # Languages & Neovim language servers
     typescript # TypeScript compiler (tsc)
     typescript-language-server # LSP for Neovim TypeScript autocompletion
     vtsls # High-performance alternative TypeScript LSP
     tailwindcss-language-server # Autocomplete & linting for Tailwind classes
 
-    # Linters, formatters & QA
+    # Traditional Linters & formatters (compatibility)
     eslint # JavaScript/TypeScript pluggable linter
     prettier # Opinionated formatter for web stacks
-    # biome  # Rust-powered alternative to ESLint/Prettier
-    # vitest # Fast testing framework
   ];
 
   tips = [
+    {
+      key = "Fast Biome QA";
+      cmd = "biome check --write .";
+    }
     {
       key = "Install";
       cmd = "pnpm install / bun install";
@@ -42,8 +47,8 @@ mkDevShell {
       cmd = "tsc --noEmit";
     }
     {
-      key = "Lint & Format";
-      cmd = "eslint . / prettier -w .";
+      key = "Format";
+      cmd = "prettier -w .";
     }
   ];
 
@@ -51,8 +56,8 @@ mkDevShell {
   # execute node/bun on every evaluation.
   extraHook = ''
     if [ -t 1 ] && [ -z "''${DEVSHELL_QUIET:-}" ]; then
-      printf '  \033[1;30mnode %s · bun %s · pnpm %s\033[0m\n' \
-        "$(node -v 2>/dev/null)" "$(bun --version 2>/dev/null)" "$(pnpm -v 2>/dev/null)"
+      printf '  \033[1;30mnode %s · bun %s · pnpm %s · biome %s\033[0m\n' \
+        "$(node -v 2>/dev/null)" "$(bun --version 2>/dev/null)" "$(pnpm -v 2>/dev/null)" "$(biome --version 2>/dev/null)"
     fi
   '';
 }

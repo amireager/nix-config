@@ -137,16 +137,15 @@ users/amir/
 | شل | برای چه |
 | :--- | :--- |
 | `nix` | بسته‌بندی، بازبینی، تحلیل closure |
-| `python` | uv، Poetry، Ruff، Pyright، IPython |
-| `rust` | Cargo، Rust-Analyzer، Clippy |
-| `go` | Go، Gopls، GolangCI-Lint، Delve |
-| `web` | Node.js، Bun، pnpm، TypeScript |
-| `data` | Pandas، NumPy، DuckDB، Jupyter |
+| `python` | uv، Ruff، Pyright، Data & AI (Polars, Pandas, DuckDB, Marimo) |
+| `rust` | Cargo، Rust-Analyzer، Clippy، Watch، Edit، LLDB |
+| `go` | Go، Gopls، GolangCI-Lint، Air Live-Reload، Delve |
+| `web` | Node.js، Bun، pnpm، TypeScript، Biome، Tailwind |
 | `media` | ffmpeg-full، vips، ImageMagick، OCR، PDF |
 | `build` | GCC، Clang، CMake، Ninja — با نام `dev c` هم |
 | `cli` | ابزارهای تحلیل و پروفایلینگ سنگین |
-| `box` | اجرای ابزار با home جابه‌جاشده |
-| `audit` | بررسی CVE، راز، سخت‌سازی |
+| `box` | سندباکس اجرای ابزارها با ماسک‌سازی مسیرها و رم موقت (-e) |
+| `audit` | بررسی CVE، راز، قفل‌فایل‌ها، سخت‌سازی |
 
 دوتای آخر خودنوشته‌اند و فصل خودشان را دارند:
 → [۰۸ سندباکس](08-sandbox.md)

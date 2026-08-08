@@ -6,7 +6,7 @@
 mkDevShell {
   name = "rust";
   icon = "🦀";
-  description = "Cargo, Rust-Analyzer, Clippy";
+  description = "Cargo, Rust-Analyzer, Clippy, Watch, Edit, LLDB";
 
   packages = with pkgs; [
     # Core Rust toolchain
@@ -15,6 +15,10 @@ mkDevShell {
     rust-analyzer
     clippy
     rustfmt
+
+    # Productivity & Cargo enhancements
+    cargo-watch # Automatically trigger rebuilds/tests on file save
+    cargo-edit # `cargo add`, `cargo rm`, `cargo upgrade`
 
     # Standard build dependencies for common crates
     pkg-config
@@ -28,6 +32,14 @@ mkDevShell {
   env.RUST_BACKTRACE = "1";
 
   tips = [
+    {
+      key = "Live Watch";
+      cmd = "cargo watch -x check -x test";
+    }
+    {
+      key = "Manage Deps";
+      cmd = "cargo add <crate> / cargo rm <crate>";
+    }
     {
       key = "Check & Lint";
       cmd = "cargo check / cargo clippy";
