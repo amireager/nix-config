@@ -7,8 +7,8 @@
   ...
 }: let
   inherit (inputs.nixpkgs.lib) mapAttrs mapAttrsToList;
-  userSystemModules = mapAttrsToList (name: path: path + "/default.nix") users;
-  userHomeModules = mapAttrs (name: path: import (path + "/home.nix")) users;
+  userSystemModules = mapAttrsToList (_: path: path + "/default.nix") users;
+  userHomeModules = mapAttrs (_: path: import (path + "/home.nix")) users;
 in
   inputs.nixpkgs.lib.nixosSystem {
     # `system` is deliberately NOT passed here. nixosSystem's own `system`

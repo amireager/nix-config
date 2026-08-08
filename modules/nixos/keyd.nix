@@ -1,7 +1,7 @@
 # ============================================================
 # KEYD — Kernel-level Key Remapper Daemon (CapsLock Navigation)
 # ============================================================
-{...}: {
+_: {
   services.keyd = {
     enable = true;
     keyboards = {

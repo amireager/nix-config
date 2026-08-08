@@ -13,42 +13,47 @@
     package = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
   };
 
-  # Display manager — SDDM with Catppuccin Mocha dark theme
-  services.displayManager.sddm = {
-    enable = true;
-    wayland.enable = true;
-    package = pkgs.kdePackages.sddm;
-    theme = "catppuccin-mocha-mauve";
-  };
+  # Services: Display Manager, Audio, Bluetooth, GVFS
+  services = {
+    displayManager.sddm = {
+      enable = true;
+      wayland.enable = true;
+      package = pkgs.kdePackages.sddm;
+      theme = "catppuccin-mocha-mauve";
+    };
 
-  # Audio
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    jack.enable = true;
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+      jack.enable = true;
+    };
+
+    blueman.enable = true;
+    gvfs.enable = true;
+    tumbler.enable = true;
   };
 
   # Graphics & Hardware Video Acceleration
-  hardware.graphics = {
-    enable = true;
-    enable32Bit = true;
-    extraPackages = with pkgs; [
-      libva
-      libva-utils
-                ];
-    extraPackages32 = with pkgs.pkgsi686Linux; [
-      libva
-    ];
-  };
+  hardware = {
+    graphics = {
+      enable = true;
+      enable32Bit = true;
+      extraPackages = with pkgs; [
+        libva
+        libva-utils
+      ];
+      extraPackages32 = with pkgs.pkgsi686Linux; [
+        libva
+      ];
+    };
 
-  # Bluetooth
-  hardware.bluetooth = {
-    enable = true;
-    powerOnBoot = true;
+    bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+    };
   };
-  services.blueman.enable = true;
 
   # XDG Portal
   xdg.portal = {
@@ -63,29 +68,29 @@
     enable = true;
     plugins = with pkgs; [thunar-archive-plugin thunar-volman];
   };
-  services.gvfs.enable = true;
-  services.tumbler.enable = true;
 
   # Wayland environment variables
-  environment.sessionVariables = {
-    NIXOS_OZONE_WL = "1";
-    QT_QPA_PLATFORM = "wayland";
-    AVALONIA_PLATFORM = "Wayland";
+  environment = {
+    sessionVariables = {
+      NIXOS_OZONE_WL = "1";
+      QT_QPA_PLATFORM = "wayland";
+      AVALONIA_PLATFORM = "Wayland";
+    };
+
+    systemPackages = with pkgs; [
+      wayland-utils
+      glib
+      gsettings-desktop-schemas
+
+      # Catppuccin SDDM dark theme — matches system Catppuccin Mocha
+      (pkgs.catppuccin-sddm.override {
+        flavor = "mocha";
+        accent = "mauve";
+        font = "JetBrainsMono Nerd Font";
+        fontSize = "10";
+        # background = "${../../backgrounds/sddm-dark.png}";
+        loginBackground = true;
+      })
+    ];
   };
-
-  environment.systemPackages = with pkgs; [
-    wayland-utils
-    glib
-    gsettings-desktop-schemas
-
-    # Catppuccin SDDM dark theme — matches system Catppuccin Mocha
-    (pkgs.catppuccin-sddm.override {
-      flavor = "mocha";
-      accent = "mauve";
-      font = "JetBrainsMono Nerd Font";
-      fontSize = "10";
-      # background = "${../../backgrounds/sddm-dark.png}";
-      loginBackground = true;
-    })
-  ];
 }

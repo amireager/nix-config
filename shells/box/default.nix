@@ -276,103 +276,103 @@ let
   '';
 
   box = pkgs.writeShellScriptBin "box" ''
-    set -eu
+        set -eu
 
-    # -p/--profile selects which profile directory to use, so one project can
-    # hold several independent identities. Accepted before OR after the
-    # subcommand, because both read naturally:
-    #   box -p work dev hermes chat
-    #   box dev -p work hermes chat
-    PROFILE="default"
-    CMD=""
-    ARGS=()
-    while [ $# -gt 0 ]; do
-      case "$1" in
-        -p | --profile)
-          [ $# -ge 2 ] || { printf 'box: %s needs a profile name\n' "$1" >&2; exit 1; }
-          PROFILE="$2"
-          shift 2
-          ;;
-        *)
-          if [ -z "$CMD" ]; then
-            CMD="$1"
-            shift
-          else
-            # Everything after the subcommand belongs to the child command;
-            # stop parsing so `box dev foo -p bar` passes -p through.
-            ARGS+=("$@")
-            break
-          fi
-          ;;
-      esac
-    done
-    set -- ''${ARGS[@]+"''${ARGS[@]}"}
-    export BOX_PROFILE_NAME="$PROFILE"
+        # -p/--profile selects which profile directory to use, so one project can
+        # hold several independent identities. Accepted before OR after the
+        # subcommand, because both read naturally:
+        #   box -p work dev hermes chat
+        #   box dev -p work hermes chat
+        PROFILE="default"
+        CMD=""
+        ARGS=()
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            -p | --profile)
+              [ $# -ge 2 ] || { printf 'box: %s needs a profile name\n' "$1" >&2; exit 1; }
+              PROFILE="$2"
+              shift 2
+              ;;
+            *)
+              if [ -z "$CMD" ]; then
+                CMD="$1"
+                shift
+              else
+                # Everything after the subcommand belongs to the child command;
+                # stop parsing so `box dev foo -p bar` passes -p through.
+                ARGS+=("$@")
+                break
+              fi
+              ;;
+          esac
+        done
+        set -- ''${ARGS[@]+"''${ARGS[@]}"}
+        export BOX_PROFILE_NAME="$PROFILE"
 
-    case "$CMD" in
-      dev)     exec ${boxDev}/bin/box-dev "$@" ;;
-      run)     exec ${boxRun}/bin/box-run "$@" ;;
-      net)     exec ${boxOffline}/bin/box-offline "$@" ;;
-      exec)    exec ${boxExec}/bin/box-exec "$@" ;;
-      vm)      exec ${boxVm}/bin/box-vm "$@" ;;
-      limit)   exec ${boxLimit}/bin/box-limit "$@" ;;
-      inspect) exec ${boxInspect}/bin/box-inspect "$@" ;;
-      shell)   exec ${boxDev}/bin/box-dev ${pkgs.fish}/bin/fish ;;
+        case "$CMD" in
+          dev)     exec ${boxDev}/bin/box-dev "$@" ;;
+          run)     exec ${boxRun}/bin/box-run "$@" ;;
+          net)     exec ${boxOffline}/bin/box-offline "$@" ;;
+          exec)    exec ${boxExec}/bin/box-exec "$@" ;;
+          vm)      exec ${boxVm}/bin/box-vm "$@" ;;
+          limit)   exec ${boxLimit}/bin/box-limit "$@" ;;
+          inspect) exec ${boxInspect}/bin/box-inspect "$@" ;;
+          shell)   exec ${boxDev}/bin/box-dev ${pkgs.fish}/bin/fish ;;
 
-      ls)
-        if [ -d .box/profiles ]; then
-          for p in .box/profiles/*/; do
-            [ -d "$p" ] || continue
-            printf '  %-20s %s\n' "$(basename "$p")" "$(du -sh "$p" 2>/dev/null | cut -f1)"
-          done
-        else
-          echo "  (no profiles yet in $PWD)"
-        fi
-        ;;
+          ls)
+            if [ -d .box/profiles ]; then
+              for p in .box/profiles/*/; do
+                [ -d "$p" ] || continue
+                printf '  %-20s %s\n' "$(basename "$p")" "$(du -sh "$p" 2>/dev/null | cut -f1)"
+              done
+            else
+              echo "  (no profiles yet in $PWD)"
+            fi
+            ;;
 
-      clean)
-        [ -d .box ] || { echo "box: nothing to clean"; exit 0; }
-        if [ "$PROFILE" != "default" ]; then
-          printf 'Remove profile %s? [y/N] ' "$PROFILE"
-          read -r a
-          case "$a" in [yY]*) rm -rf ".box/profiles/$PROFILE" && echo removed ;; *) echo kept ;; esac
-        else
-          printf 'Remove ALL of %s/.box? [y/N] ' "$PWD"
-          read -r a
-          case "$a" in [yY]*) rm -rf .box && echo removed ;; *) echo kept ;; esac
-        fi
-        ;;
+          clean)
+            [ -d .box ] || { echo "box: nothing to clean"; exit 0; }
+            if [ "$PROFILE" != "default" ]; then
+              printf 'Remove profile %s? [y/N] ' "$PROFILE"
+              read -r a
+              case "$a" in [yY]*) rm -rf ".box/profiles/$PROFILE" && echo removed ;; *) echo kept ;; esac
+            else
+              printf 'Remove ALL of %s/.box? [y/N] ' "$PWD"
+              read -r a
+              case "$a" in [yY]*) rm -rf .box && echo removed ;; *) echo kept ;; esac
+            fi
+            ;;
 
-      *)
-        cat <<'USAGE'
-box — run tools without handing them your home directory
+          *)
+            cat <<'USAGE'
+    box — run tools without handing them your home directory
 
-  box dev     <cmd>   system read-only, home swapped   ← default choice
-  box run     <cmd>   strict allowlist (/nix/store only)
-  box net     <cmd>   like dev, no network
-  box exec    <cmd>   non-interactive, fully hardened
-  box vm      <cmd>   podman: separate root, caps dropped
-  box shell           interactive fish inside a box
-  box limit   <cmd>   cap memory/CPU (BOX_MEM=4G BOX_CPU=200%)
-  box inspect <cmd>   trace which paths a tool really needs
-  box ls              list this project's profiles
-  box clean           delete a profile, or all of .box
+      box dev     <cmd>   system read-only, home swapped   ← default choice
+      box run     <cmd>   strict allowlist (/nix/store only)
+      box net     <cmd>   like dev, no network
+      box exec    <cmd>   non-interactive, fully hardened
+      box vm      <cmd>   podman: separate root, caps dropped
+      box shell           interactive fish inside a box
+      box limit   <cmd>   cap memory/CPU (BOX_MEM=4G BOX_CPU=200%)
+      box inspect <cmd>   trace which paths a tool really needs
+      box ls              list this project's profiles
+      box clean           delete a profile, or all of .box
 
-  -p <name>           pick a profile (default: "default")
+      -p <name>           pick a profile (default: "default")
 
-Each profile is a separate home at ./.box/profiles/<name>/, mounted over
-the real home path inside the box. Two profiles never see each other, so
-one agent cannot read another's credentials.
+    Each profile is a separate home at ./.box/profiles/<name>/, mounted over
+    the real home path inside the box. Two profiles never see each other, so
+    one agent cannot read another's credentials.
 
-  box -p work  dev  hermes chat
-  box -p test  dev  hermes chat      # independent identity
+      box -p work  dev  hermes chat
+      box -p test  dev  hermes chat      # independent identity
 
-dev vs run: `dev` exposes the system read-only so #!/bin/bash scripts and
-downloaded binaries work. `run` shows only /nix/store — stricter, but most
-scripts will not start.
-USAGE
-        ;;
-    esac
+    dev vs run: `dev` exposes the system read-only so #!/bin/bash scripts and
+    downloaded binaries work. `run` shows only /nix/store — stricter, but most
+    scripts will not start.
+    USAGE
+            ;;
+        esac
   '';
 in
   mkDevShell {

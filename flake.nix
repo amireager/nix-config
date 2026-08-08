@@ -38,10 +38,13 @@
     };
   };
 
-  outputs = inputs @ {self, ...}: let
+  outputs = inputs: let
     system = "x86_64-linux";
     pkgs = inputs.nixpkgs.legacyPackages.${system};
     lib = import ./lib {inherit inputs;};
+    shells = import ./shells {
+      inherit inputs pkgs system;
+    };
   in {
     nixosConfigurations = {
       nixos = lib.mkHost {
@@ -53,9 +56,10 @@
 
     # Centralized On-Demand Environments (GC-Resilient & Modular)
     # Quick invocation from anywhere using `nix develop .#<name>` or `dev <name>`
-    devShells.${system} = import ./shells {
-      inherit inputs pkgs system;
-    };
+    devShells.${system} = builtins.removeAttrs shells ["devShellsMeta"];
+
+    # Expose devShells metadata separately to maintain a valid Nix Flake schema
+    devShellsMeta.${system} = shells.devShellsMeta;
 
     formatter.${system} = pkgs.alejandra;
   };

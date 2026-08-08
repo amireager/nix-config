@@ -6,7 +6,6 @@
     eza # Modern ls with git status, icons, and tree support
     fd # Fast, user-friendly find alternative
     trash-cli # Safe delete with trash bin (prevents accidental rm)
-    # ouch     # Simple unified tool for archive compression/decompression
 
     # ──────────────────────────────────────────────
     # 💾 Disk & System Inspection
@@ -76,22 +75,24 @@
   # ============================================================
   # Native Program Configurations
   # ============================================================
-  programs.bat = {
-    enable = true;
-    config = {
-      theme = "ansi";
-      style = "numbers,changes,header";
+  programs = {
+    bat = {
+      enable = true;
+      config = {
+        theme = "ansi";
+        style = "numbers,changes,header";
+      };
     };
-  };
 
-  programs.yazi = {
-    enable = true;
-    enableFishIntegration = true;
-    shellWrapperName = "y";
-  };
+    yazi = {
+      enable = true;
+      enableFishIntegration = true;
+      shellWrapperName = "y";
+    };
 
-  programs.btop.enable = true;
-  programs.bottom.enable = true;
-  programs.fastfetch.enable = true;
-  programs.lazygit.enable = true;
+    btop.enable = true;
+    bottom.enable = true;
+    fastfetch.enable = true;
+    lazygit.enable = true;
+  };
 }

@@ -1,20 +1,20 @@
-{...}: {
+_: {
   # ============================================================
   # LAPTOP POWER MANAGEMENT
   # ============================================================
 
-  services.logind.settings.Login = {
-    HandlePowerKey = "suspend";
-    HandlePowerKeyLongPress = "poweroff";
-    HandleLidSwitch = "suspend";
-    HandleLidSwitchExternalPower = "lock";
-    HandleLidSwitchDocked = "ignore";
+  services = {
+    logind.settings.Login = {
+      HandlePowerKey = "suspend";
+      HandlePowerKeyLongPress = "poweroff";
+      HandleLidSwitch = "suspend";
+      HandleLidSwitchExternalPower = "lock";
+      HandleLidSwitchDocked = "ignore";
+    };
+
+    # auto-cpufreq — automatic CPU speed & power optimization
+    auto-cpufreq.enable = true;
+    power-profiles-daemon.enable = false;
+    upower.enable = true;
   };
-
-  # auto-cpufreq — automatic CPU speed & power optimization
-  services.auto-cpufreq.enable = true;
-
-  services.power-profiles-daemon.enable = false;
-
-  services.upower.enable = true;
 }

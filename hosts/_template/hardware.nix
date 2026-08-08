@@ -1,8 +1,6 @@
 # Replace this with the output of `nixos-generate-config --show-hardware-config`.
 {
-  config,
   lib,
-  pkgs,
   modulesPath,
   ...
 }: {
@@ -10,10 +8,14 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
-  boot.initrd.availableKernelModules = [];
-  boot.initrd.kernelModules = [];
-  boot.kernelModules = [];
-  boot.extraModulePackages = [];
+  boot = {
+    initrd = {
+      availableKernelModules = [];
+      kernelModules = [];
+    };
+    kernelModules = [];
+    extraModulePackages = [];
+  };
 
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/change-me";

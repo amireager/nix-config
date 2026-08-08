@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 mkDevShell {
   name = "data";
   icon = "📊";
@@ -16,8 +20,17 @@ mkDevShell {
   ];
 
   tips = [
-    {key = "Jupyter Lab"; cmd = "jupyter lab";}
-    {key = "DuckDB / SQL"; cmd = "duckdb / sqlite3";}
-    {key = "REPL"; cmd = "ipython";}
+    {
+      key = "Jupyter Lab";
+      cmd = "jupyter lab";
+    }
+    {
+      key = "DuckDB / SQL";
+      cmd = "duckdb / sqlite3";
+    }
+    {
+      key = "REPL";
+      cmd = "ipython";
+    }
   ];
 }

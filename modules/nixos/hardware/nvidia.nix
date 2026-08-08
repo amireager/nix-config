@@ -1,15 +1,19 @@
 # ============================================================
 # NVIDIA HYBRID GRAPHICS — Acer Aspire A715-42G
-# GPU: GTX 1650 Mobile (Turing) + AMD Lucienne (Integrated)
+# GPU: GTX 1650 Mobile (Turing TU117) + AMD Lucienne (Integrated)
 # ============================================================
-{...}: {
+_: {
   services.xserver.videoDrivers = ["nvidia"];
 
   hardware.nvidia = {
-    open = true;
+    # Open kernel modules are officially unstable on mobile Turing (TU117/GTX 1650).
+    # Proprietary drivers (open = false) ensure reliable suspend/resume and Wayland prime offload.
+    open = false;
     modesetting.enable = true;
-    powerManagement.enable = true;
-    powerManagement.finegrained = true;
+    powerManagement = {
+      enable = true;
+      finegrained = true;
+    };
     nvidiaSettings = false;
 
     prime = {

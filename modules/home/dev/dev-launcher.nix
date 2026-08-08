@@ -74,7 +74,7 @@
         echo -e "\033[1;36m💡 Usage: dev <environment> [command...]   ·   dev -w <env> to inspect\033[0m"
         echo -e "\033[1;33m📦 Environments in $FLAKE_PATH:\033[0m"
         echo
-        if META="$(nix eval --json "$FLAKE_PATH#devShells.$SYSTEM.devShellsMeta" 2>/dev/null)"; then
+        if META="$(nix eval --json "$FLAKE_PATH#devShellsMeta.$SYSTEM" 2>/dev/null)"; then
           printf '%s' "$META" | jq -r '
             (.shells + .extra) as $all
             | ( .groups[]

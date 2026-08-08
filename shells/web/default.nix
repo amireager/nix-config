@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 mkDevShell {
   name = "web";
   icon = "🌐";
@@ -25,10 +29,22 @@ mkDevShell {
   ];
 
   tips = [
-    {key = "Install"; cmd = "pnpm install / bun install";}
-    {key = "Dev server"; cmd = "pnpm dev / bun run dev";}
-    {key = "Typecheck"; cmd = "tsc --noEmit";}
-    {key = "Lint & Format"; cmd = "eslint . / prettier -w .";}
+    {
+      key = "Install";
+      cmd = "pnpm install / bun install";
+    }
+    {
+      key = "Dev server";
+      cmd = "pnpm dev / bun run dev";
+    }
+    {
+      key = "Typecheck";
+      cmd = "tsc --noEmit";
+    }
+    {
+      key = "Lint & Format";
+      cmd = "eslint . / prettier -w .";
+    }
   ];
 
   # Versions are resolved at runtime; running them in the banner data would

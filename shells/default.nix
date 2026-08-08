@@ -83,7 +83,12 @@
   meta = {
     shells =
       lib.mapAttrs
-      (n: drv: drv.passthru.devShellMeta or {name = n; icon = "📦"; description = "";})
+      (n: drv:
+        drv.passthru.devShellMeta or {
+          name = n;
+          icon = "📦";
+          description = "";
+        })
       shells;
     inherit groups;
     aliases = {

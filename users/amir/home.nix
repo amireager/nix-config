@@ -33,9 +33,11 @@
     ../../modules/home/theme/noctalia.nix
   ];
 
-  home.username = "amir";
-  home.homeDirectory = "/home/amir";
-  home.stateVersion = "26.05";
+  home = {
+    username = "amir";
+    homeDirectory = "/home/amir";
+    stateVersion = "26.05";
+  };
 
   programs.home-manager.enable = true;
 }

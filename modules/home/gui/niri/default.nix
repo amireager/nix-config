@@ -3,7 +3,7 @@
     networkmanagerapplet
     blueman
     swayidle
-    swaylock          # lock screen fallback
+    swaylock # lock screen fallback
     xwayland-satellite
   ];
 

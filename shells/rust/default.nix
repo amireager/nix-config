@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 mkDevShell {
   name = "rust";
   icon = "🦀";
@@ -24,8 +28,17 @@ mkDevShell {
   env.RUST_BACKTRACE = "1";
 
   tips = [
-    {key = "Check & Lint"; cmd = "cargo check / cargo clippy";}
-    {key = "Build & Run"; cmd = "cargo build / cargo run";}
-    {key = "Format"; cmd = "cargo fmt";}
+    {
+      key = "Check & Lint";
+      cmd = "cargo check / cargo clippy";
+    }
+    {
+      key = "Build & Run";
+      cmd = "cargo build / cargo run";
+    }
+    {
+      key = "Format";
+      cmd = "cargo fmt";
+    }
   ];
 }

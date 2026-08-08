@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 mkDevShell {
   name = "python";
   icon = "🐍";
@@ -25,10 +29,22 @@ mkDevShell {
   };
 
   tips = [
-    {key = "Interactive REPL"; cmd = "ipython";}
-    {key = "Lint / Format"; cmd = "ruff check . / ruff format .";}
-    {key = "Fast venv+deps"; cmd = "uv venv / uv pip install -r req.txt";}
-    {key = "Legacy projects"; cmd = "poetry run / poetry add";}
+    {
+      key = "Interactive REPL";
+      cmd = "ipython";
+    }
+    {
+      key = "Lint / Format";
+      cmd = "ruff check . / ruff format .";
+    }
+    {
+      key = "Fast venv+deps";
+      cmd = "uv venv / uv pip install -r req.txt";
+    }
+    {
+      key = "Legacy projects";
+      cmd = "poetry run / poetry add";
+    }
   ];
 
   # Real logic, not decoration: offer to create/activate a local virtualenv.

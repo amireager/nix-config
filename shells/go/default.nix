@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 mkDevShell {
   name = "go";
   icon = "🐹";
@@ -12,8 +16,17 @@ mkDevShell {
   ];
 
   tips = [
-    {key = "Run & Build"; cmd = "go run . / go build";}
-    {key = "Lint"; cmd = "golangci-lint run";}
-    {key = "Test"; cmd = "go test ./...";}
+    {
+      key = "Run & Build";
+      cmd = "go run . / go build";
+    }
+    {
+      key = "Lint";
+      cmd = "golangci-lint run";
+    }
+    {
+      key = "Test";
+      cmd = "go test ./...";
+    }
   ];
 }

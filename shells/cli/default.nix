@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 mkDevShell {
   name = "cli";
   icon = "⚡";
@@ -43,8 +47,17 @@ mkDevShell {
   ];
 
   tips = [
-    {key = "Profiling"; cmd = "hyperfine / bandwhich / procs";}
-    {key = "Data"; cmd = "fx / dasel / jless / jc";}
-    {key = "Code search"; cmd = "ast-grep / tokei / difft";}
+    {
+      key = "Profiling";
+      cmd = "hyperfine / bandwhich / procs";
+    }
+    {
+      key = "Data";
+      cmd = "fx / dasel / jless / jc";
+    }
+    {
+      key = "Code search";
+      cmd = "ast-grep / tokei / difft";
+    }
   ];
 }

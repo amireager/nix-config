@@ -12,65 +12,70 @@
   nixpkgs.config.allowUnfree = true;
 
   # === Nix Settings ===
-  nix.settings = {
-    experimental-features = ["nix-command" "flakes"];
+  nix = {
+    settings = {
+      experimental-features = ["nix-command" "flakes"];
 
-    # GC resilience: keep build outputs and derivations of live profiles/devShells from being collected.
-    keep-outputs = false;
-    keep-derivations = false;
+      # GC resilience: keep build outputs and derivations of live profiles/devShells from being collected.
+      keep-outputs = false;
+      keep-derivations = false;
 
-    # Store optimization: deduplicate identical files in /nix/store.
-    auto-optimise-store = true;
+      # Store optimization: deduplicate identical files in /nix/store.
+      auto-optimise-store = true;
 
-    # Nix database performance: reduce lock contention and improve reliability.
-    use-sqlite-wal = true;
+      # Nix database performance: reduce lock contention and improve reliability.
+      use-sqlite-wal = true;
 
-    # Build performance.
-    max-jobs = "auto";
-    cores = 0;
+      # Build performance.
+      max-jobs = "auto";
+      cores = 0;
 
-    # Network reliability and download concurrency for slower/unstable connections.
-    http-connections = 50;
-    tarball-ttl = 604800; # Cache downloaded flake tarballs for 7 days to speed up evaluation
-    connect-timeout = 10;
-    download-attempts = 3;
-    fallback = true;
+      # Network reliability and download concurrency for slower/unstable connections.
+      http-connections = 50;
+      tarball-ttl = 604800; # Cache downloaded flake tarballs for 7 days to speed up evaluation
+      connect-timeout = 10;
+      download-attempts = 3;
+      fallback = true;
 
-    # Allow admin users to use trusted Nix features and binary caches.
-    trusted-users = ["root" "@wheel"];
+      # Allow admin users to use trusted Nix features and binary caches.
+      trusted-users = ["root" "@wheel"];
 
-    # Binary caches — only signed caches.
-    substituters = [
-      "https://cache.nixos.org"
-      "https://niri.cachix.org"
-      "https://noctalia.cachix.org"
-    ];
+      # Binary caches — only signed caches.
+      substituters = [
+        "https://cache.nixos.org"
+        "https://niri.cachix.org"
+        "https://noctalia.cachix.org"
+      ];
 
-    trusted-public-keys = [
-      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-      "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
-      "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
-    ];
-  };
+      trusted-public-keys = [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
+        "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
+      ];
+    };
 
-  # === Automatic Store Deduplication ===
-  nix.optimise = {
-    automatic = true;
-    dates = ["weekly"];
+    optimise = {
+      automatic = true;
+      dates = ["weekly"];
+    };
   };
 
   # === IPv6 ===
   networking.enableIPv6 = false;
 
   # === Firmware ===
-  hardware.enableAllFirmware = true;
-  hardware.enableRedistributableFirmware = true;
+  hardware = {
+    enableAllFirmware = true;
+    enableRedistributableFirmware = true;
+  };
 
-  # === Fast & Silent Boot Architecture ===
+  # === Fast & Silent Boot Architecture (Zen Kernel for Low Latency) ===
   boot = {
-    kernelPackages = pkgs.linuxPackages_latest;
-    initrd.verbose = false;
-    initrd.systemd.enable = true;
+    kernelPackages = pkgs.linuxPackages_zen;
+    initrd = {
+      verbose = false;
+      systemd.enable = true;
+    };
     consoleLogLevel = 4; # Show KERN_WARNING + errors so we can see hangs
     kernelParams = [
       "quiet"
@@ -82,27 +87,28 @@
       "systemd.show_status=true"
     ];
     loader.timeout = 1;
+    kernel.sysctl = {
+      "vm.swappiness" = 180;
+      "vm.vfs_cache_pressure" = 50;
+      "vm.page-cluster" = 0;
+      "vm.watermark_boost_factor" = 0;
+      "vm.watermark_scale_factor" = 125;
+      "vm.dirty_background_ratio" = 5;
+      "vm.dirty_ratio" = 10;
+    };
+    kernelModules = ["fuse"];
   };
 
-  # === Service & Shutdown Timeouts ===
-  # Speed up shutdown: default 90s -> 10s, prevent 2-minute stalls.
-  systemd.settings.Manager.DefaultTimeoutStopSec = "10s";
-  # Do not wait for network at boot -- services that need it will wait on their own.
-  systemd.services.NetworkManager-wait-online.enable = false;
-
-  # === OOM Daemon ===
-  systemd.oomd.enable = true;
-  systemd.oomd.enableUserSlices = true;
-
-  # === Memory, Swap & I/O Responsiveness (Optimized for ZRAM + NVMe) ===
-  boot.kernel.sysctl = {
-    "vm.swappiness" = 180;
-    "vm.vfs_cache_pressure" = 50;
-    "vm.page-cluster" = 0;
-    "vm.watermark_boost_factor" = 0;
-    "vm.watermark_scale_factor" = 125;
-    "vm.dirty_background_ratio" = 5;
-    "vm.dirty_ratio" = 10;
+  # === Service & Shutdown Timeouts + OOM Daemon ===
+  systemd = {
+    # Speed up shutdown: default 90s -> 10s, prevent 2-minute stalls.
+    settings.Manager.DefaultTimeoutStopSec = "10s";
+    # Do not wait for network at boot -- services that need it will wait on their own.
+    services.NetworkManager-wait-online.enable = false;
+    oomd = {
+      enable = true;
+      enableUserSlices = true;
+    };
   };
 
   zramSwap = {
@@ -110,28 +116,29 @@
     memoryPercent = 100;
   };
 
-  # === SSD Maintenance ===
-  services.fstrim = {
-    enable = true;
-    interval = "weekly";
-  };
+  # === Services ===
+  services = {
+    fstrim = {
+      enable = true;
+      interval = "weekly";
+    };
 
-  # === Journald Log Limitation (Keeps system storage clean) ===
-  services.journald.extraConfig = ''
-    SystemMaxUse=250M
-    SystemMaxFileSize=50M
-    MaxRetentionSec=1month
-  '';
+    journald.extraConfig = ''
+      SystemMaxUse=250M
+      SystemMaxFileSize=50M
+      MaxRetentionSec=1month
+    '';
+
+    # Keyboard layout — US + Persian, toggle with Alt+Shift.
+    xserver.xkb = {
+      layout = "us,ir";
+      options = "grp:alt_shift_toggle";
+    };
+  };
 
   # === Locale & Timezone ===
   time.timeZone = "Asia/Tehran";
   i18n.defaultLocale = "en_US.UTF-8";
-
-  # Keyboard layout — US + Persian, toggle with Alt+Shift.
-  services.xserver.xkb = {
-    layout = "us,ir";
-    options = "grp:alt_shift_toggle";
-  };
 
   # === Fonts & Typography ===
   fonts = {
@@ -220,44 +227,30 @@
     inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 
-  # === NH — NixOS Management Wrapper ===
-  programs.nh = {
-    enable = true;
-    flake = flakePath;
-    clean = {
+  # === Programs & CLI Wrappers ===
+  programs = {
+    # NH — NixOS Management Wrapper
+    nh = {
       enable = true;
-      extraArgs = "--keep-since 10d --keep 10";
+      flake = flakePath;
+      clean = {
+        enable = true;
+        extraArgs = "--keep-since 10d --keep 10";
+      };
     };
+
+    # AppImage Support
+    appimage = {
+      enable = true;
+      binfmt = true;
+    };
+
+    # Dynamic Libraries (NixLD)
+    nix-ld.enable = true;
+
+    # A typo is a typo
+    command-not-found.enable = false;
   };
-
-  # === AppImage Support ===
-  programs.appimage = {
-    enable = true;
-    binfmt = true;
-  };
-
-  # === Dynamic Libraries (NixLD) ===
-  # Allows running unpatched standard Linux binaries (like downloaded precompiled tools)
-  programs.nix-ld = {
-    enable = true;
-  };
-
-  # === A typo is a typo ===
-  # Off explicitly, not left to its default. The default is
-  # `pathExists programs.sqlite`, which is true whenever nixpkgs arrives as a
-  # channel tarball — so this can switch itself on from underneath you.
-  #
-  # It installs the same kind of command_not_found handler as the nix-index
-  # fish integration (disabled in modules/home/dev/nix-tools.nix), and fish
-  # explicitly looks for /run/current-system/sw/bin/command-not-found. Turning
-  # off one and leaving the other would just move the pause somewhere else.
-  #
-  # With both off, a mistyped command says so and stops:
-  #     $ caler
-  #     fish: Unknown command: caler
-  programs.command-not-found.enable = false;
-
-  boot.kernelModules = ["fuse"];
 
   # Set to your actual installed NixOS version; do not change after installation.
   system.stateVersion = "26.05";

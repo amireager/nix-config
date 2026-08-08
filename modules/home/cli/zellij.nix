@@ -1,4 +1,4 @@
-{...}: {
+_: {
   programs.zellij = {
     enable = true;
     enableFishIntegration = false; # We'll launch it manually or via alias

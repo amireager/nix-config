@@ -35,25 +35,25 @@
 
   home.packages = with pkgs; [
     # Screenshot, Recording & Keycasting Tools
-    grim                  # Wayland screenshot tool
-    slurp                 # Interactive region selection for grim
-    wl-screenrec          # Hardware-accelerated Wayland screen recorder (Vulkan/VA-API)
-    gpu-screen-recorder     # Ultra-fast GPU screen recorder
+    grim # Wayland screenshot tool
+    slurp # Interactive region selection for grim
+    wl-screenrec # Hardware-accelerated Wayland screen recorder (Vulkan/VA-API)
+    gpu-screen-recorder # Ultra-fast GPU screen recorder
     gpu-screen-recorder-gtk # Initial GUI menu for recording (region/window/audio toggle)
-    wshowkeys             # Live Wayland keycaster (shows pressed keys on screen during recording)
+    wshowkeys # Live Wayland keycaster (shows pressed keys on screen during recording)
 
     # Hardware & Audio Controls
     brightnessctl # Screen brightness control
-    pamixer      # PulseAudio volume control CLI
-    bluetui      # Bluetooth TUI manager
+    pamixer # PulseAudio volume control CLI
+    bluetui # Bluetooth TUI manager
 
     # Clipboard & Wayland Utilities
     wl-clipboard # Wayland clipboard utilities (wl-copy / wl-paste)
-    cliphist     # Clipboard history CLI (To wipe all: `cliphist wipe && wl-copy --clear`)
+    cliphist # Clipboard history CLI (To wipe all: `cliphist wipe && wl-copy --clear`)
 
     # Keyboard-Centric Fuzzel Utilities
     networkmanager_dmenu # NetworkManager dmenu/fuzzel WiFi switcher
-    libqalculate         # Powerful command-line calculation engine (qalc)
+    libqalculate # Powerful command-line calculation engine (qalc)
 
     # --- Helper Script: Instant Fuzzel Calculator ---
     (writeShellScriptBin "fuzzel-calc" ''

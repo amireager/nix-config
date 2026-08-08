@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 # Deliberate split:
 #   • statix / deadnix / alejandra / nixd / nix-tree / nix-diff live at SYSTEM
 #     level (modules/home/dev/nix-tools.nix). They are used constantly, on
@@ -53,11 +57,26 @@ mkDevShell {
   ];
 
   tips = [
-    {key = "New package"; cmd = "nix-init / nurl <url>";}
-    {key = "Bump version"; cmd = "nix-update <attr>";}
-    {key = "Review a PR"; cmd = "nixpkgs-review pr <number>";}
-    {key = "Health check"; cmd = "nix-check";}
-    {key = "Closure size"; cmd = "nix-size [path]";}
+    {
+      key = "New package";
+      cmd = "nix-init / nurl <url>";
+    }
+    {
+      key = "Bump version";
+      cmd = "nix-update <attr>";
+    }
+    {
+      key = "Review a PR";
+      cmd = "nixpkgs-review pr <number>";
+    }
+    {
+      key = "Health check";
+      cmd = "nix-check";
+    }
+    {
+      key = "Closure size";
+      cmd = "nix-size [path]";
+    }
   ];
 
   notes = ["statix, deadnix, alejandra, nixd, nix-tree, nix-diff are system-level"];

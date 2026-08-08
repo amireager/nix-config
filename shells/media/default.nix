@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 # Heavy, occasionally-used media tooling. Daily playback/viewing apps (mpv,
 # imv, zathura, ffmpeg, ffmpegthumbnailer) deliberately stay at home level so
 # the desktop works without entering a shell.
@@ -36,10 +40,25 @@ mkDevShell {
   ];
 
   tips = [
-    {key = "Convert"; cmd = "magick in.png out.webp";}
-    {key = "Fast batch"; cmd = "vips copy in.jpg out.webp";}
-    {key = "Optimize"; cmd = "oxipng -o4 *.png / jpegoptim *.jpg";}
-    {key = "Inspect"; cmd = "mediainfo file.mkv";}
-    {key = "OCR a PDF"; cmd = "ocrmypdf in.pdf out.pdf";}
+    {
+      key = "Convert";
+      cmd = "magick in.png out.webp";
+    }
+    {
+      key = "Fast batch";
+      cmd = "vips copy in.jpg out.webp";
+    }
+    {
+      key = "Optimize";
+      cmd = "oxipng -o4 *.png / jpegoptim *.jpg";
+    }
+    {
+      key = "Inspect";
+      cmd = "mediainfo file.mkv";
+    }
+    {
+      key = "OCR a PDF";
+      cmd = "ocrmypdf in.pdf out.pdf";
+    }
   ];
 }

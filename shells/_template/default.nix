@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 # ==============================================================================
 # DEVSHELL TEMPLATE — copy this directory to create a new environment
 # ==============================================================================
