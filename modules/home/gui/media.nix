@@ -50,8 +50,10 @@
     # ── Image / PDF tools ──
     poppler-utils # pdftotext/pdfinfo — used by previewers and scripts
 
+    marker
+    guvcview
     # Moved to `dev media` (rarely used, heavy GTK/Qt closures):
-    #   imagemagick, vips, pinta, pdfarranger, marker, guvcview
+    #   imagemagick, vips, pinta, pdfarranger
     # yt-dlp is declared once in cli/tools.nix instead of twice.
   ];
 }

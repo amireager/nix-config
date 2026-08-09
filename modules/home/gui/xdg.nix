@@ -1,8 +1,4 @@
-{
-  pkgs,
-  config,
-  ...
-}: {
+{config, ...}: {
   # ============================================================
   # XDG Base Directory & Mime Applications
   # ============================================================
@@ -89,9 +85,4 @@
       mimeType = ["text/plain" "application/x-zerosize"];
     };
   };
-
-  # Ensure the necessary packages are installed
-  home.packages = with pkgs; [
-    marker # Modern, fast markdown editor/renderer
-  ];
 }

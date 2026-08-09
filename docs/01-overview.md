@@ -14,7 +14,7 @@ flake.nix
    │
    │  lib.mkHost { hostname = "nixos"; users.amir = ./users/amir; }
    ▼
-hosts/nixos/          سخت افزار، بوت لودر
+hosts/nixos/          سخت افزار، بوت لودر و درایورها
    +
 modules/nixos/        لایه ی سیستم — کرنل، شبکه، امنیت
    +
@@ -30,6 +30,16 @@ home-manager
 
 ---
 
+## مشخصات سخت‌افزار میزبان
+
+* **دستگاه:** لپ‌تاپ Acer Aspire A715-42G
+* **پردازنده:** AMD Ryzen 5 5500U (معماری Lucienne / Zen 2)
+* **گرافیک:** پردازنده گرافیکی مجتمع AMD Radeon + کارت گرافیک Nvidia GTX 1650 Mobile (معماری Turing TU117)
+* **کرنل:** `pkgs.linuxPackages_zen` (کم‌تأخیر و بهینه‌شده برای دسکتاپ)
+* **درایور گرافیک:** `hardware.nvidia.open = false;` (به دلیل ناپایداری ماژول‌های منبع‌باز روی تراشه TU117 لپ‌تاپ)
+
+---
+
 ## `flake.nix` — ورودی
 
 هفت input، همه با `follows = "nixpkgs"` تا فقط یک نسخه‌ی nixpkgs در کل درخت
@@ -39,10 +49,10 @@ home-manager
 | :--- | :--- |
 | `nixpkgs` | شاخه‌ی unstable |
 | `home-manager` | لایه‌ی کاربر |
-| `niri` | کامپوزیتور |
+| `niri` | کامپوزیتور گرافیکی |
 | `noctalia` | نوار و ویجت‌ها |
-| `zen-browser` | مرورگر |
-| `agenix` | رمزگذاری رازها |
+| `zen-browser` | مرورگر وب |
+| `agenix` | رمزگذاری رازها با age |
 | `nix-index-database` | ایندکس از پیش ساخته |
 
 `nix-index-database` یک تصمیم زمانی است: بدون آن، `nix-locate` و `,` تا وقتی
@@ -59,7 +69,7 @@ home-manager
 کپی کردن درخت.
 
 **`mkDevShell`** — *داده* می‌گیرد (نام، آیکن، توضیح، پکیج‌ها، `tips`) و شل
-می‌سازد به‌همراه بنر و متغیرهای محیطی و ثبت GC root.
+می‌سازد به‌همراه بنر، متغیرهای محیطی و ثبت GC root در `~/.local/share/dev-roots/`.
 
 قبل از این سازنده، هر شل همان سه کار را دستی تکرار می‌کرد — حدود ۳۰٪ هر فایل،
 یازده بار. حالا هر شل فقط داده است.
@@ -95,13 +105,13 @@ users/amir/
 
 | فایل | چه کار می‌کند |
 | :--- | :--- |
-| `core.nix` | تنظیمات Nix، بوت، کرنل، ZRAM، podman، `nh`، فونت |
+| `core.nix` | تنظیمات Nix، بوت، کرنل Zen، ZRAM، داکر/پادمن، `nh`، فونت‌های Vazirmatn و JetBrainsMono |
 | `network.nix` | NetworkManager، BBR، DNS رمزگذاری‌شده، proxychains |
 | `security.nix` | فایروال، sudo-rs، AppArmor، firejail، OpenSnitch، USBGuard |
 | `desktop.nix` | niri، greeter، thunar |
-| `keyd.nix` | تغییر نگاشت کلید در سطح evdev |
-| `hardware/nvidia.nix` | گرافیک هیبریدی |
-| `hardware/laptop.nix` | برق و حرارت |
+| `keyd.nix` | تغییر نگاشت کلید در سطح evdev (تبدیل CapsLock به Esc/Control) |
+| `hardware/nvidia.nix` | گرافیک هیبریدی Prime با `open = false` |
+| `hardware/laptop.nix` | برق و حرارت لپ‌تاپ |
 
 شرحش در [۰۹ باید و نباید](09-rules.md) — چون بیشترشان تصمیم‌اند نه تنظیم.
 
@@ -136,19 +146,17 @@ users/amir/
 
 | شل | برای چه |
 | :--- | :--- |
-| `nix` | بسته‌بندی، بازبینی، تحلیل closure |
-| `python` | uv، Ruff، Pyright، Data & AI (Polars, Pandas, DuckDB, Marimo) |
+| `agent` | عامل‌های هوش مصنوعی (Hermes, OpenCode)، ابزارهای AST (`ast-grep`, `sd`, `difftastic`)، `biome`, `ruff` و اتصال مستقیم به `9router` |
+| `python` | پایتون ۳ خالص، `uv`, `pip`, `ruff`, `pyright`, `ipython` با `unset PYTHONPATH` |
 | `rust` | Cargo، Rust-Analyzer، Clippy، Watch، Edit، LLDB |
 | `go` | Go، Gopls، GolangCI-Lint، Air Live-Reload، Delve |
 | `web` | Node.js، Bun، pnpm، TypeScript، Biome، Tailwind |
-| `media` | ffmpeg-full، vips، ImageMagick، OCR، PDF |
 | `build` | GCC، Clang، CMake، Ninja — با نام `dev c` هم |
-| `cli` | ابزارهای تحلیل و پروفایلینگ سنگین |
-| `box` | سندباکس اجرای ابزارها با ماسک‌سازی مسیرها و رم موقت (-e) |
-| `audit` | بررسی CVE، راز، قفل‌فایل‌ها، سخت‌سازی |
-
-دوتای آخر خودنوشته‌اند و فصل خودشان را دارند:
-→ [۰۸ سندباکس](08-sandbox.md)
+| `cli` | ابزارهای تحلیل و پروفایلینگ سنگین (`hyperfine`, `watchexec`, `tokei`, `bandwhich`) |
+| `media` | ffmpeg-full، vips، ImageMagick، OCR (`ocrmypdf`), PDF |
+| `nix` | بسته‌بندی، بازبینی، تحلیل closure (`nix-check`, `nix-size`) |
+| `box` | سندباکس اجرای ابزارها با Home-Swap، مسیر `/work` و رم موقت (-e) |
+| `audit` | بررسی CVE، سکرت‌ها، قفل‌فایل‌ها، سخت‌سازی سیستم (`audit-all`) |
 
 `shells/default.nix` رجیستری است و `devShellsMeta` را بیرون می‌دهد — منبعی که
 منوی `dev` و تکمیل خودکار هر سه شل از آن می‌خوانند.
@@ -171,6 +179,7 @@ users/amir/
 | یک مخفف شل | `modules/home/cli/fish.nix` |
 | ابزاری که همیشه باشد | `modules/home/cli/tools.nix` |
 | ابزاری فقط در یک زبان | `shells/<زبان>/default.nix` |
+| سندباکس و جداسازی | `shells/box/default.nix` |
 | تیونینگ کرنل | `modules/nixos/core.nix` |
 | قواعد فایروال | `modules/nixos/security.nix` |
 | مدل هوش مصنوعی | `modules/home/dev/nvim/lua/ai.lua` |

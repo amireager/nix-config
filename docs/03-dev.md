@@ -1,6 +1,6 @@
-# ۰۳ — محیط‌های توسعه
+# ۰۳ — محیط‌های توسعه: On-Demand و ایزوله
 
-هیچ کامپایلری، هیچ زبان‌سرور سنگینی، هیچ ابزار پروفایلینگی در سیستم نصب
+هیچ کامپایلری، هیچ زبان‌سرور سنگینی، هیچ ابزار پروفایلینگی در سیستم پایه نصب
 نیست. یازده محیط وجود دارند که **لحظه‌ی ورود** ساخته می‌شوند.
 
 دلیلش فقط حجم نیست. یک پروفایل سیستم که همه‌چیز در آن است، هر بار
@@ -11,13 +11,13 @@
 ## `dev` — چهار حالت استفاده
 
 ```sh
-dev                    منوی همه ی محیط ها
-dev python             ورود
+dev                    منوی رنگی و زیبای همه ی محیط ها
+dev python             ورود تعاملی به شل
 dev python pytest      یک دستور اجرا کن، بعد بیرون بیا
 dev -w rust            ببین داخلش چیست، بدون ورود
 ```
 
-`dev c` همان `dev build` است.
+`dev c` همان `dev build` است و `dev ai` همان `dev agent`.
 
 ### `dev -w` — نگاه کردن بدون ورود
 
@@ -28,211 +28,78 @@ dev -w rust            ببین داخلش چیست، بدون ورود
 چون `mkShell` هرچه در `packages` بگذاری آنجا می‌گذارد. (این یک باگ بود که
 اول `buildInputs` می‌خواند و همیشه خالی برمی‌گشت.)
 
----
+### ثبت ریشه GC (Garbage Collection Protection)
 
-## GC root — چرا محیط‌هایت پاک نمی‌شوند
-
-هر بار وارد یک شل شوی، یک ریشه در `~/.local/share/dev-roots/` ثبت می‌شود.
-یعنی `nix store gc` محیطی را که استفاده می‌کنی پاک نمی‌کند.
-
-بدون این، هر پاکسازی یعنی دفعه‌ی بعد نیم ساعت دانلود دوباره — که پشت یک
-اتصال فیلترشده اصلاً شوخی نیست.
-
-**ثبت ریشه بعد از خروج از شل انجام می‌شود، نه هم‌زمان.** این یک باگ حل‌شده
-است: اجرای `nix print-dev-env` در پس‌زمینه هم‌زمان با `nix develop` باعث
-می‌شد هر دو در یک eval cache بنویسند و این خطا روی **هر** فراخوانی `dev`
-چاپ شود:
-
-```
-error (ignored): SQLite database '…/eval-cache-v6/….sqlite' is busy
-```
-
-بی‌ضرر بود ولی زشت. با ترتیبی کردن، تداخل رفت — و چون تا آن لحظه ارزیابی
-cache شده، ثبت ریشه تقریباً آنی است.
-
-برای آزاد کردن فضا باید ریشه‌ها را دستی حذف کنی:
-
-```sh
-ls ~/.local/share/dev-roots/
-rm ~/.local/share/dev-roots/media-profile
-nix store gc
-```
+هر بار که وارد یک شل می‌شوی، دستور `dev` یک GC-root در
+`~/.local/share/dev-roots/<name>-profile` ثبت می‌کند. یعنی محیطی که نیم ساعت
+دانلود شده، با اجرای `nh clean` یا `nix-collect-garbage` پاک نمی‌شود تا زمانی که
+خودت صراحتاً آن را حذف کنی.
 
 ---
 
-## تکمیل خودکار
+## تشریح ۱۱ محیط توسعه و ابزارهای آن‌ها
 
-`dev <TAB>` در fish، bash و zsh کار می‌کند و نام شل‌ها را با توضیحشان نشان
-می‌دهد.
-
-از `nix eval` نمی‌خواند — مستقیم پوشه‌ی `shells/*/` را می‌بیند. **۴۳
-میلی‌ثانیه** اندازه‌گیری شده. اگر از `nix eval` می‌خواند، هر بار زدن TAB یک
-ارزیابی flake بود.
-
----
-
-## `mkDevShell` — چرا یک سازنده لازم شد
-
-قبلش هر شل سه چیز یکسان را دستی می‌نوشت: نام، بنر با کد ANSI خام، و
-`export DEVSHELL_ACTIVE`. حدود **۳۰٪ هر فایل**، یازده بار تکرار — و جعبه‌ی
-بنر باید هر بار که یک خط متن عوض می‌شد دستی تراز می‌شد.
-
-حالا هر شل فقط **داده** است:
-
-```nix
-mkDevShell {
-  name        = "rust";
-  icon        = "🦀";
-  description = "Cargo, Rust-Analyzer, Clippy";
-  packages    = with pkgs; [ cargo rustc ];
-  env.RUST_BACKTRACE = "1";
-  tips = [
-    { key = "Check & Lint"; cmd = "cargo clippy"; }
-  ];
-}
-```
-
-بنر، تراز کردن ستون‌ها، و متغیرهای محیطی خودکار تولید می‌شوند.
-
-**راه فرار:** هیچ اجباری به استفاده از این سازنده نیست. یک شل می‌تواند
-`pkgs.mkShell` خام باشد؛ رجیستری اهمیتی نمی‌دهد.
-
-### اضافه کردن شل جدید
-
-```sh
-cp -r shells/_template shells/myenv
-# ویرایشش کن، بعد یک خط به shellDirs در shells/default.nix اضافه کن
-```
-
-همین. منو، تکمیل خودکار و `dev -w` همه خودکار می‌بینندش — چون همه از
-`devShellsMeta` می‌خوانند. **فهرست دومی برای به‌روز کردن وجود ندارد.**
+### ۱. `dev agent` (`dev ai`) — عامل‌های هوش مصنوعی و خودکارسازی
+محیط عملیاتی برای اجرای عامل‌های خودکار (مانند Hermes و OpenCode) با ابزارهای AST:
+* **رانتایم‌ها:** `python3`, `uv`, `nodejs_22`, `bun`
+* **ابزارهای AI و درگاه:** `aichat` (چت و پایپ خط فرمان)، متغیر `OPENAI_API_BASE=http://127.0.0.1:20128/v1`
+* **موتورهای AST و بازنویسی کد:** `ast-grep` (جستجو و ریفکتور ساختاری)، `sd` (جایگزین سریع sed)، `difftastic` (مقایسه ساختاری)، `tokei` (شمارنده خطوط کد)
+* **لینتر و فرمتر زیر ۱۰ میلی‌ثانیه:** `ruff` (پایتون)، `biome` (کدهای JS/TS/JSON/CSS)، `shellcheck` و `shfmt` (شل)، `taplo` (فایل‌های TOML)
+* **استخراج وب:** `htmlq` (استخراج متن و سلکتورهای CSS از صفحات وب)، `xh`, `curl`
 
 ---
 
-## یازده محیط
-
-### `dev nix` — کار روی خود Nix
-
-```sh
-nix-init / nurl <url>        اسکلت derivation از یک URL
-nix-update <attr>            نسخه و hash را به‌روز کن
-nixpkgs-review pr <number>   یک PR را محلی بساز و تست کن
-nix-check                    statix + deadnix + flake check
-nix-size [path]              حجم closure + ۲۵ عامل بزرگ
-```
-
-`nix-check` و `nix-size` خودنوشته‌اند. شرحشان در
-[۰۲ دستورهای Nix](02-nix.md).
-
-### `dev python`
-
-```sh
-ipython
-ruff check . / ruff format .
-uv venv / uv pip install -r req.txt
-poetry run / poetry add
-```
-
-### `dev rust`
-
-```sh
-cargo check / cargo clippy
-cargo build / cargo run
-cargo fmt
-```
-
-`rust-analyzer` اینجاست نه در سیستم. وقتی وارد پروژه‌ای با `.envrc` شوی،
-`direnv-vim` خودش به Neovim وصلش می‌کند.
-
-### `dev go`
-
-```sh
-go run . / go build
-golangci-lint run
-go test ./...
-```
-
-`gopls` و `delve` اینجا هستند. `delve` سی مگابایت است — دلیل خوبی برای
-اینکه دائمی نباشد.
-
-### `dev web`
-
-```sh
-pnpm install / bun install
-pnpm dev / bun run dev
-tsc --noEmit
-biome check --write .
-eslint . / prettier -w .
-```
-
-### `dev python` (همراه با ابزارهای داده)
-
-```sh
-ipython / marimo edit notebook.py
-duckdb / jupyter lab
-ruff check . / ruff format .
-uv venv / uv pip install -r req.txt
-```
-
-### `dev media`
-
-```sh
-magick in.png out.webp
-vips copy in.jpg out.webp
-oxipng -o4 *.png / jpegoptim *.jpg
-mediainfo file.mkv
-ocrmypdf in.pdf out.pdf
-```
-
-`ffmpeg-full` و `vips` سنگین‌اند و به‌ندرت لازم — دقیقاً همان چیزی که نباید
-دائمی باشد.
-
-### `dev build` (یا `dev c`)
-
-```sh
-cmake -B build && cmake --build build
-make
-```
-
-`gdb` و `lldb` اینجا هستند. `lldb` وابستگی `libclang` دارد که **۸۴۹ مگابایت**
-می‌آورد.
-
-### `dev cli` — ابزارهای تحلیل سنگین
-
-فهرست کاملش در [۰۴ خط فرمان](04-cli.md) است، چون آنجا کنار بقیه‌ی ابزارهای
-خط فرمان معنا دارد.
-
-```sh
-hyperfine / bandwhich / procs
-fx / dasel / jless / jc
-ast-grep / tokei / difft
-```
-
-### `dev box` و `dev audit`
-
-خودنوشته‌اند و فصل خودشان را دارند →
-[۰۸ سندباکس](08-sandbox.md)
+### ۲. `dev python` (`dev data`) — پایتون سبک، خالص و ایزوله
+* **ابزارها:** `python3`, `uv` (مدیر پکیج و رانر محیط مجازی با Rust)، `pip`, `virtualenv`, `ipython`, `ruff`, `pyright`, `jq`
+* **ایزولاسیون:** هوک ورود با دستور `unset PYTHONPATH` از آلوده شدن venv توسط پکیج‌های سراسری Nix جلوگیری می‌کند. فعال‌سازی خودکار `.venv` در صورت وجود.
 
 ---
 
-## چرا زبان‌سرورها در شل‌اند نه در سیستم
-
-`rust-analyzer` و `gopls` در پروفایل سیستم نیستند، ولی ادیتور طوری رفتار
-می‌کند که انگار هستند.
-
-مکانیزمش `direnv-vim` است: وارد پروژه‌ای که `.envrc` دارد می‌شوی، محیط فعال
-می‌شود، و Neovim زبان‌سرور را از همان محیط برمی‌دارد.
-
-```sh
-cd ~/proj/myapp
-echo "use flake /etc/nixos#rust" > .envrc
-direnv allow
-nvim src/main.rs        # rust-analyzer وصل است
-```
-
-بیرون از پروژه، هیچ‌کدام در PATH نیستند. نتیجه: پروفایل کوچک، بوت سریع، بدون
-از دست دادن قابلیت.
+### ۳. `dev rust` — محیط جامع Rust
+* **ابزارها:** `cargo`, `rustc`, `rust-analyzer`, `clippy`, `rustfmt`
+* **بهره‌وری:** `cargo-watch` (بیلد و اجرای تست حین ذخیره فایل)، `cargo-edit` (`cargo add` / `cargo rm`)
+* **دیباگر:** `lldb` (به همراه Pretty-Printers برای وکتورها و رشته‌ها در Neovim DAP)
 
 ---
 
-بعدی: [۰۴ خط فرمان](04-cli.md)
+### ۴. `dev go` — محیط توسعه Go
+* **ابزارها:** `go`, `gopls`, `golangci-lint`
+* **لایو ریلود:** `air` (اجرای مجدد وب‌سرورهای Go حین تغییر سورس)، `delve` (دیباگر dlv)
+
+---
+
+### ۵. `dev web` — توسعه فرانت‌اند و وب مدرن
+* **رانتایم‌ها:** `nodejs_22`, `bun`, `pnpm`, `yarn`
+* **سرعت و اعتبارسنجی:** `biome` (لینتر و فرمتر ۲۵ برابر سریع‌تر)، `typescript`, `vtsls`, `tailwindcss-language-server`, `prettier`
+
+---
+
+### ۶. `dev build` (`dev c`) — کامپایلرهای C و C++
+* **ابزارها:** `gcc`, `clang`, `cmake`, `gnumake`, `ninja`, `pkg-config`, `openssl`, `zlib`
+* **دیباگرها:** `lldb` (آداپتور `lldb-dap` برای Neovim) و `gdb`
+
+---
+
+### ۷. `dev cli` — پروفایلینگ و تحلیل عمیق
+* **ابزارها:** `hyperfine` (ابزار بنچمارک دقیق)، `watchexec` (اجرای دستور هنگام تغییر فایل)، `tokei`, `hexyl` (هگز ادیتور)، `dasel` (کوئری JSON/YAML/TOML/XML)، `bandwhich` (پایش مصرف پهنای باند هر پروسس)، `procs`, `superfile`
+
+---
+
+### ۸. `dev media` — پردازش تصویر و ویدیو
+* **تصویر و ویدیو:** `ffmpeg-full` (با همه کدک‌ها)، `vips` (پردازش تصویر سریع)، `imagemagick`, `oxipng`, `jpegoptim`
+* **اسناد و OCR:** `ocrmypdf`, `tesseract`, `pdfarranger`, `qpdf`
+
+---
+
+### ۹. `dev nix` — پکیجینگ و بررسی بسته‌ها
+* **ابزارها:** `nurl`, `nix-init`, `nix-update`, `nixpkgs-review`, `nix-search-tv`, `nix-check`, `nix-size`
+
+---
+
+### ۱۰. `dev audit` — ممیزی و امنیت
+* **ابزارها:** `vulnix`, `gitleaks`, `osv-scanner`, `grype`, `syft`, `trivy`, `lynis`, `audit-all`
+
+---
+
+### ۱۱. `dev box` — موتور سندباکس Universal
+* ابزار خودنوشته اجرای امن با ایزولاسیون Zero-Trust و Home-Swap (تشریح کامل در [۰۸ سندباکس](08-sandbox.md)).

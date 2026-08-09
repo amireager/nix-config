@@ -26,7 +26,7 @@ nh os switch -- --show-trace   # وقتی خطا مبهم است
 `nix-output-monitor`) و نمایش تفاوت نسل‌ها. اگر خودش خراب شد، راه خام هست:
 
 ```sh
-nrf     # sudo nixos-rebuild switch --flake /etc/nixos#nixos
+nrf     # sudo nixos-rebuild switch --flake /home/user/nix-config#nixos
 ```
 
 ### به‌روزرسانی
@@ -59,141 +59,64 @@ nix-du -s /nix/store      # کدام مسیرها واقعاً دیسک می‌�
 ### پاک کردن
 
 ```sh
-nh clean all              # با سیاست پیش فرض: ۱۰ روز و ۱۰ نسل
-nix store gc              # هرچه ریشه ندارد
-nix store optimise        # فایل های یکسان را hard-link کن
+nh clean all --keep 5     # پنج نسل آخر را نگه دار، بقیه را پاک کن
+nh clean all --keep 3     # وقتی دیسک خیلی پر است
 ```
 
-`nh clean` خودکار هم اجرا می‌شود (`--keep-since 10d --keep 10` در
-`core.nix`) و `nix.optimise` هم زمان‌بندی شده.
+`nh clean` خودش هم `nix-collect-garbage` می‌زند و هم لاگ‌های قدیمی boot loader
+را تمیز می‌کند.
 
-⚠️ محیط‌هایی که با `dev` وارد شده‌ای پاک **نمی‌شوند** — چون GC root دارند در
-`~/.local/share/dev-roots/`. برای آزاد کردنشان باید آن ریشه‌ها را دستی حذف
-کنی.
+اگر سیستم بوت نشد و در حالت rescue هستی:
+
+```sh
+nix-collect-garbage -d    # همه ی نسل های قدیمی غیر از فعلی را پاک کن
+```
 
 ---
 
-## چرا این rebuild شد؟
+## چرا rebuild شد؟
 
-معمول‌ترین سؤال بعد از یک `nix flake update` که نیم ساعت طول کشیده.
-
-```sh
-nix-diff /run/current-system /nix/var/nix/profiles/system-123-link
-```
-
-`nix-diff` دقیق می‌گوید کدام derivation عوض شده و چرا — تا سطح یک متغیر
-محیطی. `nh` خودش بعد از هر ساخت خلاصه‌ی تفاوت را نشان می‌دهد، پس معمولاً
-`nix-diff` را وقتی می‌زنی که آن خلاصه کافی نبوده.
+وقتی یک تغییر کوچک دادی و نیم ساعت build طول کشید، یعنی چیزی در بالای درخت
+عوض شده. برای پیدا کردنش:
 
 ```sh
-nix-tree                              # درخت وابستگی، تعاملی
-nix why-depends /run/current-system /nix/store/xxx
+nix-diff /run/current-system ./result
 ```
 
-`nix why-depends` جواب «این چیز اصلاً از کجا آمده؟» را می‌دهد — مثلاً چرا
-`python2` در closure است.
+خروجی نشان می‌دهد دقیقاً کدام پکیج عوض شده و باعث build شدن بقیه شده —
+مثلاً `glibc` یا `openssl` تغییر کرده و کل دنیای وابسته بازسازی شده.
 
 ---
 
-## پیدا کردن چیزها
+## داخل `dev nix`
+
+ابزارهایی برای نوشتن، تست و دیباگ پکیج‌های Nix:
 
 ```sh
-nix search nixpkgs ripgrep       # جستجوی پکیج
-nix-locate --minimal bin/rg      # کدام پکیج این باینری را دارد
-, rg                             # یک بار اجرا کن بدون نصب
+dev nix
 ```
 
-`nix-locate` و `,` بلافاصله کار می‌کنند چون ایندکس از پیش ساخته از
-`nix-index-database` می‌آید.
-
-> ⚠️ این‌ها **فقط** وقتی اجرا می‌شوند که خودت صدایشان بزنی. غلط تایپی در شل
-> جستجوی پکیج راه نمی‌اندازد — دلیلش در [۱۰ تصمیم‌ها](10-decisions.md).
-
-```sh
-nix repl                         # بعد :lf . برای بارگذاری این flake
-nix eval .#nixosConfigurations.nixos.config.networking.hostName
-nix flake metadata               # inputها و تاریخشان
-nix-melt                         # نمایشگر TUI برای flake.lock
-```
-
-`nix repl` بهترین راه برای فهمیدن این است که یک مقدار در کانفیگ **واقعاً** چه
-شده، نه اینکه فکر می‌کنی چه شده.
+| دستور | چه کار می‌کند |
+| :--- | :--- |
+| `nix-check` | اجرای statix + deadnix + flake check روی پروژه فعلی |
+| `nix-size [path]` | تحلیل حجم closure و ۲۵ پکیج بزرگ |
+| `nurl <url>` | تولید fetcher expression از یک آدرس گیت |
+| `nix-init <url>` | ساخت خودکار اسکلت یک پکیج جدید از یک URL |
+| `nix-update <attr>` | به‌روزرسانی خودکار نسخه و هش یک پکیج |
+| `nix-search-tv` | جستجوی تعاملی و TUI در میان تمام پکیج‌های nixpkgs |
+| `nixpkgs-review pr 12345` | دانلود و تست یک PR از nixpkgs قبل از مرج |
+| `nix-fast-build` | بیلد موازی خروجی‌های یک flake |
 
 ---
 
-## وقتی چیزی نمی‌سازد
+## بازگشت به عقب (Rollback)
+
+اگر تغییری دادی و سیستم ناپایدار شد:
 
 ```sh
-dev nix && nix-check      # statix + deadnix + flake check
+nh os switch --rollback
 ```
 
-`nix-check` سه کار پشت سر هم می‌کند: الگوهای غلط، متغیرهای بی‌استفاده، و
-ارزیابی خود flake. اولین چیزی که قبل از کامیت باید زد.
-
-```sh
-nix flake check --no-build       # فقط ارزیابی، بدون ساخت
-nix build .#nixosConfigurations.nixos.config.system.build.toplevel --show-trace
-nix log /nix/store/xxx.drv       # لاگ یک build شکست خورده
-```
-
-خطاهای Nix معمولاً بلندند و جواب در **اولین** خط است، نه آخری.
-
----
-
-## ابزارهای کیفیت کد
-
-دائمی، چون روی فایل‌های بیرون این مخزن هم استفاده می‌شوند:
-
-| ابزار            | کار                                |
-| :--------------- | :--------------------------------- |
-| `statix check .` | الگوهای ضدالگو                     |
-| `deadnix .`      | تعریف‌های بی‌استفاده               |
-| `alejandra .`    | فرمت‌کننده (همان `nix fmt`)        |
-| `nixd`           | زبان‌سرور — در nvim خودکار وصل است |
-
----
-
-## ساخت پکیج — `dev nix`
-
-```sh
-nix-init                  # از یک URL، اسکلت derivation بساز
-nurl <url>                # عبارت fetcher درست را تولید کن
-nix-update <attr>         # نسخه و hash را به‌روز کن
-nix-prefetch-git <url>    # hash یک ریپو
-nixpkgs-review pr 12345   # یک PR نیکس‌پکیجز را محلی بساز و تست کن
-nix-fast-build            # ساخت موازی
-```
-
-`nurl` وقت زیادی می‌گیرد اگر ندانی هست: به‌جای حدس زدن `fetchFromGitHub` و
-پیدا کردن hash، خودش کل عبارت را می‌سازد.
-
----
-
-## نسل‌ها و برگشت
-
-```sh
-nixos-rebuild list-generations
-sudo nix-env --profile /nix/var/nix/profiles/system --rollback
-```
-
-یا ساده‌تر: موقع بوت، منوی systemd-boot ده نسل آخر را نگه می‌دارد
-(`configurationLimit = 10`). یک سیستم خراب همیشه یک ریست فاصله دارد.
-
----
-
-## پشت شبکه‌ی فیلترشده
-
-```sh
-nix_proxy 1819       # دانلودهای nix-daemon از پروکسی
-nix_proxy off
-```
-
-یک drop-in برای systemd می‌نویسد و تا ریست می‌ماند. این تنها راهی است که
-**دانلودهای خود دیمن** (نه دستورهای تو) از پروکسی رد شوند — متغیرهای محیطی
-شل روی `nix-daemon` اثر ندارند چون یک سرویس جداست.
-
-جزئیات در [۰۹ باید و نباید](09-rules.md).
-
----
-
-بعدی: [۰۳ محیط‌های توسعه](03-dev.md)
+اگر سیستم بالا نیامد: در منوی boot loader (که systemd-boot است)، کلیدهای
+جهت‌نما را بزن و نسل قبلی را انتخاب کن. هر نسل یک سیستم کامل و مستقل است که
+دقیقاً مثل روز اول کار می‌کند.
