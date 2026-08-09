@@ -4,16 +4,20 @@
   ...
 }:
 # ==============================================================================
-# BOX — Next-Gen Developer & AI Agent Sandbox (Home-Swap & Workspace Isolation)
+# BOX — Universal, Language-Agnostic Developer & Tool Sandbox
 # ==============================================================================
 # A zero-overhead, ultra-fast sandboxing engine designed for:
-#   1. Native Shebang & Path Compatibility: Mounts the workspace environment over
-#      the real $HOME (/home/amir), so virtualenvs (.venv) and tools work natively.
-#   2. Secret Protection: Host's ~/.ssh, ~/.aws, and tokens are completely hidden.
-#   3. Flexible Workspace (-w): Switch working directory to /work or subprojects.
-#   4. Multi-Path Sharing (-s): Mount host folders (e.g. -s ~/.config/nvim -s ~/.hermes -s ~/dl)
-#      directly to matching sandbox paths in read-only or read-write mode.
-#   5. Modifiers: Ephemeral RAM mode (-e), Zero-Net (-n), Proxy routing (-P), GPU (-g).
+#   1. Clean Virtual /work Mount: Inside the sandbox, workspace is always /work.
+#   2. Pure & Agnostic: No hardcoded languages/tools. Inherits caller shell's tools.
+#   3. Modular .box/ Layout: Creates .box/{home, work, tmp} locally. Any custom folder
+#      created in .box/<name> is automatically mapped as /<name> inside the sandbox.
+#   4. Zero-Trust Security: Host's ~/.ssh, ~/.aws, and tokens are completely hidden.
+#      Zero host path leaks. No implicit sharing; only paths passed via -s / -S are mounted.
+#   5. Dual-Mode Sharing:
+#      • -s <SRC>[:<DST>]  -> Read-Only share  (e.g. -s ~/.config/nvim)
+#      • -S <SRC>[:<DST>]  -> Read-Write share (e.g. -S ~/Downloads -S ~/src/venv:~/venv)
+#   6. Resource Limits: Memory (--mem 4G) and CPU (--cpu 200%) ceilings via cgroups.
+#   7. Modifiers: Ephemeral RAM mode (-e), Zero-Net (-n), Proxy routing (-P), GPU (-g).
 # ==============================================================================
 let
   bwrap = "${pkgs.bubblewrap}/bin/bwrap";
@@ -34,50 +38,51 @@ let
     print_help() {
       cat <<EOF
 ''${C_CYAN}''${C_BOLD}╔═══════════════════════════════════════════════════════════════════╗
-║                   📦 BOX — Sandboxing Engine                      ║
+║                   📦 BOX — Universal Sandbox Engine               ║
 ╚═══════════════════════════════════════════════════════════════════╝''${C_RESET}
 
 ''${C_BOLD}USAGE:''${C_RESET}
   box [FLAGS] [COMMAND [ARGS...]]
 
 ''${C_BOLD}BEHAVIOR:''${C_RESET}
-  • If no command is given, launches an interactive shell (''${SHELL:-fish}) inside the workspace.
-  • Secrets (~/.ssh, ~/.aws) are isolated; Python & Hermes shebangs work natively.
-  • Pass -s to share specific host configs or folders (e.g. -s ~/.hermes -s ~/.config/nvim).
-  • Dev servers and Web UIs (e.g. localhost:3000) are fully accessible on the host.
+  • If no command is given, launches an interactive shell (''${SHELL:-fish}) inside /work.
+  • Zero-Trust: Secrets (~/.ssh, ~/.aws) are isolated; no host files are shared implicitly.
+  • Clean /work Workspace: Working directory inside the sandbox is always /work.
+  • Agnostic: Inherits the exact environment/tools of the calling shell (dev python, dev rust, etc.).
+  • Modular .box/: Automatically maps any directory in .box/<name> to /<name> inside sandbox.
 
 ''${C_BOLD}FLAGS & MODIFIERS:''${C_RESET}
-  ''${C_YELLOW}-e, --ephemeral, --tmp''${C_RESET}     Pure RAM mode (tmpfs). Everything vanishes upon exit.
-  ''${C_YELLOW}-n, --offline, --no-net''${C_RESET}    Completely cut off network access (Zero-Net).
-  ''${C_YELLOW}-P, --proxy [PORT]''${C_RESET}         Route all traffic through SOCKS5 proxy (default: 1819).
-  ''${C_YELLOW}-g, --gpu''${C_RESET}                  Grant access to Nvidia GPU and CUDA devices.
-  ''${C_YELLOW}-s, --share <PATH>''${C_RESET}        Share host path (repeatable, e.g. -s ~/.hermes -s ~/.config/nvim).
-  ''${C_YELLOW}-w, --workdir <DIR>''${C_RESET}        Use custom directory/subproject as workspace.
-  ''${C_YELLOW}--clean''${C_RESET}                    Wipe the persistent sandbox storage for this workspace.
-  ''${C_YELLOW}--inspect <CMD>''${C_RESET}            Trace file and network calls with strace.
+  ''${C_YELLOW}-e, --ephemeral, --tmp''${C_RESET}       Pure RAM mode (tmpfs). Everything vanishes upon exit.
+  ''${C_YELLOW}-n, --offline, --no-net''${C_RESET}      Completely cut off network access (Zero-Net).
+  ''${C_YELLOW}-P, --proxy [PORT]''${C_RESET}           Route all traffic through SOCKS5 proxy (default: 1819).
+  ''${C_YELLOW}-g, --gpu''${C_RESET}                    Grant access to Nvidia GPU and CUDA devices.
+  ''${C_YELLOW}-s, --share <SRC>[:<DST>]''${C_RESET}   Read-Only share (repeatable, e.g. -s ~/.config/nvim).
+  ''${C_YELLOW}-S, --share-rw <SRC>[:<DST>]''${C_RESET} Read-Write share (repeatable, e.g. -S ~/Downloads -S ~/src/venv:~/venv).
+  ''${C_YELLOW}-w, --workdir <DIR>''${C_RESET}          Use custom directory as /work workspace (defaults to .box/work/).
+  ''${C_YELLOW}--mem <SIZE>''${C_RESET}                 Cap RAM usage via cgroups (e.g. --mem 4G, --mem 512M).
+  ''${C_YELLOW}--cpu <QUOTA>''${C_RESET}                Cap CPU quota via cgroups (e.g. --cpu 200%, --cpu 150%).
+  ''${C_YELLOW}--clean''${C_RESET}                      Wipe the local .box/ storage for this project.
+  ''${C_YELLOW}--inspect <CMD>''${C_RESET}              Trace file and network calls with strace.
   ''${C_YELLOW}-h, --help''${C_RESET}                 Show this help manual.
 
 ''${C_BOLD}EXAMPLES:''${C_RESET}
-  ''${C_DIM}# 1. Interactive sandbox shell in current folder''${C_RESET}
+  ''${C_DIM}# 1. Interactive sandbox in clean /work workspace''${C_RESET}
   box
 
-  ''${C_DIM}# 2. Run Hermes in sandbox with its configuration shared''${C_RESET}
-  box -s ~/.hermes hermes
+  ''${C_DIM}# 2. Run with read-only Neovim config and read-write downloads''${C_RESET}
+  box -s ~/.config/nvim -S ~/Downloads
 
-  ''${C_DIM}# 3. Work on a subproject folder mounted at /work''${C_RESET}
-  box -w work/
+  ''${C_DIM}# 3. Work on custom directory mapped to /work''${C_RESET}
+  box -w my-project/
 
-  ''${C_DIM}# 4. Test untrusted script in RAM (zero traces on disk)''${C_RESET}
+  ''${C_DIM}# 4. Limit runaway script to 2GB RAM and 150% CPU''${C_RESET}
+  box --mem 2G --cpu 150% python test.py
+
+  ''${C_DIM}# 5. Test untrusted script in RAM (zero traces on disk)''${C_RESET}
   box -e curl -sSL https://example.com/install.sh | bash
 
-  ''${C_DIM}# 5. Isolated offline build/test''${C_RESET}
+  ''${C_DIM}# 6. Isolated offline build/test''${C_RESET}
   box -n npm test
-
-  ''${C_DIM}# 6. Run AI model or PyTorch with Nvidia GPU acceleration''${C_RESET}
-  box -g python train.py
-
-  ''${C_DIM}# 7. Force traffic through local proxy''${C_RESET}
-  box -P 1819 aichat "Explain this repo"
 EOF
     }
 
@@ -86,12 +91,16 @@ EOF
     OPT_OFFLINE=0
     OPT_GPU=0
     OPT_PROXY=""
-    OPT_SHARES=()
-    OPT_WORKDIR="$PWD"
+    OPT_SHARES_RO=()
+    OPT_SHARES_RW=()
+    OPT_WORKDIR=""
+    OPT_MEM=""
+    OPT_CPU=""
     OPT_INSPECT=0
     CMD=()
     REAL_HOST_HOME="''${HOME:-/home/''${USER:-user}}"
     REAL_USER="''${USER:-user}"
+    PROJECT_ROOT="$PWD"
 
     # ── Parse Command Line Flags ─────────────────────────────────────────────
     while [ $# -gt 0 ]; do
@@ -101,14 +110,13 @@ EOF
           exit 0
           ;;
         --clean)
-          TARGET_STORAGE="''${REAL_HOST_HOME}/.local/share/box/workspaces/$(basename "$PWD")"
-          if [ -d "$TARGET_STORAGE" ]; then
-            printf "''${C_YELLOW}Remove sandbox storage in %s? [y/N] ''${C_RESET}" "$TARGET_STORAGE"
+          if [ -d "$PROJECT_ROOT/.box" ]; then
+            printf "''${C_YELLOW}Remove .box directory in %s? [y/N] ''${C_RESET}" "$PROJECT_ROOT"
             read -r reply
             case "$reply" in
               [yY]*)
-                rm -rf "$TARGET_STORAGE"
-                echo -e "''${C_GREEN}✔ Sandbox storage cleaned successfully.''${C_RESET}"
+                rm -rf "$PROJECT_ROOT/.box"
+                echo -e "''${C_GREEN}✔ .box cleaned successfully.''${C_RESET}"
                 exit 0
                 ;;
               *)
@@ -117,7 +125,7 @@ EOF
                 ;;
             esac
           else
-            echo "No persistent sandbox storage found for $PWD."
+            echo "No .box directory found in $PROJECT_ROOT."
             exit 0
           fi
           ;;
@@ -142,14 +150,29 @@ EOF
             shift
           fi
           ;;
-        -s|--share)
-          [ $# -ge 2 ] || { echo -e "''${C_RED}box: -s/--share requires a path argument''${C_RESET}" >&2; exit 1; }
-          OPT_SHARES+=("$2")
+        -S|--share-rw)
+          [ $# -ge 2 ] || { echo -e "''${C_RED}box: -S requires a path argument''${C_RESET}" >&2; exit 1; }
+          OPT_SHARES_RW+=("$2")
           shift 2
           ;;
-        -w|--workdir|-p|--path)
-          [ $# -ge 2 ] || { echo -e "''${C_RED}box: $1 requires a path argument''${C_RESET}" >&2; exit 1; }
-          OPT_WORKDIR="$(cd "$2" && pwd -P)"
+        -s|--share)
+          [ $# -ge 2 ] || { echo -e "''${C_RED}box: -s requires a path argument''${C_RESET}" >&2; exit 1; }
+          OPT_SHARES_RO+=("$2")
+          shift 2
+          ;;
+        -w|--workdir)
+          [ $# -ge 2 ] || { echo -e "''${C_RED}box: -w requires a path argument''${C_RESET}" >&2; exit 1; }
+          OPT_WORKDIR="$2"
+          shift 2
+          ;;
+        --mem)
+          [ $# -ge 2 ] || { echo -e "''${C_RED}box: --mem requires a size argument (e.g. 4G, 512M)''${C_RESET}" >&2; exit 1; }
+          OPT_MEM="$2"
+          shift 2
+          ;;
+        --cpu)
+          [ $# -ge 2 ] || { echo -e "''${C_RED}box: --cpu requires a quota argument (e.g. 200%)''${C_RESET}" >&2; exit 1; }
+          OPT_CPU="$2"
           shift 2
           ;;
         --inspect)
@@ -168,21 +191,41 @@ EOF
       esac
     done
 
-    # ── Workspace and Storage Layout ─────────────────────────────────────────
-    HOST_WORK="$OPT_WORKDIR"
-    PROJECT_ROOT="$PWD"
-    WORKSPACE_NAME="$(basename "$PROJECT_ROOT")"
-    CENTRAL_BOX="''${REAL_HOST_HOME}/.local/share/box/workspaces/''${WORKSPACE_NAME}"
-    HOST_HOME="''${CENTRAL_BOX}/home"
+    # ── Workspace & Storage Resolution ───────────────────────────────────────
+    BOX_DIR="$PROJECT_ROOT/.box"
+    HOST_HOME="$BOX_DIR/home"
+    DEFAULT_WORK="$BOX_DIR/work"
 
     if [ "$OPT_EPHEMERAL" -eq 0 ]; then
       mkdir -p "$HOST_HOME"/{.config,.cache,.local/bin,.local/share,.npm-global/bin,.cargo/bin,go/bin}
+      mkdir -p "$DEFAULT_WORK"
+      if [ ! -f "$BOX_DIR/.gitignore" ]; then
+        printf "*\n" > "$BOX_DIR/.gitignore"
+      fi
+    fi
+
+    # Determine Active Workspace Directory on Host
+    if [ -n "$OPT_WORKDIR" ]; then
+      OPT_WORKDIR="''${OPT_WORKDIR/#\~/$REAL_HOST_HOME}"
+      if [ -d "$OPT_WORKDIR" ]; then
+        HOST_ACTIVE_WORK="$(cd "$OPT_WORKDIR" && pwd -P)"
+      else
+        mkdir -p "$OPT_WORKDIR"
+        HOST_ACTIVE_WORK="$(cd "$OPT_WORKDIR" && pwd -P)"
+      fi
+    else
+      if [ "$OPT_EPHEMERAL" -eq 1 ]; then
+        HOST_ACTIVE_WORK="$PROJECT_ROOT"
+      else
+        HOST_ACTIVE_WORK="$DEFAULT_WORK"
+      fi
     fi
 
     # ── Build bwrap Arguments ────────────────────────────────────────────────
+    # Strict mount ordering:
     # 1. Mount root filesystem, /proc, /dev, /tmp
-    # 2. Set TMPDIR to /tmp to prevent stale host temp directory errors
-    # 3. Swap $REAL_HOST_HOME with isolated home storage
+    # 2. Swap $REAL_HOST_HOME with isolated home storage
+    # 3. Mount workspace directly at /work (No redundant duplicate path)
     BWRAP_ARGS=(
       --die-with-parent
       --unshare-user
@@ -219,38 +262,24 @@ EOF
       BWRAP_ARGS+=(--bind "$HOST_HOME" "$REAL_HOST_HOME")
     fi
 
-    # Bind the parent project root so real paths and .venv resolve seamlessly
+    # Bind active workspace directly to /work
     BWRAP_ARGS+=(
-      --dir "$PROJECT_ROOT"
-      --bind "$PROJECT_ROOT" "$PROJECT_ROOT"
+      --dir /work
+      --bind "$HOST_ACTIVE_WORK" /work
     )
 
-    # If -w specified a subfolder, also mount /work pointing to it
-    if [ "$HOST_WORK" != "$PROJECT_ROOT" ]; then
-      BWRAP_ARGS+=(
-        --dir "$HOST_WORK"
-        --bind "$HOST_WORK" "$HOST_WORK"
-        --dir /work
-        --bind "$HOST_WORK" /work
-      )
-    else
-      BWRAP_ARGS+=(
-        --dir /work
-        --bind "$PROJECT_ROOT" /work
-      )
-    fi
-
-    # Shell Environment Integration: bind host fish config into sandbox home (read-only)
-    if [ -d "''${REAL_HOST_HOME}/.config/fish" ]; then
-      BWRAP_ARGS+=(--ro-bind-try "''${REAL_HOST_HOME}/.config/fish" "''${REAL_HOST_HOME}/.config/fish")
-    fi
-    if [ -f "''${REAL_HOST_HOME}/.config/starship.toml" ]; then
-      BWRAP_ARGS+=(--ro-bind-try "''${REAL_HOST_HOME}/.config/starship.toml" "''${REAL_HOST_HOME}/.config/starship.toml")
-    fi
-
-    # Auto-share ~/.hermes if present on host unless explicitly omitted
-    if [ -d "''${REAL_HOST_HOME}/.hermes" ]; then
-      BWRAP_ARGS+=(--bind-try "''${REAL_HOST_HOME}/.hermes" "''${REAL_HOST_HOME}/.hermes")
+    # Dynamic Root Directories: Auto-mount any custom directory from .box/<name> to /<name>
+    if [ "$OPT_EPHEMERAL" -eq 0 ] && [ -d "$BOX_DIR" ]; then
+      for custom_dir in "$BOX_DIR"/*/; do
+        [ -d "$custom_dir" ] || continue
+        dname="$(basename "$custom_dir")"
+        case "$dname" in
+          home|work|tmp) continue ;;
+          *)
+            BWRAP_ARGS+=(--dir "/$dname" --bind "$custom_dir" "/$dname")
+            ;;
+        esac
+      done
     fi
 
     # GPU Hardware Passthrough
@@ -262,30 +291,19 @@ EOF
       done
     fi
 
-    # ── Multi-Path Sharing Logic (-s / --share) ──────────────────────────────
-    for entry in "''${OPT_SHARES[@]+''${OPT_SHARES[@]}}"; do
-      [ -n "$entry" ] || continue
-      src=""
-      dst=""
-      mode="--ro-bind-try"
+    # ── Multi-Path Sharing Logic (-s for RO, -S for RW) ─────────────────────
+    mount_share() {
+      local entry="$1"
+      local mode="$2"
+      local src=""
+      local dst=""
 
       if [[ "$entry" == *":"* ]]; then
-        p1=""
-        p2=""
-        p3=""
-        IFS=":" read -r p1 p2 p3 <<< "$entry"
-        src="$p1"
-        if [ "$p2" = "rw" ] || [ "$p2" = "ro" ]; then
-          [ "$p2" = "rw" ] && mode="--bind-try"
-        else
-          dst="$p2"
-          [ "$p3" = "rw" ] && mode="--bind-try"
-        fi
+        IFS=":" read -r src dst <<< "$entry"
       else
         src="$entry"
       fi
 
-      # Expand tilde
       src="''${src/#\~/$REAL_HOST_HOME}"
       if [ -e "$src" ]; then
         src="$(cd "$(dirname "$src")" && pwd -P)/$(basename "$src")"
@@ -296,21 +314,32 @@ EOF
         fi
         BWRAP_ARGS+=("$mode" "$src" "$dst")
       fi
+    }
+
+    # Apply Read-Only shares (-s)
+    for entry in "''${OPT_SHARES_RO[@]+''${OPT_SHARES_RO[@]}}"; do
+      [ -n "$entry" ] || continue
+      mount_share "$entry" "--ro-bind-try"
     done
 
-    # Working Directory inside sandbox
-    BWRAP_ARGS+=(--chdir "$HOST_WORK")
+    # Apply Read-Write shares (-S)
+    for entry in "''${OPT_SHARES_RW[@]+''${OPT_SHARES_RW[@]}}"; do
+      [ -n "$entry" ] || continue
+      mount_share "$entry" "--bind-try"
+    done
 
-    # ── Assemble Clean PATH inside sandbox ───────────────────────────────────
-    # Ensure project .venv and host local bins are prioritized
-    SANDBOX_PATH="''${PROJECT_ROOT}/.venv/bin:''${HOST_WORK}/.venv/bin:''${REAL_HOST_HOME}/.local/bin:''${REAL_HOST_HOME}/.npm-global/bin:''${REAL_HOST_HOME}/.cargo/bin:$PATH"
+    # Working Directory inside sandbox is ALWAYS /work
+    BWRAP_ARGS+=(--chdir /work)
+
+    # ── Clean Agnostic PATH (Inherits caller shell's PATH directly) ───────────
+    SANDBOX_PATH="''${REAL_HOST_HOME}/.local/bin:''${REAL_HOST_HOME}/.npm-global/bin:''${REAL_HOST_HOME}/.cargo/bin:$PATH"
 
     # ── Sandbox Environment Variables ────────────────────────────────────────
     ENV_ARGS=(
       --setenv USER "$REAL_USER"
       --setenv LOGNAME "$REAL_USER"
       --setenv HOME "$REAL_HOST_HOME"
-      --setenv PWD "$HOST_WORK"
+      --setenv PWD "/work"
       --setenv TMPDIR "/tmp"
       --setenv TMP "/tmp"
       --setenv TEMP "/tmp"
@@ -326,7 +355,6 @@ EOF
       --setenv CARGO_HOME "$REAL_HOST_HOME/.cargo"
       --setenv GOPATH "$REAL_HOST_HOME/go"
       --setenv PATH "$SANDBOX_PATH"
-      --setenv HERMES_HOME "$REAL_HOST_HOME/.hermes"
       --setenv BOX_ACTIVE "1"
     )
 
@@ -359,19 +387,32 @@ EOF
       TARGET_CMD=("''${CMD[@]}")
     fi
 
-    # ── Execution ────────────────────────────────────────────────────────────
+    # ── Execution with optional Systemd Resource Limits ──────────────────────
+    EXEC_CMD=("${bwrap}" "''${BWRAP_ARGS[@]}" "''${ENV_ARGS[@]}" -- "''${TARGET_CMD[@]}")
+
     if [ "$OPT_INSPECT" -eq 1 ]; then
       echo -e "''${C_MAGENTA}🔍 [box inspect] Monitoring filesystem access with strace...''${C_RESET}"
-      exec ${pkgs.strace}/bin/strace -f -e trace=file ${bwrap} "''${BWRAP_ARGS[@]}" "''${ENV_ARGS[@]}" -- "''${TARGET_CMD[@]}"
-    else
-      exec ${bwrap} "''${BWRAP_ARGS[@]}" "''${ENV_ARGS[@]}" -- "''${TARGET_CMD[@]}"
+      exec ${pkgs.strace}/bin/strace -f -e trace=file "''${EXEC_CMD[@]}"
     fi
+
+    if [ -n "$OPT_MEM" ] || [ -n "$OPT_CPU" ]; then
+      if command -v systemd-run >/dev/null 2>&1 && systemd-run --user --scope --quiet -- true 2>/dev/null; then
+        SYS_ARGS=(--user --scope --quiet)
+        [ -n "$OPT_MEM" ] && SYS_ARGS+=(-p "MemoryMax=$OPT_MEM")
+        [ -n "$OPT_CPU" ] && SYS_ARGS+=(-p "CPUQuota=$OPT_CPU")
+        exec systemd-run "''${SYS_ARGS[@]}" -- "''${EXEC_CMD[@]}"
+      else
+        echo -e "''${C_YELLOW}⚠ systemd user scope unavailable — running without cgroup limits''${C_RESET}" >&2
+      fi
+    fi
+
+    exec "''${EXEC_CMD[@]}"
   '';
 in
   mkDevShell {
     name = "box";
     icon = "📦";
-    description = "Next-Gen Sandbox: Home-Swap, Python Shebang Safety, Multi-Share (-s), Ephemeral RAM & GPU";
+    description = "Universal Sandbox: Language-Agnostic, Clean /work, Dynamic .box/*, -s (RO) & -S (RW)";
 
     packages = [
       boxCli
@@ -383,46 +424,46 @@ in
     tips = [
       {
         key = "Interactive";
-        cmd = "box                 (launches isolated shell in workspace)";
+        cmd = "box                         (launches isolated shell in /work)";
       }
       {
-        key = "Share Host Configs";
-        cmd = "box -s ~/.config/nvim -s ~/.hermes";
+        key = "Share Config (RO)";
+        cmd = "box -s ~/.config/nvim";
       }
       {
-        key = "Subproject";
-        cmd = "box -w work/        (work in subproject with parent .venv available)";
+        key = "Share Writable (RW)";
+        cmd = "box -S ~/Downloads -S ~/src/venv:~/venv";
+      }
+      {
+        key = "Resource Limits";
+        cmd = "box --mem 4G --cpu 200% <cmd> (prevent freeze with cgroups)";
+      }
+      {
+        key = "Custom Workdir";
+        cmd = "box -w work/                (work in custom subfolder)";
       }
       {
         key = "Ephemeral RAM";
-        cmd = "box -e <cmd>        (pure memory tmpfs, zero disk trace)";
+        cmd = "box -e <cmd>                (pure memory tmpfs, zero disk trace)";
       }
       {
         key = "Zero-Net";
-        cmd = "box -n <cmd>        (isolated network stack)";
+        cmd = "box -n <cmd>                (isolated network stack)";
       }
       {
         key = "GPU / CUDA";
-        cmd = "box -g <cmd>        (Nvidia GTX 1650 & CUDA passthrough)";
-      }
-      {
-        key = "Proxy Route";
-        cmd = "box -P 1819 <cmd>   (route all traffic through local proxy)";
-      }
-      {
-        key = "Inspect";
-        cmd = "box --inspect <cmd> (trace touched paths with strace)";
+        cmd = "box -g <cmd>                (Nvidia GTX 1650 & CUDA passthrough)";
       }
       {
         key = "Clean Storage";
-        cmd = "box --clean         (wipe workspace sandbox storage)";
+        cmd = "box --clean                 (wipe local .box folder)";
       }
     ];
 
     notes = [
-      "Home-Swap: Isolated home mounted over real path (Python Shebangs work natively)"
-      "Clean Workdir: Persistent storage lives in ~/.local/share/box/workspaces/"
-      "Local Tools: npm -g, pip, cargo, and curl | bash install cleanly into sandbox"
+      "Language-Agnostic: No hardcoded tool paths; inherits caller shell's exact environment"
+      "Clean Workspace: Always /work  ·  Dynamic: .box/<name> auto-maps to /<name>"
+      "-s = Read-Only share  ·  -S = Read-Write share  ·  Supports <src>:<dst> mapping"
       "Ports Open: Web UIs & dev servers on localhost/0.0.0.0 reach the host browser"
     ];
   }

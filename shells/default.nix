@@ -3,13 +3,6 @@
 # ==============================================================================
 # Every subdirectory here is a self-contained environment, realised only when
 # it is actually entered (`dev <name>` / `nix develop .#<name>`).
-#
-# Adding a shell:
-#   1. cp -r shells/_template shells/<name>
-#   2. add one line to `shellDirs` below
-#
-# The `dev` launcher builds its menu from `devShellsMeta`, exported below, so
-# a new shell shows up there automatically — no second list to update.
 # ==============================================================================
 {
   inputs,
@@ -77,9 +70,6 @@
     }
   ];
 
-  # Machine-readable description of every shell, consumed by the `dev`
-  # launcher. Aliases are listed separately so the menu can mention them
-  # without implying they are separate environments.
   meta = {
     shells =
       lib.mapAttrs
@@ -95,13 +85,7 @@
       ai = "agent";
       c = "build";
       default = "nix";
-      data = "python"; # Data workflow merged into modern Python shell
-    };
-    extra = {
-      test = {
-        icon = "🧪";
-        description = "Composite: Python + Rust toolchains";
-      };
+      data = "python";
     };
   };
 in
@@ -114,24 +98,6 @@ in
     ai = shells.agent;
     c = shells.build;
     data = shells.python;
-
-    # Composite environment for cross-language work.
-    test = mkDevShell {
-      name = "test";
-      icon = "🧪";
-      description = "Composite: Python + Rust toolchains";
-      inputsFrom = [shells.python shells.rust];
-      tips = [
-        {
-          key = "Python";
-          cmd = "pytest / ruff check .";
-        }
-        {
-          key = "Rust";
-          cmd = "cargo test";
-        }
-      ];
-    };
 
     # Not a shell: metadata for the `dev` launcher's menu.
     devShellsMeta = meta;

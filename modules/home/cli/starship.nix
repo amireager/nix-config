@@ -92,15 +92,12 @@
         deleted = "✘$count";
       };
 
-      # ── DevShell Indicator (Native Heuristic Detection) ────────────────
+      # ── DevShell Indicator (Only renders inside actual devShells) ──────
       nix_shell = {
-        disabled = false;
-        symbol = "❄️ dev:";
+        symbol = "❄️ ";
+        style = "bold #89b4fa";
         format = "[$symbol$name]($style) ";
-        style = "bold #74c7ec";
-        heuristic = true;
-        impure_msg = "";
-        pure_msg = "";
+        heuristic = false;
       };
 
       direnv = {

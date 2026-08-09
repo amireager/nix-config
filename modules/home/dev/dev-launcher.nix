@@ -150,7 +150,6 @@
         printf 'ai\t🤖\talias for agent\n'
         printf 'c\t🛠️\talias for build\n'
         printf 'data\t🐍\talias for python\n'
-        printf 'test\t🧪\tComposite: Python + Rust toolchains\n'
       }
     '';
 
@@ -175,7 +174,6 @@
           printf 'ai\t🤖 alias for agent\n'
           printf 'c\t🛠️ alias for build\n'
           printf 'data\t🐍 alias for python\n'
-          printf 'test\t🧪 Composite: Python + Rust toolchains\n'
       end
 
       complete -c dev -f
@@ -190,8 +188,11 @@
       complete -c box -s n -l offline -l no-net -d 'Completely cut off network access'
       complete -c box -s P -l proxy -x -d 'Route traffic through local SOCKS5 proxy port (default: 1819)'
       complete -c box -s g -l gpu -d 'Grant access to Nvidia GPU and CUDA devices'
-      complete -c box -s s -l share -r -d 'Share host directory/file (repeatable)'
-      complete -c box -s w -l workdir -s p -l path -r -d 'Custom workspace directory'
+      complete -c box -s s -l share -r -d 'Share host path in Read-Only mode (repeatable, e.g. -s ~/.config/nvim)'
+      complete -c box -s S -l share-rw -r -d 'Share host path in Read-Write mode (repeatable, e.g. -S ~/.hermes)'
+      complete -c box -s w -l workdir -r -d 'Custom workspace directory (defaults to .box/work/)'
+      complete -c box -l mem -x -d 'Cap RAM usage via cgroups (e.g. --mem 4G)'
+      complete -c box -l cpu -x -d 'Cap CPU quota via cgroups (e.g. --cpu 200%)'
       complete -c box -l clean -d 'Wipe local .box storage for current project'
       complete -c box -l inspect -d 'Trace file access with strace'
       complete -c box -s h -l help -d 'Show help manual'
@@ -221,7 +222,7 @@
       _box_complete() {
         local cur
         cur="''${COMP_WORDS[COMP_CWORD]}"
-        local opts="-e --ephemeral --tmp -n --offline --no-net -P --proxy -g --gpu -s --share -w --workdir -p --path --clean --inspect -h --help"
+        local opts="-e --ephemeral --tmp -n --offline --no-net -P --proxy -g --gpu -s --share -S --share-rw -w --workdir --mem --cpu --clean --inspect -h --help"
         mapfile -t COMPREPLY < <(compgen -W "$opts" -- "$cur")
       }
       complete -F _box_complete box
@@ -248,7 +249,7 @@
           desc="$(sed -n 's/.*description = "\([^"]*\)".*/\1/p' "$d/default.nix" 2>/dev/null | head -1)"
           shells+=("$n:$desc")
         done
-        shells+=('ai:alias for agent' 'c:alias for build' 'data:alias for python' 'test:Composite: Python + Rust toolchains')
+        shells+=('ai:alias for agent' 'c:alias for build' 'data:alias for python')
         _describe 'environment' shells
       }
       _dev "$@"
@@ -267,12 +268,14 @@
           '--proxy[Route traffic through local SOCKS5 proxy]:port:'
           '-g[Grant access to Nvidia GPU and CUDA devices]'
           '--gpu[Grant access to Nvidia GPU and CUDA devices]'
-          '-s[Share host directory/file]:path:_files'
-          '--share[Share host directory/file]:path:_files'
+          '-s[Share host path Read-Only]:path:_files'
+          '--share[Share host path Read-Only]:path:_files'
+          '-S[Share host path Read-Write]:path:_files'
+          '--share-rw[Share host path Read-Write]:path:_files'
           '-w[Custom workspace directory]:path:_files -/'
           '--workdir[Custom workspace directory]:path:_files -/'
-          '-p[Custom workspace directory]:path:_files -/'
-          '--path[Custom workspace directory]:path:_files -/'
+          '--mem[Cap RAM usage via cgroups]:size:'
+          '--cpu[Cap CPU quota via cgroups]:quota:'
           '--clean[Wipe local .box storage for current project]'
           '--inspect[Trace file access with strace]'
           '-h[Show help manual]'

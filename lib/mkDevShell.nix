@@ -65,23 +65,12 @@ in
     Use the dedicated argument instead of passing it through `env`.
   '';
     (pkgs.mkShell ({
-        name = "${name}-env";
+        name = "${name}";
         inherit packages inputsFrom;
 
         shellHook = ''
           export DEVSHELL_ACTIVE="true"
           export DEVSHELL_NAME=${lib.escapeShellArg name}
-
-          # Track multi-environment devShell stack for Starship prompt
-          if [ -z "''${DEVSHELLS_STACK:-}" ]; then
-            export DEVSHELLS_STACK=${lib.escapeShellArg name}
-          else
-            # Append if not already in stack
-            case ":$DEVSHELLS_STACK:" in
-              *":${name}:"*) ;;
-              *) export DEVSHELLS_STACK="$DEVSHELLS_STACK:${name}" ;;
-            esac
-          fi
 
           ${banner}
           ${extraHook}
