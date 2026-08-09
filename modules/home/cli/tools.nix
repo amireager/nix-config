@@ -90,6 +90,32 @@
       shellWrapperName = "y";
     };
 
+    zoxide = {
+      enable = true;
+      enableFishIntegration = true;
+      options = ["--cmd" "z"];
+    };
+
+    fzf = {
+      enable = true;
+      enableFishIntegration = true;
+      defaultCommand = "fd --type f --strip-cwd-prefix --hidden --follow --exclude .git";
+      defaultOptions = [
+        "--height 55%"
+        "--layout=reverse"
+        "--border rounded"
+        "--multi"
+        "--color=fg:#cdd6f4,bg:#1e1e2e,hl:#f38ba8"
+        "--color=fg+:#cdd6f4,bg+:#313244,hl+:#f38ba8"
+        "--color=info:#cba6f7,prompt:#89b4fa,pointer:#f5e0dc"
+      ];
+    };
+
+    carapace = {
+      enable = true;
+      enableFishIntegration = true;
+    };
+
     btop.enable = true;
     bottom.enable = true;
     fastfetch.enable = true;

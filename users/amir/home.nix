@@ -4,6 +4,8 @@
     # 1. CLI Tools & Shells (Explicitly Imported)
     # ==========================================
     ../../modules/home/cli/fish.nix
+    ../../modules/home/cli/starship.nix
+    ../../modules/home/cli/direnv.nix
     ../../modules/home/cli/git.nix
     ../../modules/home/cli/tmux.nix
     ../../modules/home/cli/zellij.nix

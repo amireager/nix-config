@@ -1,388 +1,286 @@
 {
   pkgs,
-  lib,
   hostname,
   flakePath,
   ...
 }: {
   # ============================================================
-  # FISH SHELL & STARSHIP PROMPT
+  # FISH SHELL — Aliases, Abbrs, Keybindings & Custom Functions
   # ============================================================
-  programs = {
-    fish = {
-      enable = true;
+  programs.fish = {
+    enable = true;
 
-      interactiveShellInit = ''
-        # ──────────────────────────────────────────────
-        # General Settings
-        # ──────────────────────────────────────────────
-        set -g fish_greeting
-        set -g fish_autosuggestion_enabled true
-        set -g fish_key_bindings fish_default_key_bindings
+    interactiveShellInit = ''
+      # ──────────────────────────────────────────────
+      # General Settings
+      # ──────────────────────────────────────────────
+      set -g fish_greeting
+      set -g fish_autosuggestion_enabled true
+      set -g fish_key_bindings fish_default_key_bindings
 
-        # ──────────────────────────────────────────────
-        # Environment Variables
-        # ──────────────────────────────────────────────
-        set -gx EDITOR nvim
-        set -gx VISUAL nvim
-        set -gx PAGER "bat --plain"
-        set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
+      # ──────────────────────────────────────────────
+      # Environment Variables
+      # ──────────────────────────────────────────────
+      set -gx EDITOR nvim
+      set -gx VISUAL nvim
+      set -gx PAGER "bat --plain"
+      set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 
-        # ──────────────────────────────────────────────
-        # FZF Preview Command
-        # ──────────────────────────────────────────────
-        set -gx FZF_PREVIEW_COMMAND 'bat --style=numbers --color=always --line-range :500 {}'
+      # ──────────────────────────────────────────────
+      # FZF Integration & Preview
+      # ──────────────────────────────────────────────
+      set -gx FZF_DEFAULT_COMMAND 'fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+      set -gx FZF_PREVIEW_COMMAND 'bat --style=numbers --color=always --line-range :500 {}'
+      set -gx FZF_DEFAULT_OPTS '--height 55% --layout=reverse --border rounded --multi --color=fg:#cdd6f4,bg:#1e1e2e,hl:#f38ba8 --color=fg+:#cdd6f4,bg+:#313244,hl+:#f38ba8 --color=info:#cba6f7,prompt:#89b4fa,pointer:#f5e0dc'
 
-        # ──────────────────────────────────────────────
-        # Catppuccin Mocha Theme Colors
-        # ──────────────────────────────────────────────
-        set -g fish_color_normal cdd6f4
-        set -g fish_color_command 89b4fa
-        set -g fish_color_param f2cdcd
-        set -g fish_color_keyword f38ba8
-        set -g fish_color_quote a6e3a1
-        set -g fish_color_redirection f5c2e7
-        set -g fish_color_end fab387
-        set -g fish_color_error f38ba8
-        set -g fish_color_gray 6c7086
-        set -g fish_color_selection --background=313244
-        set -g fish_color_search_match --background=313244
-        set -g fish_color_option a6e3a1
-        set -g fish_color_operator f5c2e7
-        set -g fish_color_escape eba0ac
-        set -g fish_color_autosuggestion 6c7086
-        set -g fish_color_cancel f38ba8
+      # ──────────────────────────────────────────────
+      # Catppuccin Mocha Theme Colors
+      # ──────────────────────────────────────────────
+      set -g fish_color_normal cdd6f4
+      set -g fish_color_command 89b4fa
+      set -g fish_color_param f2cdcd
+      set -g fish_color_keyword f38ba8
+      set -g fish_color_quote a6e3a1
+      set -g fish_color_redirection f5c2e7
+      set -g fish_color_end fab387
+      set -g fish_color_error f38ba8
+      set -g fish_color_gray 6c7086
+      set -g fish_color_selection --background=313244
+      set -g fish_color_search_match --background=313244
+      set -g fish_color_option a6e3a1
+      set -g fish_color_operator f5c2e7
+      set -g fish_color_escape eba0ac
+      set -g fish_color_autosuggestion 6c7086
+      set -g fish_color_cancel f38ba8
 
-        # Pager Colors
-        set -g fish_pager_color_progress cyan
-        set -g fish_pager_color_background --background=1e1e2e
-        set -g fish_pager_color_prefix f9e2af --bold
-        set -g fish_pager_color_completion cdd6f4
-        set -g fish_pager_color_description a6e3a1
-        set -g fish_pager_color_selected_background --background=313244
-        set -g fish_pager_color_selected_prefix f9e2af --bold
-        set -g fish_pager_color_selected_completion cdd6f4 --bold
-        set -g fish_pager_color_selected_description 89b4fa
+      # Pager Colors
+      set -g fish_pager_color_progress cyan
+      set -g fish_pager_color_background --background=1e1e2e
+      set -g fish_pager_color_prefix f9e2af --bold
+      set -g fish_pager_color_completion cdd6f4
+      set -g fish_pager_color_description a6e3a1
+      set -g fish_pager_color_selected_background --background=313244
+      set -g fish_pager_color_selected_prefix f9e2af --bold
+      set -g fish_pager_color_selected_completion cdd6f4 --bold
+      set -g fish_pager_color_selected_description 89b4fa
 
-        # ──────────────────────────────────────────────
-        # Custom Key Bindings
-        # ──────────────────────────────────────────────
-        # Ctrl+Space — accept autosuggestion
-        bind ctrl-space forward-char
-      '';
+      # ──────────────────────────────────────────────
+      # Custom Key Bindings
+      # ──────────────────────────────────────────────
+      # Ctrl+Space — accept autosuggestion
+      bind ctrl-space forward-char
+    '';
 
-      plugins = [
-        {
-          name = "colored-man-pages";
-          src = pkgs.fishPlugins.colored-man-pages.src;
-        }
-        {
-          name = "done";
-          src = pkgs.fishPlugins.done.src;
-        }
-        {
-          name = "autopair";
-          src = pkgs.fishPlugins.autopair.src;
-        }
-        {
-          name = "forgit";
-          src = pkgs.fishPlugins.forgit.src;
-        }
-        {
-          name = "sponge";
-          src = pkgs.fishPlugins.sponge.src;
-        }
-        {
-          name = "puffer";
-          src = pkgs.fishPlugins.puffer.src;
-        }
-      ];
+    plugins = [
+      {
+        name = "colored-man-pages";
+        src = pkgs.fishPlugins.colored-man-pages.src;
+      }
+      {
+        name = "done";
+        src = pkgs.fishPlugins.done.src;
+      }
+      {
+        name = "autopair";
+        src = pkgs.fishPlugins.autopair.src;
+      }
+      {
+        name = "forgit";
+        src = pkgs.fishPlugins.forgit.src;
+      }
+      {
+        name = "sponge";
+        src = pkgs.fishPlugins.sponge.src;
+      }
+      {
+        name = "puffer";
+        src = pkgs.fishPlugins.puffer.src;
+      }
+      {
+        name = "fzf-fish";
+        src = pkgs.fishPlugins.fzf-fish.src;
+      }
+    ];
 
-      shellAliases = {
-        ls = "eza --icons --group-directories-first --git";
-        ll = "eza -l --icons --group-directories-first --git --header";
-        la = "eza -la --icons --group-directories-first --git --header";
-        lt = "eza --tree --level=2 --icons --git";
-        tree = "eza --tree --icons --git";
-        cat = "bat --style=plain";
-        top = "btop";
-      };
-
-      shellAbbrs = {
-        gs = "git status";
-        ga = "git add";
-        gc = "git commit -m";
-        gco = "git checkout";
-        gcb = "git checkout -b";
-        gp = "git push";
-        gpl = "git pull --rebase";
-        gsw = "git switch";
-
-        n = "nvim";
-
-        sw = "nh os switch";
-        tst = "nh os test";
-        bld = "nh os build";
-        nrf = "sudo nixos-rebuild switch --flake ${flakePath}#${hostname}";
-        nrs = "nh os switch";
-        nrt = "nh os test";
-        nrb = "nh os build";
-
-        # === Proxy Management ===
-        myip = "curl ip.me";
-
-        # === Sandbox (Firejail) ===
-        fj = "firejail --private=. --whitelist=$(pwd)";
-        fjx = "firejail --private=. --net=none --whitelist=$(pwd)";
-      };
-
-      functions = {
-        # === A typo is a typo ===
-        fish_command_not_found = {
-          description = "Report a typo and stop — no package database search";
-          body = ''
-            printf "fish: Unknown command: %s\n" (string escape -- $argv[1]) >&2
-            return 127
-          '';
-        };
-
-        mkcd = "mkdir -p $argv[1] && cd $argv[1]";
-
-        # === On-Demand Dynamic Proxy (Per Terminal Tab) ===
-        proxy_on = {
-          description = "Enable proxy for the current shell session";
-          body = ''
-            set -l port 1819
-            if test (count $argv) -gt 0
-              set port $argv[1]
-            end
-            set -gx ALL_PROXY "socks5h://127.0.0.1:$port"
-            set -gx HTTP_PROXY "socks5h://127.0.0.1:$port"
-            set -gx HTTPS_PROXY "socks5h://127.0.0.1:$port"
-            echo -e "\033[1;32m[+] Proxy Enabled in this terminal (127.0.0.1:$port)\033[0m"
-          '';
-        };
-
-        # === Proxy for nix builds ===
-        nix_proxy = {
-          description = "Route nix-daemon downloads through a local proxy (until reboot)";
-          body = ''
-            set -l dir /run/systemd/system/nix-daemon.service.d
-            set -l conf $dir/zz-nix-proxy.conf
-
-            switch "$argv[1]"
-              case off
-                sudo rm -f $conf
-                sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
-                sudo systemctl daemon-reload
-                sudo systemctl restart nix-daemon
-                echo -e "\033[1;31m[-] nix-daemon: direct\033[0m"
-
-              case status ""
-                if test -f $conf
-                  echo -e "\033[1;32m[+] nix-daemon: proxied\033[0m"
-                  grep -o 'all_proxy=[^"]*' $conf | sed 's/^/    /'
-                else
-                  echo -e "\033[1;30m[-] nix-daemon: direct\033[0m"
-                end
-                echo "    usage: nix_proxy <port> | nix_proxy off | nix_proxy status"
-
-              case '*'
-                set -l port $argv[1]
-                if not string match -qr '^[0-9]+$' -- $port
-                  echo -e "\033[1;31mnix_proxy: '$port' is not a port number\033[0m" >&2
-                  echo "    usage: nix_proxy <port> | nix_proxy off | nix_proxy status" >&2
-                  return 1
-                end
-                set -l url "socks5h://127.0.0.1:$port"
-
-                sudo mkdir -p $dir
-                printf '%s\n' \
-                  "[Service]" \
-                  "Environment=\"http_proxy=$url\"" \
-                  "Environment=\"https_proxy=$url\"" \
-                  "Environment=\"all_proxy=$url\"" \
-                  "Environment=\"no_proxy=127.0.0.1,localhost,::1,cache.nixos.org\"" \
-                  | sudo tee $conf >/dev/null
-
-                sudo systemctl daemon-reload
-                sudo systemctl restart nix-daemon
-                echo -e "\033[1;32m[+] nix-daemon proxied via $url\033[0m"
-                echo -e "\033[1;30m    until reboot, or: nix_proxy off\033[0m"
-            end
-          '';
-        };
-
-        proxy_off = {
-          description = "Disable proxy for the current shell session";
-          body = ''
-            set -e ALL_PROXY HTTP_PROXY HTTPS_PROXY
-            echo -e "\033[1;31m[-] Proxy Disabled in this terminal\033[0m"
-          '';
-        };
-      };
+    shellAliases = {
+      ls = "eza --icons --group-directories-first --git";
+      ll = "eza -l --icons --group-directories-first --git --header";
+      la = "eza -la --icons --group-directories-first --git --header";
+      lt = "eza --tree --level=2 --icons --git";
+      tree = "eza --tree --icons --git";
+      cat = "bat --style=plain";
+      top = "btop";
     };
 
-    # ============================================================
-    # STARSHIP PROMPT
-    # ============================================================
-    starship = {
-      enable = true;
-      enableFishIntegration = true;
-      settings = {
-        add_newline = false;
-        command_timeout = 1000;
-        scan_timeout = 30;
+    shellAbbrs = {
+      gs = "git status";
+      ga = "git add";
+      gc = "git commit -m";
+      gco = "git checkout";
+      gcb = "git checkout -b";
+      gp = "git push";
+      gpl = "git pull --rebase";
+      gsw = "git switch";
 
-        format = lib.concatStrings [
-          "$directory"
-          "$git_branch$git_state$git_status"
-          "([\\(](#585b70)"
-          "$nix_shell$direnv"
-          "$python$nodejs$rust$golang$java$lua$package"
-          "$container$docker_context"
-          "[\\)](#585b70) )"
-          "$fill"
-          "$jobs$cmd_duration"
-          "$line_break"
-          "$character"
-        ];
+      n = "nvim";
 
-        right_format = "$status$time$battery";
+      sw = "nh os switch";
+      tst = "nh os test";
+      bld = "nh os build";
+      nrf = "sudo nixos-rebuild switch --flake ${flakePath}#${hostname}";
+      nrs = "nh os switch";
+      nrt = "nh os test";
+      nrb = "nh os build";
 
-        directory = {
-          style = "bold #89b4fa";
-          truncation_length = 3;
-          truncate_to_repo = true;
-          truncation_symbol = "…/";
-          read_only = " ";
-          read_only_style = "bold #f38ba8";
-          format = "[$path]($style)[$read_only]($read_only_style) ";
-          substitutions = {
-            "~/projects" = "󰲋 ";
-            "~/Documents" = "󰈙 ";
-            "~/Downloads" = "󰇚 ";
-          };
-        };
+      # === Proxy Management ===
+      myip = "curl ip.me";
 
-        git_branch = {
-          symbol = " ";
-          style = "bold #cba6f7";
-          format = "[$symbol$branch]($style) ";
-          truncation_length = 20;
-          truncation_symbol = "…";
-        };
+      # === Sandbox (Firejail) ===
+      fj = "firejail --private=. --whitelist=$(pwd)";
+      fjx = "firejail --private=. --net=none --whitelist=$(pwd)";
+    };
 
-        git_state = {
-          format = "[\($state( $progress_current/$progress_total)\)]($style) ";
-          style = "bold #f9e2af";
-        };
+    functions = {
+      # === A typo is a typo ===
+      fish_command_not_found = {
+        description = "Report a typo and stop — no package database search";
+        body = ''
+          printf "fish: Unknown command: %s\n" (string escape -- $argv[1]) >&2
+          return 127
+        '';
+      };
 
-        git_status = {
-          format = "([$all_status$ahead_behind]($style) )";
-          style = "bold #fab387";
-          conflicted = "=";
-          ahead = "⇡\${count}";
-          behind = "⇣\${count}";
-          diverged = "⇕⇡\${ahead_count}⇣\${behind_count}";
-          untracked = "?";
-          stashed = "\\$";
-          modified = "!";
-          staged = "+";
-          renamed = "»";
-          deleted = "✘";
-        };
+      mkcd = "mkdir -p $argv[1] && cd $argv[1]";
 
-        nix_shell = {
-          symbol = "󱄅 ";
-          format = "[$symbol$state]($style) ";
-          style = "bold #74c7ec";
-          heuristic = false;
-        };
+      # === On-Demand Dynamic Proxy (Per Terminal Tab) ===
+      proxy_on = {
+        description = "Enable proxy for the current shell session";
+        body = ''
+          set -l port 1819
+          if test (count $argv) -gt 0
+            set port $argv[1]
+          end
+          set -gx ALL_PROXY "socks5h://127.0.0.1:$port"
+          set -gx HTTP_PROXY "socks5h://127.0.0.1:$port"
+          set -gx HTTPS_PROXY "socks5h://127.0.0.1:$port"
+          echo -e "\033[1;32m[+] Proxy Enabled in this terminal (127.0.0.1:$port)\033[0m"
+        '';
+      };
 
-        direnv = {
-          disabled = false;
-          symbol = "󰌪 ";
-          format = "[$symbol$loaded/$allowed]($style) ";
-          style = "bold #a6e3a1";
-          loaded_msg = "";
-          unloaded_msg = "off";
-          allowed_msg = "";
-          not_allowed_msg = "denied";
-        };
+      # === Proxy for nix builds ===
+      nix_proxy = {
+        description = "Route nix-daemon downloads through a local proxy (until reboot)";
+        body = ''
+          set -l dir /run/systemd/system/nix-daemon.service.d
+          set -l conf $dir/zz-nix-proxy.conf
 
-        python = {
-          symbol = " ";
-          format = "[$symbol$version(\\($virtualenv\\))]($style) ";
-          style = "bold #f9e2af";
-        };
+          switch "$argv[1]"
+            case off
+              sudo rm -f $conf
+              sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
+              sudo systemctl daemon-reload
+              sudo systemctl restart nix-daemon
+              echo -e "\033[1;31m[-] nix-daemon: direct\033[0m"
 
-        rust = {
-          symbol = "󱘗 ";
-          format = "[$symbol$version]($style) ";
-          style = "bold #f38ba8";
-        };
+            case status ""
+              if test -f $conf
+                echo -e "\033[1;32m[+] nix-daemon: proxied\033[0m"
+                grep -o 'all_proxy=[^"]*' $conf | sed 's/^/    /'
+              else
+                echo -e "\033[1;30m[-] nix-daemon: direct\033[0m"
+              end
+              echo "    usage: nix_proxy <port> | nix_proxy off | nix_proxy status"
 
-        golang = {
-          symbol = " ";
-          format = "[$symbol$version]($style) ";
-          style = "bold #89dceb";
-        };
+            case '*'
+              set -l port $argv[1]
+              if not string match -qr '^[0-9]+$' -- $port
+                echo -e "\033[1;31mnix_proxy: '$port' is not a port number\033[0m" >&2
+                echo "    usage: nix_proxy <port> | nix_proxy off | nix_proxy status" >&2
+                return 1
+              end
+              set -l url "socks5h://127.0.0.1:$port"
 
-        nodejs = {
-          symbol = " ";
-          format = "[$symbol$version]($style) ";
-          style = "bold #a6e3a1";
-        };
+              sudo mkdir -p $dir
+              printf '%s\n' \
+                "[Service]" \
+                "Environment=\"http_proxy=$url\"" \
+                "Environment=\"https_proxy=$url\"" \
+                "Environment=\"all_proxy=$url\"" \
+                "Environment=\"no_proxy=127.0.0.1,localhost,::1,cache.nixos.org\"" \
+                | sudo tee $conf >/dev/null
 
-        container = {
-          symbol = "󰏖 ";
-          format = "[$symbol$name]($style) ";
-          style = "dimmed white";
-        };
+              sudo systemctl daemon-reload
+              sudo systemctl restart nix-daemon
+              echo -e "\033[1;32m[+] nix-daemon proxied via $url\033[0m"
+              echo -e "\033[1;30m    until reboot, or: nix_proxy off\033[0m"
+          end
+        '';
+      };
 
-        fill = {
-          symbol = " ";
-        };
+      proxy_off = {
+        description = "Disable proxy for the current shell session";
+        body = ''
+          set -e ALL_PROXY HTTP_PROXY HTTPS_PROXY
+          echo -e "\033[1;31m[-] Proxy Disabled\033[0m"
+        '';
+      };
 
-        cmd_duration = {
-          min_time = 2000;
-          format = "[$duration]($style) ";
-          style = "bold #fab387";
-          show_milliseconds = false;
-        };
+      # === Dynamic Proxychains Wrapper ===
+      px = {
+        description = "Run a command with proxychains, ignoring hardcoded port if PROXY_PORT is set";
+        body = ''
+          if set -q PROXY_PORT
+            set tmp_conf "/tmp/proxychains_dynamic.conf"
+            cat /etc/proxychains.conf | sed -E "s/socks5 \+127.0.0.1 \+[0-9]+/socks5  127.0.0.1  $PROXY_PORT/" > $tmp_conf
+            proxychains4 -f $tmp_conf $argv
+          else
+            proxychains4 -q $argv
+          end
+        '';
+      };
 
-        time = {
-          disabled = false;
-          format = "[$time]($style)";
-          style = "dimmed #6c7086";
-          time_format = "%R";
-        };
-
-        battery = {
-          full_symbol = "󰁹 ";
-          charging_symbol = "󰂄 ";
-          discharging_symbol = "󰂃 ";
-          unknown_symbol = "󰁽 ";
-          empty_symbol = "󰂎 ";
-          format = " [$symbol$percentage]($style)";
-          display = [
-            {
-              threshold = 20;
-              style = "bold #f38ba8";
-            }
-            {
-              threshold = 50;
-              style = "bold #f9e2af";
-            }
-          ];
-        };
-
-        character = {
-          success_symbol = "[❯](bold #a6e3a1)";
-          error_symbol = "[❯](bold #f38ba8)";
-          vimcmd_symbol = "[❮](bold #89b4fa)";
-        };
+      extract = {
+        description = "Extract any archive format";
+        body = ''
+          if test (count $argv) -eq 0
+            echo "Usage: extract <file>"
+            return 1
+          end
+          for file in $argv
+            switch $file
+              case "*.tar.bz2"
+                tar xjf $file
+              case "*.tar.gz"
+                tar xzf $file
+              case "*.tar.xz"
+                tar xJf $file
+              case "*.tar.zst"
+                tar --zstd -xf $file
+              case "*.bz2"
+                bunzip2 $file
+              case "*.rar"
+                unrar x $file
+              case "*.gz"
+                gunzip $file
+              case "*.tar"
+                tar xf $file
+              case "*.tbz2"
+                tar xjf $file
+              case "*.tgz"
+                tar xzf $file
+              case "*.zip"
+                unzip $file
+              case "*.Z"
+                uncompress $file
+              case "*.7z"
+                7z x $file
+              case "*.zst"
+                unzstd $file
+              case "*"
+                echo "extract: unknown format: $file"
+            end
+          end
+        '';
       };
     };
   };

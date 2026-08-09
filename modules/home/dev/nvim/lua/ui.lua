@@ -135,7 +135,7 @@ if ok_which then
 		{ "<leader>m", group = "📝 Markdown Tools" },
 		{ "<leader>r", group = "▶️ Run / REPL (Slime)" },
 		{ "<leader>t", group = "💻 Tabs & Terminal" },
-		{ "<leader>u", group = "🎨 UI Toggles & Zen" },
+		{ "<leader>u", group = "🎨 UI & Format Toggles" },
 		{ "<leader>w", group = "🪟 Windows (Native)" },
 		{ "<leader>x", group = "🚨 Diagnostics (Trouble)" },
 	})

@@ -72,6 +72,14 @@ snacks.setup({
 			files = { hidden = true, ignored = false },
 			grep = { hidden = true, ignored = false },
 		},
+		win = {
+			input = {
+				keys = {
+					["<a-i>"] = { "toggle_ignored", mode = { "i", "n" }, desc = "Toggle Gitignored (.gitignore)" },
+					["<a-h>"] = { "toggle_hidden", mode = { "i", "n" }, desc = "Toggle Hidden files" },
+				},
+			},
+		},
 	},
 	explorer = { enabled = true },
 	indent = { enabled = true },
@@ -107,9 +115,13 @@ map("n", "<leader>tf", function()
 end, { desc = "Terminal bottom float (Snacks)" })
 
 -- ══════════════════════════════════════════
--- ZEN MODE (Snacks)
+-- FOCUS & ZEN MODES (Snacks)
 -- ══════════════════════════════════════════
 map("n", "<leader>uz", function()
+	snacks.dim()
+end, { desc = "Focus/Dim scope toggle (Snacks)" })
+
+map("n", "<leader>uZ", function()
 	snacks.zen()
 end, { desc = "Zen mode toggle (Snacks)" })
 

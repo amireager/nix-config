@@ -1,6 +1,10 @@
 {...}: {
   imports = [
     # Add your imported modules from ../../modules/home/...
+    ../../modules/home/cli/fish.nix
+    ../../modules/home/cli/starship.nix
+    ../../modules/home/cli/direnv.nix
+    ../../modules/home/cli/tools.nix
   ];
 
   home = {
