@@ -82,8 +82,43 @@ snacks.setup({
 		},
 	},
 	explorer = { enabled = true },
-	indent = { enabled = true },
-	scope = { enabled = true },
+	indent = {
+		enabled = true,
+		priority = 1,
+		char = "│",
+		only_scope = false,
+		only_current = false,
+		hl = {
+			"SnacksIndent1",
+			"SnacksIndent2",
+			"SnacksIndent3",
+			"SnacksIndent4",
+			"SnacksIndent5",
+			"SnacksIndent6",
+			"SnacksIndent7",
+			"SnacksIndent8",
+		},
+	},
+	scope = {
+		enabled = true,
+		priority = 200,
+		char = "│",
+		underline = false,
+		only_current = false,
+		hl = {
+			"SnacksIndent1",
+			"SnacksIndent2",
+			"SnacksIndent3",
+			"SnacksIndent4",
+			"SnacksIndent5",
+			"SnacksIndent6",
+			"SnacksIndent7",
+			"SnacksIndent8",
+		},
+		animate = {
+			enabled = false,
+		},
+	},
 	scroll = { enabled = true, animate = { duration = { step = 12, total = 120 } } },
 	statuscolumn = { enabled = true },
 	words = { enabled = true },
@@ -118,12 +153,12 @@ end, { desc = "Terminal bottom float (Snacks)" })
 -- FOCUS & ZEN MODES (Snacks)
 -- ══════════════════════════════════════════
 map("n", "<leader>uz", function()
-	snacks.dim()
-end, { desc = "Focus/Dim scope toggle (Snacks)" })
+	snacks.toggle.dim():toggle()
+end, { desc = "Toggle focus/dim mode (Snacks)" })
 
 map("n", "<leader>uZ", function()
-	snacks.zen()
-end, { desc = "Zen mode toggle (Snacks)" })
+	snacks.toggle.zen():toggle()
+end, { desc = "Toggle zen mode (Snacks)" })
 
 -- ══════════════════════════════════════════
 -- TOP-LEVEL FAST ACTIONS (Snacks)
@@ -289,6 +324,9 @@ end, { desc = "Rename file (Snacks)" })
 map("n", "<leader>un", function()
 	snacks.notifier.hide()
 end, { desc = "Dismiss notifications (Snacks)" })
+map("n", "<leader>uN", function()
+	snacks.toggle.notifier():toggle()
+end, { desc = "Toggle notification popups (Snacks)" })
 map("n", "<leader>ui", function()
 	snacks.toggle.indent():toggle()
 end, { desc = "Toggle indent guides (Snacks)" })

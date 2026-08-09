@@ -11,13 +11,14 @@
 #   2. Pure & Agnostic: No hardcoded languages/tools. Inherits caller shell's tools.
 #   3. Modular .box/ Layout: Creates .box/{home, work, tmp} locally. Any custom folder
 #      created in .box/<name> is automatically mapped as /<name> inside the sandbox.
-#   4. Zero-Trust Security: Host's ~/.ssh, ~/.aws, and tokens are completely hidden.
+#   4. Persistent /tmp: In standard mode, /tmp maps directly to .box/tmp/ on the host.
+#   5. Zero-Trust Security: Host's ~/.ssh, ~/.aws, and tokens are completely hidden.
 #      Zero host path leaks. No implicit sharing; only paths passed via -s / -S are mounted.
-#   5. Dual-Mode Sharing:
+#   6. Dual-Mode Sharing:
 #      • -s <SRC>[:<DST>]  -> Read-Only share  (e.g. -s ~/.config/nvim)
 #      • -S <SRC>[:<DST>]  -> Read-Write share (e.g. -S ~/Downloads -S ~/src/venv:~/venv)
-#   6. Resource Limits: Memory (--mem 4G) and CPU (--cpu 200%) ceilings via cgroups.
-#   7. Modifiers: Ephemeral RAM mode (-e), Zero-Net (-n), Proxy routing (-P), GPU (-g).
+#   7. Resource Limits: Memory (--mem 4G) and CPU (--cpu 200%) ceilings via cgroups.
+#   8. Modifiers: Ephemeral RAM mode (-e), Zero-Net (-n), Proxy routing (-P), GPU (-g).
 # ==============================================================================
 let
   bwrap = "${pkgs.bubblewrap}/bin/bwrap";
@@ -195,10 +196,12 @@ EOF
     BOX_DIR="$PROJECT_ROOT/.box"
     HOST_HOME="$BOX_DIR/home"
     DEFAULT_WORK="$BOX_DIR/work"
+    HOST_TMP="$BOX_DIR/tmp"
 
     if [ "$OPT_EPHEMERAL" -eq 0 ]; then
       mkdir -p "$HOST_HOME"/{.config,.cache,.local/bin,.local/share,.npm-global/bin,.cargo/bin,go/bin}
       mkdir -p "$DEFAULT_WORK"
+      mkdir -p "$HOST_TMP"
       if [ ! -f "$BOX_DIR/.gitignore" ]; then
         printf "*\n" > "$BOX_DIR/.gitignore"
       fi
@@ -223,9 +226,10 @@ EOF
 
     # ── Build bwrap Arguments ────────────────────────────────────────────────
     # Strict mount ordering:
-    # 1. Mount root filesystem, /proc, /dev, /tmp
-    # 2. Swap $REAL_HOST_HOME with isolated home storage
-    # 3. Mount workspace directly at /work (No redundant duplicate path)
+    # 1. Mount root filesystem, /proc, /dev
+    # 2. Mount /tmp (persisted to .box/tmp in standard mode, tmpfs in ephemeral)
+    # 3. Swap $REAL_HOST_HOME with isolated home storage
+    # 4. Mount workspace directly at /work
     BWRAP_ARGS=(
       --die-with-parent
       --unshare-user
@@ -243,10 +247,16 @@ EOF
       --ro-bind /etc /etc
       --ro-bind-try /run /run
       --ro-bind-try /var /var
-      --tmpfs /tmp
       --dir /tmp/xdg-runtime
       --tmpfs "$REAL_HOST_HOME"
     )
+
+    # Temporary directory handling
+    if [ "$OPT_EPHEMERAL" -eq 1 ]; then
+      BWRAP_ARGS+=(--tmpfs /tmp)
+    else
+      BWRAP_ARGS+=(--dir /tmp --bind "$HOST_TMP" /tmp)
+    fi
 
     # Network configuration
     if [ "$OPT_OFFLINE" -eq 1 ]; then
@@ -312,6 +322,17 @@ EOF
         else
           dst="''${dst/#\~/$REAL_HOST_HOME}"
         fi
+
+        # Ensure destination parent directory exists in sandbox storage if inside HOME
+        if [ "$OPT_EPHEMERAL" -eq 0 ] && [[ "$dst" == "$REAL_HOST_HOME"* ]]; then
+          local rel_path="''${dst#$REAL_HOST_HOME/}"
+          local parent_dir
+          parent_dir="$(dirname "$rel_path")"
+          if [ "$parent_dir" != "." ] && [ "$parent_dir" != "/" ]; then
+            mkdir -p "$HOST_HOME/$parent_dir"
+          fi
+        fi
+
         BWRAP_ARGS+=("$mode" "$src" "$dst")
       fi
     }
@@ -412,7 +433,7 @@ in
   mkDevShell {
     name = "box";
     icon = "📦";
-    description = "Universal Sandbox: Language-Agnostic, Clean /work, Dynamic .box/*, -s (RO) & -S (RW)";
+    description = "Universal Sandbox: Language-Agnostic, Clean /work, Persisted .box/tmp, -s (RO) & -S (RW)";
 
     packages = [
       boxCli

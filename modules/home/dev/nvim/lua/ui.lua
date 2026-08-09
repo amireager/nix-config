@@ -55,6 +55,29 @@ end
 -- Set default active colorscheme (Nightfox custom #0d131a by default, switch live with <leader>fC)
 vim.cmd.colorscheme("nightfox")
 
+-- Snacks Indent & Scope rainbow levels (Catppuccin / Nightfox harmonious palette)
+local function setup_indent_highlights()
+	local indent_colors = {
+		SnacksIndent1 = { fg = "#89b4fa" }, -- Blue
+		SnacksIndent2 = { fg = "#a6e3a1" }, -- Green
+		SnacksIndent3 = { fg = "#f9e2af" }, -- Yellow
+		SnacksIndent4 = { fg = "#fab387" }, -- Peach
+		SnacksIndent5 = { fg = "#f38ba8" }, -- Red
+		SnacksIndent6 = { fg = "#cba6f7" }, -- Mauve
+		SnacksIndent7 = { fg = "#94e2d5" }, -- Teal
+		SnacksIndent8 = { fg = "#74c7ec" }, -- Sapphire
+	}
+	for group, spec in pairs(indent_colors) do
+		vim.api.nvim_set_hl(0, group, spec)
+	end
+end
+
+setup_indent_highlights()
+vim.api.nvim_create_autocmd("ColorScheme", {
+	pattern = "*",
+	callback = setup_indent_highlights,
+})
+
 local function lsp_clients()
 	local clients = vim.lsp.get_clients({ bufnr = 0 })
 	if #clients == 0 then
@@ -141,7 +164,7 @@ if ok_which then
 	})
 end
 
--- UI toggles — no conflicts with snacks.lua
+-- UI toggles — consistent <leader>u palette
 vim.keymap.set("n", "<leader>ul", function()
 	vim.opt.relativenumber = not vim.opt.relativenumber:get()
 end, { desc = "Toggle relative line numbers" })
@@ -153,3 +176,24 @@ end, { desc = "Toggle word wrap" })
 vim.keymap.set("n", "<leader>uS", function()
 	vim.opt.spell = not vim.opt.spell:get()
 end, { desc = "Toggle spell check" })
+
+vim.keymap.set("n", "<leader>um", function()
+	local ok, rm = pcall(require, "render-markdown")
+	if ok then
+		rm.toggle()
+	end
+end, { desc = "Toggle markdown render (RenderMarkdown)" })
+
+vim.keymap.set("n", "<leader>ub", function()
+	local ok, gs = pcall(require, "gitsigns")
+	if ok then
+		gs.toggle_current_line_blame()
+	end
+end, { desc = "Toggle git line blame (Gitsigns)" })
+
+vim.keymap.set("n", "<leader>ug", function()
+	local ok, gs = pcall(require, "gitsigns")
+	if ok then
+		gs.toggle_deleted()
+	end
+end, { desc = "Toggle git deleted lines (Gitsigns)" })

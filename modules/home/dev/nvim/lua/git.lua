@@ -53,7 +53,7 @@ if ok_gitsigns then
 			end, "Diff vs ~ (Gitsigns)")
 
 			-- Toggle deleted lines
-			map("n", "<leader>tx", gs.toggle_deleted, "Toggle deleted lines (Gitsigns)")
+			map("n", "<leader>ug", gs.toggle_deleted, "Toggle deleted lines (Gitsigns)")
 
 			-- Text object: ih = hunk
 			map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "Select git hunk (Gitsigns)")
