@@ -22,7 +22,7 @@ mkDevShell {
     # ── Core Multi-Language Runtimes ──
     python3
     uv # Fast Python venv & package runner
-    nodejs_22 # Current stable Node.js runtime
+    nodejs_24 # Current LTS Node.js runtime
     bun # Ultra-fast JS/TS runtime & package manager
 
     # ── AI CLI & Gateway Tools ──

@@ -30,18 +30,39 @@ mkDevShell {
     # Search & exploration
     nix-search-tv # Interactive fuzzy nixpkgs search (TUI)
 
-    # Unified health check. Uses the system-level linters so the shell stays small.
-    (writeShellScriptBin "nix-check" ''
-      set -u
-      echo -e "\033[1;36m[1/3] 🔍 Statix (anti-patterns)..."
-      ${statix}/bin/statix check . || true
+    # Fast and deterministic health check. Deliberately no flake evaluation,
+    # network access, builds or activation.
+    (writeShellApplication {
+      name = "nix-check";
+      runtimeInputs = [nix statix deadnix alejandra findutils];
+      text = ''
+        set -u
+        status=0
+        parsed=0
 
-      echo -e "\n\033[1;33m[2/3] 💀 Deadnix (unused bindings)..."
-      ${deadnix}/bin/deadnix . || true
+        echo -e "\033[1;36m[1/4] Nix parser (syntax)...\033[0m"
+        while IFS= read -r -d "" file; do
+          parsed=$((parsed + 1))
+          if ! nix-instantiate --parse "$file" >/dev/null; then
+            status=1
+          fi
+        done < <(find . \
+          \( -type d \( -name .git -o -name .direnv -o -name result \) -prune \) -o \
+          \( -type f -name "*.nix" -print0 \))
+        printf "  parsed %d file(s)\n" "$parsed"
 
-      echo -e "\n\033[1;35m[3/3] ❄️  Flake evaluation..."
-      nix flake check --no-build "$@"
-    '')
+        echo -e "\n\033[1;36m[2/4] Statix (anti-patterns)...\033[0m"
+        statix check . || status=1
+
+        echo -e "\n\033[1;36m[3/4] Deadnix (unused bindings)...\033[0m"
+        deadnix --fail . || status=1
+
+        echo -e "\n\033[1;36m[4/4] Alejandra (format, read-only)...\033[0m"
+        alejandra --check . || status=1
+
+        exit "$status"
+      '';
+    })
 
     # "Did my change actually make the system bigger?"
     (writeShellScriptBin "nix-size" ''

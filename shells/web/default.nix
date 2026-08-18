@@ -10,7 +10,7 @@ mkDevShell {
 
   packages = with pkgs; [
     # Core runtimes & package managers
-    nodejs_22 # Current stable LTS Node.js runtime
+    nodejs_24 # Current LTS Node.js runtime
     bun # Ultra-fast JavaScript/TypeScript all-in-one toolchain
     pnpm # Efficient alternative package manager
     yarn # Traditional package manager alternative

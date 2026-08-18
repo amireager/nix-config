@@ -40,7 +40,12 @@
 
   outputs = inputs: let
     system = "x86_64-linux";
-    pkgs = inputs.nixpkgs.legacyPackages.${system};
+    # DevShells include CUDA-enabled AI tooling, so their standalone package set
+    # needs the same unfree policy as the NixOS configuration.
+    pkgs = import inputs.nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+    };
     lib = import ./lib {inherit inputs;};
     shells = import ./shells {
       inherit inputs pkgs system;

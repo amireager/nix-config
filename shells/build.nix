@@ -1,4 +1,8 @@
-{mkDevShell, pkgs, ...}:
+{
+  mkDevShell,
+  pkgs,
+  ...
+}:
 mkDevShell {
   name = "build";
   icon = "🛠️";
@@ -31,7 +35,13 @@ mkDevShell {
   ];
 
   tips = [
-    {key = "CMake"; cmd = "cmake -B build && cmake --build build";}
-    {key = "Make / Cargo"; cmd = "make / cargo build --release";}
+    {
+      key = "CMake";
+      cmd = "cmake -B build && cmake --build build";
+    }
+    {
+      key = "Make / Cargo";
+      cmd = "make / cargo build --release";
+    }
   ];
 }

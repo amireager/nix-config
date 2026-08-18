@@ -1,0 +1,38 @@
+#compdef box
+_box() {
+  local -a opts
+  opts=(
+    '-e[Pure in-memory RAM mode (tmpfs)]'
+    '--ephemeral[Pure in-memory RAM mode (tmpfs)]'
+    '--secure[Clear inherited env and hide broad /run and /var mounts]'
+    '--dry-run[Print sandbox plan without starting it]'
+    '-n[Completely cut off network access]'
+    '--offline[Completely cut off network access]'
+    '--net[Network mode]:mode:(host none proxy proxy\:1819)'
+    '-P[Set local SOCKS5 proxy environment]:port:'
+    '--proxy[Set local SOCKS5 proxy environment]:port:'
+    '-g[Grant access to Nvidia GPU and CUDA devices]'
+    '--gpu[Grant access to Nvidia GPU and CUDA devices]'
+    '-s[Share host path Read-Only]:path:_files'
+    '--share[Share host path Read-Only]:path:_files'
+    '-S[Share host path Read-Write]:path:_files'
+    '--share-rw[Share host path Read-Write]:path:_files'
+    '-w[Explicit workspace directory]:path:_files -/'
+    '--workdir[Explicit workspace directory]:path:_files -/'
+    '--clear-env[Start with a clean environment]'
+    '--env[Set KEY=VALUE inside Box]:assignment:'
+    '--env-pass[Pass one host variable explicitly]:variable:'
+    '--profile[Load trusted profile]:profile:'
+    '--profiles[List trusted profiles]'
+    '--path[Print local .box path]'
+    '--status[Show local Box storage status]'
+    '--mem[Cap RAM usage via cgroups]:size:'
+    '--cpu[Cap CPU quota via cgroups]:quota:'
+    '--clean[Wipe local .box storage for current project]'
+    '--inspect[Trace file access with strace]'
+    '-h[Show help manual]'
+    '--help[Show help manual]'
+  )
+  _arguments -s $opts '*:command:_command_names -e'
+}
+_box "$@"

@@ -1,8 +1,10 @@
 # ==============================================================================
 # DEVSHELLS REGISTRY — Central Hub for Modular On-Demand Environments
 # ==============================================================================
-# Every subdirectory here is a self-contained environment, realised only when
-# it is actually entered (`dev <name>` / `nix develop .#<name>`).
+# Every registered module here is a self-contained environment, realised only
+# when it is actually entered (`dev <name>` / `nix develop .#<name>`).
+# Names, groups and aliases are pure data in ./registry.nix and are also read by
+# the global `dev` launcher, keeping menus and completions in sync.
 # ==============================================================================
 {
   inputs,
@@ -12,93 +14,50 @@
 }: let
   inherit (pkgs) lib;
 
+  registry = import ./registry.nix;
+
   # The builder from lib/, already applied to this pkgs.
   mkDevShell = (import ../lib {inherit inputs;}).mkDevShellFor pkgs;
 
   # Arguments handed to every shell module. A shell may ignore any of them.
   shellArgs = {inherit mkDevShell pkgs inputs system lib;};
 
-  # Registered environments. `_template` is deliberately excluded.
-  shellDirs = [
-    "agent"
-    "audit"
-    "box"
-    "build"
-    "cli"
-    "go"
-    "media"
-    "nix"
-    "python"
-    "rust"
-    "web"
-  ];
-
-  # Import a shell directory. Supports both shapes:
-  #   • mkDevShell { ... }              -> a derivation
-  #   • { default = pkgs.mkShell {...}; } -> the legacy/escape-hatch shape
+  # Import a directory- or file-based shell module. Supports both result shapes:
+  #   • mkDevShell { ... }                -> a derivation
+  #   • { default = pkgs.mkShell { ... }; } -> the legacy/escape-hatch shape
   importShell = name: let
-    result = import (./. + "/${name}") shellArgs;
+    directoryModule = ./. + "/${name}/default.nix";
+    fileModule = ./. + "/${name}.nix";
+    modulePath =
+      if builtins.pathExists directoryModule
+      then directoryModule
+      else fileModule;
+    result = import modulePath shellArgs;
   in
     if lib.isDerivation result
     then result
     else result.default;
 
-  shells = lib.genAttrs shellDirs importShell;
+  shells = lib.genAttrs registry.shellDirs importShell;
 
-  # Grouping is presentation only: it decides the headings the `dev` menu
-  # prints. A shell missing from every group still appears, under "Other".
-  groups = [
-    {
-      title = "AI & Autonomous Agents";
-      members = ["agent"];
-    }
-    {
-      title = "Languages, Data & Runtimes";
-      members = ["python" "rust" "go" "web"];
-    }
-    {
-      title = "Media & Content";
-      members = ["media"];
-    }
-    {
-      title = "System, Build & QA";
-      members = ["cli" "build" "nix"];
-    }
-    {
-      title = "Security & Isolation";
-      members = ["box" "audit"];
-    }
-  ];
+  aliasShells = lib.mapAttrs (_alias: target: shells.${target}) registry.aliases;
 
   meta = {
     shells =
       lib.mapAttrs
-      (n: drv:
+      (name: drv:
         drv.passthru.devShellMeta or {
-          name = n;
+          inherit name;
           icon = "📦";
           description = "";
         })
       shells;
-    inherit groups;
-    aliases = {
-      ai = "agent";
-      c = "build";
-      default = "nix";
-      data = "python";
-    };
+    inherit (registry) groups aliases;
   };
 in
   shells
+  // aliasShells
   // {
-    # `nix develop` with no argument, and `dev` with no argument.
-    default = shells.nix;
-
-    # Aliases
-    ai = shells.agent;
-    c = shells.build;
-    data = shells.python;
-
     # Not a shell: metadata for the `dev` launcher's menu.
     devShellsMeta = meta;
   }

@@ -69,7 +69,7 @@ home-manager
 کپی کردن درخت.
 
 **`mkDevShell`** — *داده* می‌گیرد (نام، آیکن، توضیح، پکیج‌ها، `tips`) و شل
-می‌سازد به‌همراه بنر، متغیرهای محیطی و ثبت GC root در `~/.local/share/dev-roots/`.
+را به‌همراه بنر و متغیرهای محیطی می‌سازد. ثبت و مرتب‌سازی GC-root وظیفه‌ی launcher سراسری `dev` است.
 
 قبل از این سازنده، هر شل همان سه کار را دستی تکرار می‌کرد — حدود ۳۰٪ هر فایل،
 یازده بار. حالا هر شل فقط داده است.
@@ -147,6 +147,7 @@ users/amir/
 | شل | برای چه |
 | :--- | :--- |
 | `agent` | عامل‌های هوش مصنوعی (Hermes, OpenCode)، ابزارهای AST (`ast-grep`, `sd`, `difftastic`)، `biome`, `ruff` و اتصال مستقیم به `9router` |
+| `ai` | اجرای محلی مدل‌ها با Ollama CUDA و llama.cpp، رابط‌های متنی و وب، Whisper، Piper، stable-diffusion.cpp و ابزارهای GPU |
 | `python` | پایتون ۳ خالص، `uv`, `pip`, `ruff`, `pyright`, `ipython` با `unset PYTHONPATH` |
 | `rust` | Cargo، Rust-Analyzer، Clippy، Watch، Edit، LLDB |
 | `go` | Go، Gopls، GolangCI-Lint، Air Live-Reload، Delve |
@@ -155,11 +156,9 @@ users/amir/
 | `cli` | ابزارهای تحلیل و پروفایلینگ سنگین (`hyperfine`, `watchexec`, `tokei`, `bandwhich`) |
 | `media` | ffmpeg-full، vips، ImageMagick، OCR (`ocrmypdf`), PDF |
 | `nix` | بسته‌بندی، بازبینی، تحلیل closure (`nix-check`, `nix-size`) |
-| `box` | سندباکس اجرای ابزارها با Home-Swap، مسیر `/work` و رم موقت (-e) |
 | `audit` | بررسی CVE، سکرت‌ها، قفل‌فایل‌ها، سخت‌سازی سیستم (`audit-all`) |
 
-`shells/default.nix` رجیستری است و `devShellsMeta` را بیرون می‌دهد — منبعی که
-منوی `dev` و تکمیل خودکار هر سه شل از آن می‌خوانند.
+`shells/registry.nix` نام‌ها، گروه‌ها و aliasها را یک‌جا نگه می‌دارد. منوی سریع و completionهای `dev` از همین داده و metadata فایل‌های shell می‌خوانند و برای نمایش فهرست هیچ Flake evaluationی انجام نمی‌دهند. `devShellsMeta` نیز برای مصرف‌کنندگان Flake صادر می‌شود.
 
 ---
 
@@ -178,8 +177,8 @@ users/amir/
 | یک کلید ادیتور | `modules/home/dev/nvim/lua/*.lua` |
 | یک مخفف شل | `modules/home/cli/fish.nix` |
 | ابزاری که همیشه باشد | `modules/home/cli/tools.nix` |
-| ابزاری فقط در یک زبان | `shells/<زبان>/default.nix` |
-| سندباکس و جداسازی | `shells/box/default.nix` |
+| ابزاری فقط در یک محیط | `shells/<name>/default.nix` یا فایل تکی مانند `shells/build.nix` |
+| سندباکس و جداسازی | `modules/home/dev/box/` |
 | تیونینگ کرنل | `modules/nixos/core.nix` |
 | قواعد فایروال | `modules/nixos/security.nix` |
 | مدل هوش مصنوعی | `modules/home/dev/nvim/lua/ai.lua` |
