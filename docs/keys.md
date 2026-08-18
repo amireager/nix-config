@@ -151,14 +151,22 @@
 | **`dev`** | نمایش فوری محیط‌ها بدون Flake evaluation |
 | **`dev -i`** | انتخاب تعاملی محیط با FZF |
 | **`dev <name>`** | ورود به محیط توسعه لحظه‌ای (`agent`, `ai`, `python`, ...) |
+| **`dev --shell bash <name>`** | انتخاب Fish، Bash، Zsh یا shell جاری برای ورود تعاملی |
+| **`dev --dry-run <name> ...`** | نمایش Flake، root و command نهایی بدون evaluation یا اجرا |
 | **`dev -w <name>`** | evaluation صریح و نمایش بسته‌های محیط |
-| **`dev --roots`** | نمایش GC-rootهای مرتب و تعداد generationها |
-| **`dev --unkeep <name>`** | حذف حفاظت GC یک محیط |
+| **`dev --keep <name>`** | refresh کردن GC-root واقعی بدون ورود |
+| **`dev --no-keep <name> ...`** | اجرا بدون ایجاد یا refresh کردن root |
+| **`dev --roots`** | نمایش rootهای kept، broken، legacy و orphan |
+| **`dev --prune`** | پاک‌سازی rootهای قدیمی، شکسته و orphan با تأیید |
+| **`dev --unkeep <name>`** | حذف حفاظت GC یک محیط یا root orphan |
+| **`dev -v / --verbose`** | نمایش جزئیات عملیات Nix و GC-root |
 | **`box`** | ورود به `.box/work → /work` با Home ایزوله |
 | **`box --dry-run <cmd>`** | نمایش Plan بدون ساخت فایل یا اجرای process |
 | **`box --secure <cmd>`** | environment پاک و mountهای محدودتر؛ شبکه فعال می‌ماند |
 | **`box --net none <cmd>`** | اجرای بدون شبکه |
 | **`box --status`** | نمایش وضعیت و حجم storage محلی Box |
+| **`box --inspect <cmd>`** | trace مختصر دسترسی target به مسیرهای کاربر و workspace |
+| **`box --inspect-all <cmd>`** | trace کامل و verbose دسترسی فایل‌های target |
 | **`box -e <cmd>`** | Home، tmp و work کاملاً موقت |
 | **`box --mem 4G <cmd>`** | اجرای دستور با محدودیت ۴ گیگابایت رم |
 | **`proxy_on [port]`** | فعال‌سازی پروکسی در تب جاری ترمینال |

@@ -11,16 +11,21 @@
 ## `dev` — سریع، On-Demand و قابل مدیریت
 
 ```sh
-dev                    منوی سریع؛ بدون Flake evaluation
-dev -i                 انتخاب تعاملی محیط با FZF
-dev python             ورود تعاملی به شل
-dev python pytest      یک دستور اجرا کن، بعد بیرون بیا
-dev -w rust            بسته‌های محیط را با evaluation صریح ببین
-dev --roots            GC-rootهای نگه‌داری‌شده را فهرست کن
-dev --unkeep rust      حفاظت GC یک محیط را حذف کن
+dev                         منوی سریع؛ بدون Flake evaluation
+dev -i                      انتخاب تعاملی محیط با FZF
+dev python                  ورود تعاملی به شل
+dev --shell bash python     ورود با Bash به‌جای Fish
+dev python pytest           اجرای مستقیم command با حفظ آرگومان‌ها
+dev --dry-run python pytest نمایش Plan بدون evaluation یا اجرا
+dev -w rust                 نمایش بسته‌ها با evaluation صریح
+dev --keep rust             ساخت یا refresh کردن GC-root بدون ورود
+dev --no-keep rust cargo test  اجرا بدون تغییر GC-root
+dev --roots                 نمایش rootهای سالم، شکسته، قدیمی و orphan
+dev --prune                 پاک‌سازی rootهای شکسته، قدیمی و orphan
+dev --unkeep rust           حذف حفاظت GC یک محیط
 ```
 
-`dev c` همان `dev build` و `dev data` همان `dev python` است. `dev ai` اکنون یک محیط مستقل برای اجرای مدل‌های محلی است.
+`dev c` همان `dev build` و `dev data` همان `dev python` است. `dev ai` یک محیط مستقل برای اجرای مدل‌های محلی است. `-v` یا `--verbose` جزئیات عملیات Nix و ثبت root را نشان می‌دهد؛ `DEV_SHELL` نیز shell تعاملی پیش‌فرض را انتخاب می‌کند.
 
 ### `dev -w` — نگاه کردن بدون ورود
 
@@ -31,21 +36,34 @@ dev --unkeep rust      حفاظت GC یک محیط را حذف کن
 
 ### ثبت و مدیریت ریشه GC
 
-هر محیط در مسیر مرتب زیر یک profile مستقل دارد:
+هر محیط یک پوشه‌ی ثابت و نام‌دار دارد:
 
 ```text
-~/.local/share/dev-roots/<name>/profile
+~/.local/share/dev-roots/<name>/
+├── profile       → profile-N-link
+├── profile-N-link → /nix/store/…-build-env
+├── gc-root       → /nix/store/…-build-env
+└── last-used
 ```
 
-بعد از ثبت root، تاریخچه‌ی generationهای قبلی همان profile پاک می‌شود؛ بنابراین تغییر کوچک فایل‌ها دیگر پوشه را از لینک‌های قدیمی پر نمی‌کند. زمان آخرین استفاده نیز کنار profile ثبت می‌شود.
+`nix develop --profile` همان محیطی را که اجرا می‌شود در `profile` ثبت می‌کند. پیش از اجرای command، helper داخلی `dev` مسیر جاری profile را با `nix-store --add-root --indirect` به‌عنوان GC-root واقعی ثبت می‌کند و سپس history غیرجاری profile را پاک می‌کند. بنابراین برای هر shell فقط current generation و یک لینک ثابت `gc-root` می‌ماند؛ تغییر shell همان root را به closure جدید منتقل می‌کند و لینک‌ها انباشته نمی‌شوند.
+
+این root از build environment و تمام store pathهای referenced در closure آن محافظت می‌کند. در نتیجه تا وقتی `gc-root` سالم و در `dev --roots` با وضعیت `kept` دیده می‌شود، اجرای `nh clean` یا `nix-collect-garbage` نباید پکیج‌های آن محیط را حذف کند. generationهای قبلی که دیگر current نیستند عمداً آزاد می‌شوند.
 
 ```sh
-dev --roots             وضعیت rootها و تعداد generationها
-dev --unkeep <name>     حذف root یک محیط
+dev --keep <name>       ایجاد یا refresh کردن root بدون ورود
+dev --no-keep <name>    اجرا بدون ایجاد یا refresh کردن root
+dev --roots             بررسی registration، generation و زمان آخرین استفاده
+dev --unkeep <name>     حذف root مشخص، حتی اگر shell از registry حذف شده باشد
 dev --unkeep-all        حذف همه‌ی rootها با تأیید کاربر
+dev --prune             حذف rootهای broken، legacy، unregistered و orphan با تأیید
 ```
 
-تا وقتی root وجود دارد، `nh clean` یا `nix-collect-garbage` محیط را حذف نمی‌کند.
+`--no-keep` یک root موجود را حذف نمی‌کند؛ فقط آن را refresh نمی‌کند. برای آزاد کردن واقعی closure باید `--unkeep` اجرا شود. وضعیت‌های منو و `--roots` نیز دقیق‌اند: `kept`، `not kept`، `broken`، `legacy`، `unregistered` و `orphan`. ثبت daemon را می‌توان مستقل نیز دید:
+
+```sh
+nix-store --gc --print-roots | grep dev-roots
+```
 
 ---
 

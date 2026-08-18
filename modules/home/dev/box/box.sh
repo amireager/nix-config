@@ -47,7 +47,8 @@ ${C_BOLD}FLAGS & MODIFIERS:${C_RESET}
   ${C_YELLOW}--mem <SIZE>${C_RESET}                 Cap RAM usage via cgroups (e.g. --mem 4G).
   ${C_YELLOW}--cpu <QUOTA>${C_RESET}                Cap CPU quota (e.g. --cpu 200%).
   ${C_YELLOW}--clean${C_RESET}                      Wipe the local .box/ storage for this project.
-  ${C_YELLOW}--inspect${C_RESET}                    Trace file access with strace.
+  ${C_YELLOW}--inspect${C_RESET}                    Trace user/workspace file access for the target command.
+  ${C_YELLOW}--inspect-all${C_RESET}                Trace all target-command file access (verbose).
   ${C_YELLOW}-h, --help${C_RESET}                   Show this help manual.
 
 ${C_BOLD}EXAMPLES:${C_RESET}
@@ -312,6 +313,10 @@ while [ $# -gt 0 ]; do
       OPT_INSPECT=1
       shift
       ;;
+    --inspect-all)
+      OPT_INSPECT=2
+      shift
+      ;;
     --)
       shift
       CMD+=("$@")
@@ -343,6 +348,27 @@ elif [ "$OPT_EPHEMERAL" -eq 1 ]; then
 else
   HOST_ACTIVE_WORK="$DEFAULT_WORK"
 fi
+
+validate_share() {
+  local entry="$1" src
+  if [[ "$entry" == *":"* ]]; then
+    src="${entry%%:*}"
+  else
+    src="$entry"
+  fi
+  src="${src/#\~/$REAL_HOST_HOME}"
+  [ -e "$src" ] || {
+    echo -e "${C_RED}box: share source does not exist: $src${C_RESET}" >&2
+    exit 1
+  }
+}
+
+for entry in "${OPT_SHARES_RO[@]+${OPT_SHARES_RO[@]}}"; do
+  [ -n "$entry" ] && validate_share "$entry"
+done
+for entry in "${OPT_SHARES_RW[@]+${OPT_SHARES_RW[@]}}"; do
+  [ -n "$entry" ] && validate_share "$entry"
+done
 
 print_plan() {
   local network env_mode home_mode tmp_mode work_value
@@ -435,6 +461,7 @@ BWRAP_ARGS=(
   --ro-bind /etc /etc
   --tmpfs "$REAL_HOST_HOME"
 )
+INSPECT_PATHS=(/work "$REAL_HOST_HOME" /tmp)
 
 # Standard mode retains host runtime compatibility. Secure mode deliberately
 # omits these broad mounts; networking remains independent and stays enabled
@@ -485,6 +512,7 @@ if [ "$OPT_EPHEMERAL" -eq 0 ] && [ -d "$BOX_DIR" ]; then
       home|work|tmp) continue ;;
       *)
         BWRAP_ARGS+=(--dir "/$dname" --bind "$custom_dir" "/$dname")
+        INSPECT_PATHS+=("/$dname")
         ;;
     esac
   done
@@ -521,38 +549,41 @@ mount_share() {
   fi
 
   src="${src/#\~/$REAL_HOST_HOME}"
-  if [ -e "$src" ]; then
-    src="$(cd "$(dirname "$src")" && pwd -P)/$(basename "$src")"
-    if [ -z "$dst" ]; then
-      dst="$src"
-    else
-      dst="${dst/#\~/$REAL_HOST_HOME}"
-    fi
-
-    # Ensure destination parent directory exists in sandbox storage if inside HOME
-    if [ "$OPT_EPHEMERAL" -eq 0 ] && [[ "$dst" == "$REAL_HOST_HOME"* ]]; then
-      local rel_path="${dst#$REAL_HOST_HOME/}"
-      local parent_dir
-      parent_dir="$(dirname "$rel_path")"
-      if [ "$parent_dir" != "." ] && [ "$parent_dir" != "/" ]; then
-        mkdir -p "$HOST_HOME/$parent_dir"
-      fi
-    fi
-
-    BWRAP_ARGS+=("$mode" "$src" "$dst")
+  [ -e "$src" ] || {
+    echo -e "${C_RED}box: share source does not exist: $src${C_RESET}" >&2
+    exit 1
+  }
+  src="$(cd "$(dirname "$src")" && pwd -P)/$(basename "$src")"
+  if [ -z "$dst" ]; then
+    dst="$src"
+  else
+    dst="${dst/#\~/$REAL_HOST_HOME}"
   fi
+
+  # Ensure destination parent directory exists in sandbox storage if inside HOME
+  if [ "$OPT_EPHEMERAL" -eq 0 ] && [[ "$dst" == "$REAL_HOST_HOME"* ]]; then
+    local rel_path="${dst#$REAL_HOST_HOME/}"
+    local parent_dir
+    parent_dir="$(dirname "$rel_path")"
+    if [ "$parent_dir" != "." ] && [ "$parent_dir" != "/" ]; then
+      mkdir -p "$HOST_HOME/$parent_dir"
+    fi
+  fi
+
+  BWRAP_ARGS+=("$mode" "$src" "$dst")
+  INSPECT_PATHS+=("$dst")
 }
 
 # Apply Read-Only shares (-s)
 for entry in "${OPT_SHARES_RO[@]+${OPT_SHARES_RO[@]}}"; do
   [ -n "$entry" ] || continue
-  mount_share "$entry" "--ro-bind-try"
+  mount_share "$entry" "--ro-bind"
 done
 
 # Apply Read-Write shares (-S)
 for entry in "${OPT_SHARES_RW[@]+${OPT_SHARES_RW[@]}}"; do
   [ -n "$entry" ] || continue
-  mount_share "$entry" "--bind-try"
+  mount_share "$entry" "--bind"
 done
 
 # Working Directory inside sandbox is ALWAYS /work
@@ -640,13 +671,23 @@ else
   TARGET_CMD=("${CMD[@]}")
 fi
 
-# ── Execution with optional Systemd Resource Limits ──────────────────────
-EXEC_CMD=("bwrap" "${BWRAP_ARGS[@]}" "${ENV_ARGS[@]}" -- "${TARGET_CMD[@]}")
-
-if [ "$OPT_INSPECT" -eq 1 ]; then
-  echo -e "${C_MAGENTA}🔍 [box inspect] Monitoring filesystem access with strace...${C_RESET}"
-  exec strace -f -e trace=file "${EXEC_CMD[@]}"
+# ── Execution with optional inspection and Systemd Resource Limits ───────
+# Inspect the target from inside Box. This avoids tracing Bubblewrap's own
+# namespace/mount setup and keeps resource limits effective.
+if [ "$OPT_INSPECT" -gt 0 ]; then
+  STRACE_ARGS=(-f -qq -e trace=%file)
+  if [ "$OPT_INSPECT" -eq 1 ]; then
+    for path in "${INSPECT_PATHS[@]}"; do
+      STRACE_ARGS+=(-P "$path")
+    done
+    echo -e "${C_MAGENTA}🔍 [box inspect] Tracing target access under /work, /tmp, Home and explicit shares...${C_RESET}"
+  else
+    echo -e "${C_MAGENTA}🔍 [box inspect-all] Tracing all target file access...${C_RESET}"
+  fi
+  TARGET_CMD=(strace "${STRACE_ARGS[@]}" -- "${TARGET_CMD[@]}")
 fi
+
+EXEC_CMD=("bwrap" "${BWRAP_ARGS[@]}" "${ENV_ARGS[@]}" -- "${TARGET_CMD[@]}")
 
 if [ -n "$OPT_MEM" ] || [ -n "$OPT_CPU" ]; then
   if command -v systemd-run >/dev/null 2>&1 && systemd-run --user --scope --quiet -- true 2>/dev/null; then

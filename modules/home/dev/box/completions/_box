@@ -29,7 +29,8 @@ _box() {
     '--mem[Cap RAM usage via cgroups]:size:'
     '--cpu[Cap CPU quota via cgroups]:quota:'
     '--clean[Wipe local .box storage for current project]'
-    '--inspect[Trace file access with strace]'
+    '--inspect[Trace target access to user and workspace paths]'
+    '--inspect-all[Trace all target file access (verbose)]'
     '-h[Show help manual]'
     '--help[Show help manual]'
   )
