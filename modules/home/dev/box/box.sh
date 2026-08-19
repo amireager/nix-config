@@ -1,6 +1,7 @@
 # shellcheck shell=bash
 set -euo pipefail
 
+_BAKED_PROXY_HOST="@proxyHost@"
 _BAKED_PROXY_PORT="@proxyPort@"
 
 is_valid_port() {
@@ -670,7 +671,7 @@ done
 
 # Proxy Routing
 if [ -n "$OPT_PROXY" ]; then
-  PROXY_URL="socks5h://127.0.0.1:$OPT_PROXY"
+  PROXY_URL="socks5h://$_BAKED_PROXY_HOST:$OPT_PROXY"
   ENV_ARGS+=(
     --setenv ALL_PROXY "$PROXY_URL"
     --setenv HTTP_PROXY "$PROXY_URL"
@@ -678,7 +679,7 @@ if [ -n "$OPT_PROXY" ]; then
     --setenv all_proxy "$PROXY_URL"
     --setenv http_proxy "$PROXY_URL"
     --setenv https_proxy "$PROXY_URL"
-    --setenv SOCKS5_SERVER "127.0.0.1:$OPT_PROXY"
+    --setenv SOCKS5_SERVER "$_BAKED_PROXY_HOST:$OPT_PROXY"
     --setenv NO_PROXY "127.0.0.1,localhost,::1"
     --setenv no_proxy "127.0.0.1,localhost,::1"
   )

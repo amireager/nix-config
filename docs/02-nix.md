@@ -266,7 +266,7 @@ dev --prune
 nix-store --gc --print-roots | rg "$HOME/.local/share/dev-roots"
 ```
 
-اگر daemon root registry قابل خواندن نباشد، `dev` وضعیت را `unknown` گزارش می‌کند و prune مخرب انجام نمی‌دهد.
+منوی سریع `dev` وضعیت روزمره را از symlink محلی می‌خواند و daemon-wide query انجام نمی‌دهد. ثبت indirect root هنگام ورود synchronous است و در صورت failure ورود متوقف می‌شود. برای audit مستقل registry daemon از command بالا استفاده کنید.
 
 ---
 

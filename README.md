@@ -69,8 +69,8 @@ dev -i                  # select with FZF
 dev python              # enter an interactive environment
 dev rust cargo test     # run one command directly
 dev --keep net          # realise and retain an environment
-dev --roots             # inspect registration, generations, size, and last use
-dev --prune             # confirm removal of stale or broken roots
+dev --roots             # inspect local state, generations, size, and last use
+dev --prune             # confirm removal of directory-only or broken roots
 ```
 
 Available environments:
@@ -90,7 +90,7 @@ Available environments:
 | `nix` | Packaging, source checks, review, search, closure analysis |
 | `audit` | Secrets, CVEs, SBOMs, images, IaC, and system hardening |
 
-Aliases: `dev c` → `build`, `dev data` → `python`, and `dev default` → `nix`.
+Aliases: `dev c` → `build`, `dev data` → `python`, and `dev default` → `nix`. The shared Registry validates names, one-group membership, alias targets, and collisions; the Flake exposes only standard `devShells` outputs.
 
 ### Box sandbox
 

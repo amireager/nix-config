@@ -70,6 +70,18 @@ dev --what media
 
 این تنها مسیر menu نیست و صریحاً Flake output را evaluate می‌کند تا `nativeBuildInputs` و `buildInputs` مؤثر را بخواند. packageهای تکراری قبل از نمایش حذف می‌شوند.
 
+## مالکیت implementation
+
+| بخش | فایل |
+| :--- | :--- |
+| Home Manager wiring | `modules/home/dev/dev-launcher.nix` |
+| CLI parsing، منو و `nix develop` | `modules/home/dev/dev-launcher/runtime.nix` |
+| root registration/list/prune | `modules/home/dev/dev-launcher/roots.nix` |
+| Fish/Bash/Zsh completion | `modules/home/dev/dev-launcher/completions.nix` |
+| نام، group و alias | `shells/registry.nix` |
+
+این split داخلی است و interface بالا را عوض نمی‌کند. Registry هنگام import روی نام‌ها، module membership، groupهای دقیقاً یک‌بار، alias target و collisionها assertion دارد. Flake فقط `devShells.<system>` استاندارد را export می‌کند؛ metadata هر derivation در `passthru.devShellMeta` باقی می‌ماند و منوی سریع برای اجتناب از evaluation، icon/description را از source می‌خواند.
+
 ---
 
 # GC-root و lifecycle محیط
@@ -109,21 +121,21 @@ dev --unkeep-all
 dev --prune
 ```
 
-`--no-keep` root قبلی را حذف نمی‌کند؛ فقط آن را refresh نمی‌کند.
+`--no-keep` root قبلی را حذف نمی‌کند؛ فقط آن را refresh نمی‌کند. `--prune` فقط پس از confirmation، directory-onlyها و stateهای broken/legacy/orphan را پاک می‌کند و به `kept` دست نمی‌زند.
 
 ## معنی statusها
 
-| وضعیت | معنی |
-| :--- | :--- |
-| `kept` | symlink سالم و در daemon ثبت‌شده |
-| `not kept` | هنوز root ندارد |
-| `legacy` | layout قدیمی profile در root base |
-| `broken` | symlink یا profile خراب |
-| `unregistered` | path وجود دارد ولی daemon آن را root نمی‌شناسد |
-| `orphan` | نام دیگر در Registry وجود ندارد |
-| `unknown` | daemon root registry قابل query نبوده است |
+سه حالت عادی منو مستقیماً از filesystem محلی خوانده می‌شوند:
 
-در حالت `unknown`، prune بدون تغییر abort می‌شود. failure مشاهده نباید به حذف داده تبدیل شود.
+| علامت | وضعیت | معنی |
+| :---: | :--- | :--- |
+| `●` | `kept` | `gc-root` یک symlink سالم به `/nix/store` است |
+| `◐` | `directory only` | directory محیط ساخته شده ولی `gc-root` ندارد |
+| `○` | `not used` | هنوز directory/rootی برای محیط ساخته نشده است |
+
+`◆ legacy` فقط layout قدیمی را نشان می‌دهد، `◆ orphan` directory خارج از Registry است و `! broken` مخصوص symlink خراب یا path غیرمنتظره در محل `gc-root` است.
+
+منوی `dev` و `dev -i` عمداً `nix-store --gc --print-roots` اجرا نمی‌کنند؛ ثبت root هنگام ورود به‌صورت synchronous انجام می‌شود و failure همان‌جا جلوی ورود را می‌گیرد. این کار منو را سریع نگه می‌دارد و وضعیت نمایشی را به format خروجی نسخه‌های مختلف Nix وابسته نمی‌کند. برای audit مستقل daemon همچنان command پایین وجود دارد.
 
 ## closure size
 

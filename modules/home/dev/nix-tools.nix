@@ -59,7 +59,8 @@
     nixd # LSP — must work in any .nix file, not just inside a project
 
     # === Global Dev CLI ===
-    # The `dev` launcher and its completions live in ./dev-launcher.nix — it is
-    # a hundred lines of shell and does not belong in a package list.
+    # The `dev` launcher wiring lives in ./dev-launcher.nix; runtime, root
+    # lifecycle and completions are split under ./dev-launcher/ and do not
+    # belong in a package list.
   ];
 }

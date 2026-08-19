@@ -274,8 +274,8 @@
             return 2
           end
 
-          if not grep -Eq '^[[:space:]]*socks5[[:space:]]+127\.0\.0\.1[[:space:]]+[0-9]+' /etc/proxychains.conf
-            echo "px: local SOCKS5 entry not found in /etc/proxychains.conf" >&2
+          if not grep -Eq '^[[:space:]]*socks5[[:space:]]+[^[:space:]]+[[:space:]]+[0-9]+' /etc/proxychains.conf
+            echo "px: configured SOCKS5 entry not found in /etc/proxychains.conf" >&2
             return 1
           end
 
@@ -285,7 +285,7 @@
           or return 1
           chmod 600 $tmp_conf
 
-          if not sed -E "s|^([[:space:]]*socks5[[:space:]]+127\.0\.0\.1[[:space:]]+)[0-9]+|\1$PROXY_PORT|" \
+          if not sed -E "s|^([[:space:]]*socks5[[:space:]]+)[^[:space:]]+([[:space:]]+)[0-9]+|\1${proxy.host}\2$PROXY_PORT|" \
             /etc/proxychains.conf > $tmp_conf
             rm -f -- $tmp_conf
             return 1

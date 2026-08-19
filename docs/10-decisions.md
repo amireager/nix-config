@@ -159,7 +159,17 @@ On-demand بودن بدون root یعنی GC می‌تواند toolchain سنگ�
 4. history قدیمی profile را پاک می‌کند؛
 5. last-used را ثبت می‌کند.
 
-اگر query daemon شکست بخورد، state `unknown` است و prune abort می‌شود.
+Registration هنگام ورود synchronous است و failure همان‌جا shell را متوقف می‌کند. نمایش روزمره فقط سه state محلی `kept`، `directory only` و `not used` را می‌خواند؛ daemon-wide query از مسیر منو حذف شده است چون هم کند بود و هم به format متن خروجی Nix وابستگی شکننده ایجاد می‌کرد. Audit مستقل daemon همچنان با `nix-store --gc --print-roots` ممکن است.
+
+---
+
+# Registry داده‌ی مرکزی است، نه output سفارشی Flake
+
+نام، ترتیب، group و alias محیط‌ها در `shells/registry.nix` هستند. Assertionهای کوچک همان‌جا نام نامعتبر، module/member گمشده، membership تکراری، alias target ناموجود و collision را زود رد می‌کنند.
+
+Metadata هر محیط در `passthru.devShellMeta` derivation باقی می‌ماند، اما Flake فقط `devShells.<system>` استاندارد را export می‌کند. output سفارشی `devShellsMeta` حذف شد چون consumer خارجی نداشت، schema استاندارد نبود و launcher برای منوی evaluation-free باید source را بخواند.
+
+Runtime، root management و completion فایل‌های مستقل‌اند؛ CLI عمداً همان قرارداد قبلی را حفظ می‌کند.
 
 ---
 
@@ -225,7 +235,7 @@ Activation symlink صریح به‌خاطر regular file قدیمی باقی م�
 | `box --proxy` | environment داخل sandbox |
 | `nix_proxy` | daemon تا off/reboot |
 
-یکی‌کردن این‌ها در toggle سراسری رد شد، چون هر scope failure و cleanup متفاوت دارد. Host/port پایه مشترک است؛ lifecycle مشترک نیست.
+یکی‌کردن این‌ها در toggle سراسری رد شد، چون هر scope failure و cleanup متفاوت دارد. Host/port پایه در `lib.proxy` مشترک و authoritative است؛ `px`، proxychains و Box endpoint دیگری را hard-code نمی‌کنند. Lifecycle مشترک نیست.
 
 ---
 

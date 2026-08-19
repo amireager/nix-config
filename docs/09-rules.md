@@ -283,10 +283,13 @@ dev --prune
 
 - command عادی separator اجباری نمی‌خواهد؛
 - cleanup confirmation و failure-safe می‌ماند؛
-- daemon query failure حذف ایجاد نمی‌کند؛
-- root واقعی باید با registry daemon اثبات شود؛
+- registration واقعی باید هنگام ورود synchronous باشد و failure را پنهان نکند؛
+- menu وضعیت را از `gc-root` محلی می‌خواند و daemon-wide query انجام نمی‌دهد؛
 - Bash/Fish/Zsh completion هم‌زمان update شوند؛
-- menu سریع Flake evaluation انجام نمی‌دهد.
+- menu سریع Flake evaluation انجام نمی‌دهد؛
+- `runtime.nix` interface/launch، `roots.nix` lifecycle و `completions.nix` shell integration را مالک‌اند؛
+- Registry باید validity، membership، group، alias target و collision را قبل از تولید output رد کند؛
+- metadata در `passthru.devShellMeta` می‌ماند و output سفارشی top-level ساخته نمی‌شود.
 
 Structured subcommand، doctor، JSON report و featureهای اضافی بدون نیاز واقعی اضافه نمی‌شوند.
 

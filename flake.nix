@@ -54,12 +54,10 @@
       };
     };
 
-    # Centralized On-Demand Environments (GC-Resilient & Modular)
-    # Quick invocation from anywhere using `nix develop .#<name>` or `dev <name>`
-    devShells.${system} = builtins.removeAttrs shells ["devShellsMeta"];
-
-    # Expose devShells metadata separately to maintain a valid Nix Flake schema
-    devShellsMeta.${system} = shells.devShellsMeta;
+    # Centralized On-Demand Environments (GC-Resilient & Modular).
+    # Each derivation keeps its own metadata in passthru.devShellMeta; the Flake
+    # exposes only standard devShell outputs.
+    devShells.${system} = shells;
 
     formatter.${system} = pkgs.alejandra;
   };

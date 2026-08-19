@@ -248,7 +248,11 @@ modules/home/cli/
 modules/home/dev/
 ├── nvim/
 ├── nix-tools.nix
-├── dev-launcher.nix
+├── dev-launcher.nix          # Home Manager wiring
+├── dev-launcher/
+│   ├── runtime.nix           # CLI/menu/nix develop
+│   ├── roots.nix             # GC-root lifecycle
+│   └── completions.nix       # Fish/Bash/Zsh
 └── box/
 ```
 
@@ -331,17 +335,20 @@ shells/registry.nix
 shells/default.nix
 └── import shell module
     └── mkDevShell
-        └── devShell derivation + metadata
+        └── devShell derivation
+            └── passthru.devShellMeta
+
+Flake
+└── devShells.<system>        # فقط output استاندارد
 
 Home Manager
-└── dev command
-    ├── menu/completion
-    ├── nix develop
-    ├── profile
-    └── indirect GC-root
+└── dev-launcher.nix
+    ├── runtime → menu + nix develop
+    ├── roots → profile + indirect GC-root
+    └── completions → Fish + Bash + Zsh
 ```
 
-Registry source نام و ترتیب است؛ shell file محتوا و metadata محیط را تعریف می‌کند. Menu سریع source را می‌خواند و Flake را evaluate نمی‌کند.
+Registry source نام، ترتیب، گروه و alias است و برای نام نامعتبر، module گمشده، membership ناقص/تکراری، target ناموجود و collision assertion دارد. Shell file محتوا و metadata derivation را تعریف می‌کند. Menu سریع source را می‌خواند و Flake را evaluate نمی‌کند؛ metadata به output سفارشی top-level تبدیل نمی‌شود.
 
 ---
 
@@ -379,7 +386,10 @@ Frameworkهایی مانند flake-parts صرفاً برای کوتاه‌کرد
 | ابزار دائمی CLI | `modules/home/cli/tools.nix` |
 | Neovim plugin/binary | `modules/home/dev/nvim/default.nix` |
 | Neovim behavior/key | `modules/home/dev/nvim/lua/*.lua` |
-| `dev` behavior/root | `modules/home/dev/dev-launcher.nix` |
+| `dev` Home wiring | `modules/home/dev/dev-launcher.nix` |
+| `dev` CLI/menu execution | `modules/home/dev/dev-launcher/runtime.nix` |
+| `dev` root lifecycle | `modules/home/dev/dev-launcher/roots.nix` |
+| `dev` completion | `modules/home/dev/dev-launcher/completions.nix` |
 | Box runtime | `modules/home/dev/box/box.sh` |
 | devShell package | `shells/<name>` |
 | shell name/group/alias | `shells/registry.nix` |
