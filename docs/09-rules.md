@@ -184,8 +184,11 @@ Package را فقط چون نامش مدرن است اضافه نکنید؛ سؤ
 
 | موضوع | محل |
 | :--- | :--- |
-| device/filesystem/bus ID | `hosts/<name>` یا hardware module |
-| policy مشترک سیستم | `modules/nixos` |
+| device/filesystem/bus ID، bootloader، stateVersion | `hosts/<name>` یا hardware module |
+| foundation مشترک | `modules/nixos/core.nix` |
+| kernel/memory/store tuning | `modules/nixos/performance.nix` |
+| container runtime | `modules/nixos/virtualisation.nix` |
+| network/security/desktop policy | module موضوعی در `modules/nixos` |
 | user program/config | `modules/home` |
 | project toolchain | `shells` |
 | mutable project isolation | Box/runtime state |

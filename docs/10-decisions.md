@@ -290,6 +290,21 @@ Default-deny سخت‌گیرانه به‌خاطر friction و احتمال disa
 
 ---
 
+# Foundation، performance و virtualisation owner جدا دارند
+
+`core.nix` قبلاً foundation، kernel/memory tuning و Podman را هم‌زمان در اختیار داشت. این ترکیب reuse روی host دیگر را مبهم می‌کرد: مصرف‌کننده‌ی locale و Nix cache ناخواسته Zen kernel، zram و container runtime را نیز می‌گرفت.
+
+تصمیم:
+
+- `core.nix`: foundation مشترک؛
+- `performance.nix`: kernel، memory، store و storage tuning؛
+- `virtualisation.nix`: Podman policy؛
+- `hosts/<name>`: bootloader و `system.stateVersion`.
+
+این جداسازی option framework جدید نمی‌سازد و مقدار runtime موجود را عوض نمی‌کند؛ فقط انتخاب policy و review مالکیت را صریح می‌کند.
+
+---
+
 # Podman group عمداً حفظ شده است
 
 Rootless Podman برای کار عادی به گروه `podman` نیاز ندارد، اما این سیستم در مواردی از system/rootful access استفاده می‌کند. بنابراین membership باقی می‌ماند و به‌عنوان privilege مشابه دسترسی مدیریتی مستند می‌شود.

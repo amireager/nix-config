@@ -15,23 +15,6 @@
     settings = {
       experimental-features = ["nix-command" "flakes"];
 
-      # Store optimization: deduplicate identical files in /nix/store.
-      auto-optimise-store = true;
-
-      # Nix database performance: reduce lock contention and improve reliability.
-      use-sqlite-wal = true;
-
-      # Build performance.
-      max-jobs = "auto";
-      cores = 0;
-
-      # Network reliability and download concurrency for slower/unstable connections.
-      http-connections = 50;
-      tarball-ttl = 604800; # Cache downloaded flake tarballs for 7 days to speed up evaluation
-      connect-timeout = 10;
-      download-attempts = 3;
-      fallback = true;
-
       # Allow admin users to use trusted Nix features and binary caches.
       trusted-users = ["root" "@wheel"];
 
@@ -48,11 +31,6 @@
         "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
       ];
     };
-
-    optimise = {
-      automatic = true;
-      dates = ["weekly"];
-    };
   };
 
   # === Firmware ===
@@ -60,58 +38,12 @@
   # extras stay out until a device actually needs them.
   hardware.enableRedistributableFirmware = true;
 
-  # === Fast & Silent Boot Architecture (Zen Kernel for Low Latency) ===
-  boot = {
-    kernelPackages = pkgs.linuxPackages_zen;
-    initrd = {
-      verbose = false;
-      systemd.enable = true;
-    };
-    consoleLogLevel = 4; # Show KERN_WARNING + errors so we can see hangs
-    kernelParams = [
-      "quiet"
-      "splash"
-      "boot.shell_on_fail"
-      "udev.log_level=3"
-      # systemd.show_status keeps the boot log visible even behind splash,
-      # so we can diagnose where the boot hangs.
-      "systemd.show_status=true"
-    ];
-    loader.timeout = 1;
-    kernel.sysctl = {
-      "vm.swappiness" = 180;
-      "vm.vfs_cache_pressure" = 50;
-      "vm.page-cluster" = 0;
-      "vm.watermark_boost_factor" = 0;
-      "vm.watermark_scale_factor" = 125;
-      "vm.dirty_background_ratio" = 5;
-      "vm.dirty_ratio" = 10;
-    };
-    kernelModules = ["fuse"];
-  };
-
-  # === Service & Shutdown Timeouts + OOM Daemon ===
-  systemd = {
-    # 10s cut off disk flushes and containers; 30s stays responsive.
-    settings.Manager.DefaultTimeoutStopSec = "30s";
-    oomd = {
-      enable = true;
-      enableUserSlices = true;
-    };
-  };
-
-  zramSwap = {
-    enable = true;
-    memoryPercent = 100;
-  };
+  # AppImage support and user mounts rely on FUSE independent of the selected
+  # kernel/performance policy.
+  boot.kernelModules = ["fuse"];
 
   # === Services ===
   services = {
-    fstrim = {
-      enable = true;
-      interval = "weekly";
-    };
-
     journald.extraConfig = ''
       SystemMaxUse=250M
       SystemMaxFileSize=50M
@@ -238,15 +170,5 @@
 
     # A typo is a typo
     command-not-found.enable = false;
-  };
-
-  # Set to your actual installed NixOS version; do not change after installation.
-  system.stateVersion = "26.05";
-
-  # === Container Runtime (Podman) ===
-  # Daemonless rootless container engine for isolated test environments.
-  virtualisation.podman = {
-    enable = true;
-    dockerCompat = true;
   };
 }

@@ -15,8 +15,10 @@
     # 2. General System Profile Layer (Shared / Modular)
     # ========================================================
     ../../modules/nixos/core.nix
+    ../../modules/nixos/performance.nix
     ../../modules/nixos/network.nix
     ../../modules/nixos/security.nix
+    ../../modules/nixos/virtualisation.nix
     ../../modules/nixos/desktop.nix
   ];
 
@@ -27,5 +29,10 @@
       configurationLimit = 10;
     };
     efi.canTouchEfiVariables = true;
+    timeout = 1;
   };
+
+  # Compatibility baseline of the original installation; never bump merely to
+  # follow the current release.
+  system.stateVersion = "26.05";
 }

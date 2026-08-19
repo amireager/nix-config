@@ -39,6 +39,8 @@ flake.nix
 
 Home Manager is integrated as a NixOS module. A system rebuild therefore updates the operating system and the user environment as one generation.
 
+System ownership is deliberately split: `core.nix` provides the reusable foundation, `performance.nix` owns kernel/memory/store tuning, and `virtualisation.nix` owns Podman. Bootloader settings and `system.stateVersion` remain host-specific.
+
 Two values are intentionally shared across layers:
 
 - `/etc/nixos` is the stable flake entry point. On the installed machine it is a symlink to the real Git checkout.

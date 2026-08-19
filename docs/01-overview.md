@@ -142,12 +142,27 @@ hosts/nixos/
 Profileهای فعال روی این host:
 
 - core system؛
+- performance و memory/storage tuning؛
 - network و DNS؛
 - security؛
+- Podman virtualisation؛
 - desktop؛
 - laptop power؛
 - NVIDIA hybrid graphics؛
 - keyd.
+
+Moduleهای عمومی NixOS عمداً بر اساس owner جدا شده‌اند:
+
+| Module | مالک چه چیزی است؟ |
+| :--- | :--- |
+| `core.nix` | Nix trust/cache، firmware، locale، font، packageهای recovery و programهای پایه |
+| `performance.nix` | Zen kernel، VM sysctl، zram، OOM، Nix/store tuning و fstrim |
+| `virtualisation.nix` | Podman و container-runtime policy |
+| `network.nix` | NetworkManager، DNSCrypt، proxychains و network policy |
+| `security.nix` | firewall، sudo-rs، AppArmor، USBGuard و hardening |
+| `desktop.nix` | system-side session و serviceهای desktop |
+
+Bootloader، `system.stateVersion` و hardware selection در `hosts/<name>` می‌مانند، چون قابلیت reuse عمومی ندارند.
 
 چیزهایی که نباید به host دیگر کپی شوند:
 
@@ -352,7 +367,9 @@ Frameworkهایی مانند flake-parts صرفاً برای کوتاه‌کرد
 | host/hardware/boot | `hosts/<name>` |
 | user/group/login shell | `users/<name>/default.nix` |
 | انتخاب Home module | `users/<name>/home.nix` |
-| Nix/cache/kernel/base | `modules/nixos/core.nix` |
+| Nix trust/cache، locale/font و base packages | `modules/nixos/core.nix` |
+| kernel/memory/store performance | `modules/nixos/performance.nix` |
+| Podman/container policy | `modules/nixos/virtualisation.nix` |
 | DNS/proxychains/network | `modules/nixos/network.nix` |
 | firewall/sudo/USB | `modules/nixos/security.nix` |
 | Niri system session | `modules/nixos/desktop.nix` |
