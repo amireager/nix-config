@@ -1,160 +1,264 @@
-# NixOS — یک سیستم که هر بار دقیقاً همان چیزی می‌شود که نوشته‌ای
+# راهنمای کامل NixOS Workstation
 
-این یک کانفیگ کامل NixOS است: از بوت‌لودر تا رنگ نوار وضعیت، از تیونینگ کرنل
-تا کلیدهای ادیتور، همه در متن نوشته شده و همه در گیت.
+این repository یک سیستم واقعی و روزمره را توصیف می‌کند: از bootloader و driver تا shell، editor، desktop، sandbox و محیط‌های توسعه. هدف آن نمایش چند snippet مستقل نیست؛ هدف این است که هر generation از روی source قابل بازسازی، بررسی و بازگشت باشد.
 
-سیستمی که اینجا توصیف می‌شود یک چیز را جدی می‌گیرد: **دستت روی کیبورد بماند
-و منتظر چیزی نمانی.** بقیه‌ی تصمیم‌ها از همین یکی درآمده‌اند.
+ورودی انگلیسی برای مخاطب بین‌المللی در [`../README.md`](../README.md) است. این handbook مرجع کامل فارسی پروژه است.
 
 ---
 
-## 🎯 مشخصات سخت‌افزاری و تارگت سیستم
+# این پروژه برای چه کسی است؟
 
-* **دستگاه میزبان:** لپ‌تاپ Acer Aspire A715-42G
-* **پردازنده (CPU):** AMD Ryzen 5 5500U (معماری Lucienne / Zen 2)
-* **کارت گرافیک (GPU):** Nvidia GeForce GTX 1650 Mobile (معماری Turing TU117)
-* **کرنل:** `pkgs.linuxPackages_zen` (بهینه‌شده برای پاسخ‌دهی بلادرنگ دسکتاپ و گیمینگ)
-* **درایور گرافیک:** درایور اختصاصی انویدیا با پیکربندی پایدار `hardware.nvidia.open = false`
-* **معماری پکیج‌ها:** Nix Flakes با سازنده ماژولار `lib.mkHost` و لایه‌بندی Home-Manager نیتیو
+سه گروه می‌توانند از آن استفاده کنند:
 
----
+1. **مالک سیستم:** برای نصب، update، recovery و یادآوری تصمیم‌ها؛
+2. **مشارکت‌کننده:** برای فهمیدن مالک هر تنظیم و قراردادهای تغییر؛
+3. **خواننده‌ی بیرونی:** برای دیدن یک نمونه‌ی واقعی از ترکیب NixOS، Home Manager، Niri، devShell و sandbox.
 
-## این سیستم چه کار می‌کند
-
-**دسکتاپ افقی.** `niri` پنجره‌ها را در ستون‌هایی می‌چیند که به چپ و راست
-اسکرول می‌شوند. پنجره‌ها هرگز روی هم نمی‌افتند و هرگز کوچک نمی‌شوند تا جا
-باز کنند — فضا تمام نمی‌شود، فقط ادامه پیدا می‌کند.
-
-**ادیتوری که با پروژه عوض می‌شود.** Neovim با ۳۷ پلاگین و ۱۶ فایل ماژولار، ولی زبان‌سرورهای
-سنگین در آن نیستند. وارد یک پروژه‌ی Rust که شوی، `rust-analyzer` خودش وصل
-می‌شود؛ بیرون که بیایی، دیگر نیست. تگل‌های زنده UI (`<leader>u`)، هایلایت ۸ سطحی رنگین‌کمانی تورفتگی‌ها و اتصال مستقیم به REPL پایتون.
-
-**محیط‌هایی که فقط لحظه‌ی لازم وجود دارند.** دوازده محیط توسعه On-Demand که هیچ‌کدام در
-سیستم نصب نیستند. `dev python` می‌زنی و همان لحظه ساخته می‌شود (`agent`, `ai`, `python`, `rust`, `go`, `web`, `build`, `cli`, `media`, `net`, `nix`, `audit`). ابزار `box` جدا از devShellها و همیشه در سطح کاربر در دسترس است.
-
-**sandbox برای چیزی که نخوانده‌ای.** `box` با معماری **Home-Swap** فایل‌هایی مانند `~/.ssh` را از دید پردازش خارج می‌کند و فضای کاری را در `/work` نگه می‌دارد. حالت استاندارد ابزارها و متغیرهای محیط فراخواننده را حفظ می‌کند؛ برای کد نامطمئن، `--secure` environment را پاک و mountهای runtime را محدود می‌کند.
-
-**هوش مصنوعی که تا نخواهی حرف نمی‌زند.** ادیتور به یک درگاه محلی `9router` وصل است.
-هیچ درخواستی موقع باز شدن nvim نمی‌رود؛ اولین درخواست وقتی است که کلیدی
-بزنی. کلیدهای API در درگاه محلی نگهداری می‌شوند و هیچ رمزی در مخزن نیست.
-
-**شبکه‌ای که با فیلترینگ کنار می‌آید.** توابعی برای روشن کردن پروکسی روی یک
-شل، روی یک تک‌دستور، یا روی خود دیمن سیستم‌عامل (`nix-daemon`). به همراه متد اختصاصی پیش‌دانلود درایور انویدیا با `nix-prefetch-url`.
+این config یک starter عمومی نیست. سخت‌افزار، GPU bus ID، bootloader، username، timezone و سیاست شبکه شخصی‌اند. ساختار قابل اقتباس است، ولی deploy مستقیم روی ماشین دیگر بدون review خطرناک است.
 
 ---
 
-## قاعده‌ی این مستندات
+# مشخصات سیستم هدف
 
-**اگر با `man` یا `--help` پیدا می‌شود، اینجا نیست.**
-
-اینجا راهنمای `git` یا `fish` یا `neovim` نیست — راهنمای چیزی است که روی
-آن‌ها ساخته شده. توضیح یک ابزار، کاراییِ نسبی‌اش را می‌گوید؛ ما بیشتر سراغ
-چیزهایی می‌رویم که در `man` نیست یا کمتر دیده می‌شود.
-
-نام ابزارها، دستورها، مسیرها و آپشن‌ها همیشه انگلیسی می‌مانند.
-
----
-
-## فهرست فصول
-
-| صفحه | موضوع |
+| بخش | مقدار |
 | :--- | :--- |
-| [۰۱ نمای کلی](01-overview.md) | نقشه فایل‌ها، معماری Flake و دیاگرام جریان ساخت |
-| [۰۲ دستورهای Nix](02-nix.md) | آنچه واقعاً به کار می‌آید — دستورات ساخت، پاک‌سازی دیسک و ابزارهای nix |
-| [۰۳ محیط‌های توسعه](03-dev.md) | دستور `dev` و تشریح جامع دوازده شل On-Demand |
-| [۰۴ خط فرمان](04-cli.md) | fish، توابع پروکسی، پرامپت starship و ابزارهای دائمی |
-| [۰۵ دسکتاپ](05-desktop.md) | کامپوزیتور niri، رابط noctalia و تایپ دوزبانه |
-| [۰۶ ادیتور](06-editor.md) | ویژگی‌های Neovim 0.11+، تگل‌های `<leader>u`، LSP، DAP و Slime |
-| [۰۷ هوش مصنوعی](07-ai.md) | معماری سلف‌کانتین، درگاه محلی 9router و CodeCompanion |
-| [۰۸ سندباکس](08-sandbox.md) | موتور جامع `box`، معماری Home-Swap و ابزار امنیتی `audit` |
-| [۰۹ باید و نباید](09-rules.md) | قواعد عملیاتی، شبکه ایران، پیش‌دانلود درایور انویدیا و مخازن مسدود |
-| [۱۰ تصمیم‌ها](10-decisions.md) | دفترچه تصمیمات معماری (ADR) — بنچمارک‌ها، هزینه‌ها و چرایی انتخاب‌ها |
-| [مرجع کلیدها](keys.md) | کارت مرجع سریع تمام کلیدهای میانبر Niri، Neovim و خط فرمان |
+| میزبان | Acer Aspire A715-42G |
+| CPU | AMD Ryzen 5 5500U، Lucienne / Zen 2 |
+| GPU | AMD iGPU + Nvidia GTX 1650 Mobile TU117 |
+| معماری | `x86_64-linux` |
+| Kernel | `linuxPackages_zen` |
+| NVIDIA | proprietary module، `open = false`، Prime offload |
+| Desktop | Niri + Noctalia روی Wayland |
+| Login | SDDM روی Wayland |
+| User management | NixOS + Home Manager یکپارچه |
+| Shell | Fish، با completion برای Bash/Zsh |
+| Editor | Neovim 0.11+ با plugin/LSP/DAP declarative |
+| Container | Podman، شامل دسترسی rootful مورد استفاده |
+| Sandbox | Bubblewrap از طریق `box` |
 
 ---
 
-## نصب روی یک Nix خام
+# سیستم چه چیزهایی را مدیریت می‌کند؟
 
-```sh
-sudo nix-shell -p git nixVersions.stable
-git clone https://github.com/amireager/nix-config /etc/nixos
+## سیستم‌عامل و سخت‌افزار
+
+- bootloader و generationهای systemd-boot؛
+- Zen kernel، initrd، ZRAM و OOMD؛
+- firmware، SMART، fstrim و journal limits؛
+- NVIDIA Prime offload و power management؛
+- power/lid/battery policy لپ‌تاپ؛
+- CapsLock در سطح evdev با keyd.
+
+## شبکه و امنیت
+
+- NetworkManager بدون مالکیت DNS؛
+- `/etc/resolv.conf` ثابت به DNSCrypt روی loopback؛
+- fallback resolver داخل DNSCrypt، نه خارج آن؛
+- proxychains و helperهای proxy در چند scope؛
+- firewall ورودی بدون port عمومی؛
+- sudo-rs، AppArmor، USBGuard و fwupd؛
+- Box برای processهایی که نباید Home واقعی را ببینند.
+
+## محیط کاربر
+
+- Fish، Starship، Git، tmux و Zellij؛
+- ابزارهای جست‌وجو، داده، HTTP، دانلود و diagnosis؛
+- Kitty و WezTerm؛
+- browser، media و XDG associationها؛
+- Niri config، Fuzzel helperها و Noctalia.
+
+## توسعه
+
+- دوازده devShell on-demand؛
+- command سراسری `dev` با root واقعی؛
+- Neovim، LSP، formatter، DAP، REPL، Git و AI؛
+- Box به‌عنوان sandbox مستقل از devShell؛
+- audit ابزارهای secret/CVE/SBOM/hardening.
+
+---
+
+# مرز declarative و mutable
+
+Nix مالک همه‌ی stateها نیست و نباید هم باشد. mutable zoneهای عمدی:
+
+| مسیر/بخش | مالک | دلیل |
+| :--- | :--- | :--- |
+| Noctalia GUI state | Noctalia | idle/Caffeine باید runtime قابل تغییر باشد |
+| `~/.local/share/dev-roots` | `dev` | profile، GC-root و last-used |
+| `<project>/.box` | Box | Home/work/tmp خصوصی هر پروژه |
+| `/run/systemd/system/...nix-proxy...` | `nix_proxy` | proxy موقت daemon تا reboot |
+| login password | `passwd` | secret در Git/Agenix قرار نمی‌گیرد |
+| API credentialها | Bitwarden/9router | جدا از public repository |
+| AI modelها | storage کاربر | بزرگ، mutable و خارج از Git |
+
+این مرزها در docs ثبت شده‌اند تا state پنهان یا تصادفی نباشد.
+
+---
+
+# مسیر مطالعه
+
+## اگر تازه وارد پروژه شده‌اید
+
+1. [۰۱ نمای کلی](01-overview.md)
+2. [۰۳ محیط‌های توسعه](03-dev.md)
+3. [۰۴ جعبه‌ابزار CLI](04-cli.md)
+4. [۰۸ Box و Audit](08-sandbox.md)
+5. [۱۰ تصمیم‌ها](10-decisions.md)
+
+## اگر می‌خواهید سیستم را نصب یا نگه‌داری کنید
+
+1. همین صفحه، بخش نصب؛
+2. [۰۲ عملیات Nix](02-nix.md)؛
+3. [۰۹ قواعد عملیاتی](09-rules.md)؛
+4. [۰۵ Desktop](05-desktop.md)؛
+5. [مرجع کلیدها](keys.md).
+
+## اگر توسعه‌دهنده‌اید
+
+1. [۰۳ محیط‌ها](03-dev.md)؛
+2. [۰۴ CLI](04-cli.md)؛
+3. [۰۶ Neovim](06-editor.md)؛
+4. [۰۷ AI](07-ai.md)؛
+5. [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
+
+---
+
+# فهرست فصل‌ها
+
+| فصل | پرسشی که جواب می‌دهد |
+| :--- | :--- |
+| [۰۱ نمای کلی](01-overview.md) | Flake، host، user و moduleها چطور به هم وصل‌اند؟ |
+| [۰۲ عملیات Nix](02-nix.md) | چطور امن build/update/clean/rollback کنیم؟ |
+| [۰۳ محیط‌های توسعه](03-dev.md) | هر shell چه دارد و چگونه اجرا/حفظ می‌شود؟ |
+| [۰۴ CLI](04-cli.md) | ابزارهای روزمره را چطور حرفه‌ای ترکیب کنیم؟ |
+| [۰۵ Desktop](05-desktop.md) | Niri/Noctalia و workflow گرافیکی چگونه کار می‌کنند؟ |
+| [۰۶ Editor](06-editor.md) | Neovim، LSP، DAP، REPL و Git چگونه به کار می‌روند؟ |
+| [۰۷ AI](07-ai.md) | gateway، local inference و editor AI چه مرزی دارند؟ |
+| [۰۸ Sandbox](08-sandbox.md) | Box چه چیزی را مخفی می‌کند و چه چیزی را نمی‌کند؟ |
+| [۰۹ قواعد](09-rules.md) | تله‌های شبکه/driver و قرارداد تغییر repository چیست؟ |
+| [۱۰ تصمیم‌ها](10-decisions.md) | چرا این راه انتخاب شد و چه راه‌هایی رد شدند؟ |
+| [مرجع کلیدها](keys.md) | برای یک کار مشخص چه کلیدی بزنم؟ |
+
+---
+
+# نصب روی NixOS خام
+
+> این دستورات نمونه‌ی deployment هستند و روی ماشین هدف build/activation انجام می‌دهند. قبل از اجرا hardware و user را شخصی‌سازی کنید.
+
+## ۱. checkout و symlink پایدار
+
+```bash
+nix-shell -p git
+
+git clone https://github.com/amireager/nix-config "$HOME/nix-config"
+sudo ln -sfn "$HOME/nix-config" /etc/nixos
+readlink -f /etc/nixos
 cd /etc/nixos
 ```
 
-**۱. سخت‌افزار خودت را بگذار.** فایل `hosts/nixos/hardware.nix` مال ماشین من
-است:
+چرا symlink؟ مسیر واقعی project می‌تواند تغییر کند، ولی `nh`، `nrf`، Audit و recovery همیشه `/etc/nixos` را می‌شناسند.
 
-```sh
+## ۲. hardware config
+
+```bash
 sudo nixos-generate-config --show-hardware-config > hosts/nixos/hardware.nix
 ```
 
-**۲. کاربر را عوض کن.** در `users/` پوشه‌ی `amir` را کپی کن و در `flake.nix`
-نامش را بگذار.
+فقط replace کردن `hardware.nix` کافی نیست. این موارد را هم بررسی کنید:
 
-**۳. اگر در ایرانی، اول این‌ها را کامنت کن.** وگرنه build وسط راه می‌شکند و
-سیستم اصلاً بالا نمی‌آید (چون codeberg مسدود است):
+- filesystem و swap؛
+- bootloader؛
+- CPU/GPU driver؛
+- NVIDIA bus IDها؛
+- laptop-only moduleها؛
+- hostname و stateVersion.
 
-```nix
-# modules/home/dev/nvim/default.nix
-# nvim-dap
-# nvim-dap-ui
-# nvim-dap-virtual-text
-# nvim-dap-python
-# one-small-step-for-vimkind
+## ۳. user
+
+پوشه‌ی template را کپی و تمام occurrenceهای username/home را عوض کنید:
+
+```bash
+cp -r users/_template users/myuser
+rg -n 'username|/home/username' users/myuser
 ```
 
-و در `lua/dap.lua` نگران نباش — با `pcall` محافظت شده، پس نبودن پلاگین
-باعث خطا نمی‌شود.
+سپس user را در call مربوط به `lib.mkHost` ثبت کنید.
 
-**۴. بساز:**
+## ۴. host
 
-```sh
-sudo nixos-rebuild switch --flake .#nixos
+برای ماشین جدید:
+
+```bash
+cp -r hosts/_template hosts/myhost
 ```
 
-**۵. بعد از بالا آمدن سیستم، پروکسی دیمن و دانلود پلاگین‌ها:**
+Moduleهای laptop/NVIDIA/desktop را فقط در صورت سازگاری فعال کنید. `system.stateVersion` نسخه‌ی نصب اولیه است و بعداً برای دنبال‌کردن release تغییر نمی‌کند.
 
-```sh
-nix_proxy 1819        # دانلودهای nix-daemon را از پروکسی رد کن
-# حالا کامنت های مرحله ۳ را بردار
-sw                    # nh os switch
-nix_proxy off
+## ۵. شبکه‌های محدود
+
+بعضی sourceها مانند Codeberg یا NVIDIA ممکن است مستقیم در دسترس نباشند. راهنمای مرحله‌ای و تفاوت proxy shell با proxy daemon در [۰۹ قواعد](09-rules.md) آمده است.
+
+## ۶. build قبل از switch
+
+```bash
+nh os build
+nh os test
+nh os switch
 ```
 
-از این به بعد آن پلاگین‌ها در store هستند و بدون پروکسی هم build می‌شوند.
-
-> `niri` و `noctalia` از cachix می‌آیند و معمولاً بدون پروکسی هم در دسترس‌اند.
-> جزئیات بیشتر در [۰۹ باید و نباید](09-rules.md).
+برای نصب اولیه ممکن است `nixos-rebuild` خام لازم باشد. جزئیات recovery در [۰۲](02-nix.md) است.
 
 ---
 
-## سه ویژگی که بقیه از آن‌ها درآمده‌اند
+# استفاده‌ی روزمره در پنج دقیقه
 
-**۱. هیچ چیز سنگینی دائمی نصب نیست.** `rust-analyzer` و `gopls` در `dev rust` و
-`dev go` هستند. `direnv-vim` آن‌ها را موقع ورود به پروژه به ادیتور وصل
-می‌کند، پس ادیتور طوری رفتار می‌کند که انگار همیشه بوده‌اند.
+```bash
+# سیستم
+git -C /etc/nixos status --short
+bld
+tst
+sw
 
-**۲. هر محیطی که یک بار وارد شوی، از زباله‌روب جان سالم می‌برد.** `dev` برای هر shell یک profile و indirect GC-root واقعی در `~/.local/share/dev-roots/<name>/` نگه می‌دارد؛ root با closure جدید بازنویسی و history غیرجاری حذف می‌شود تا generationها انباشته نشوند.
+# محیط پروژه
+dev -i
+dev python python -m pytest -q
+dev --roots
 
-**۳. فهرست دوم وجود ندارد.** منوی `dev`، تکمیل خودکارش در سه شل، و رجیستری
-شل‌ها همه از یک منبع می‌خوانند. این یک درس تکرارشونده است: هرجا دو جا باید
-هم‌زمان به‌روز شوند، یکی فراموش می‌شود. راه‌حل حذف فهرست دوم است، نه یادآوری
-بهتر.
+# sandbox
+box --dry-run --secure command
+box --secure --net none command
+
+# جست‌وجو
+rg -n --hidden -g '!.git' 'pattern'
+rg --files | fzf
+
+# editor
+nvim project-file
+# Space را بزنید و which-key را بخوانید
+```
 
 ---
 
-## درباره‌ی نویسنده‌ی این پروژه
+# اصول ثابت پروژه
 
-من برنامه‌نویس این پروژه نبودم.
+1. **منبع حقیقت دوم نساز.** proxy، shell registry، key docs و package owner باید روشن باشند.
+2. **ابزار روزمره را به زور on-demand نکن.** کاهش closure نباید workflow را خراب کند.
+3. **environment نباید هنگام ورود side effect سنگین داشته باشد.** service و model download دستی‌اند.
+4. **کد نامطمئن Home واقعی را نمی‌بیند.** Box project را هم خودکار mount نمی‌کند.
+5. **runtime state لازم را declarative جعل نکن.** Caffeine، roots و project sandbox state مالک مشخص دارند.
+6. **source check را با runtime validation اشتباه نگیر.** parser موفق، boot سالم را ثابت نمی‌کند.
+7. **دلیل تصمیم عجیب را بنویس.** ADR از تکرار شکست قبلی جلوگیری می‌کند.
 
-این سیستم با کمک هوش مصنوعی‌های مختلف و agentها ساخته و ارتقا داده شده.
-نقش من بیشتر ایده‌پرداز بود: مسیر را مشخص می‌کردم، تصمیم می‌گرفتم چه چیزی
-بماند و چه چیزی برود، و هدایتش می‌کردم به سمت آن سیستمی که در ذهنم بود.
+---
 
-این را می‌نویسم چون هم درست است و هم مهم: کسی که این مخزن را می‌خواند بهتر
-است بداند کد از کجا آمده. تصمیم‌های معماری — اینکه `box` به‌جای متغیر محیطی
-mount namespace بسازد، اینکه تکمیل خودکار AI **بعد از** کار کردن حذف شود —
-همه بحث شدند و انتخاب شدند، نه اینکه اتفاقی افتاده باشند.
+# درباره‌ی نویسندگی و AI
 
-آن بحث‌ها در [۱۰ تصمیم‌ها](10-decisions.md) ثبت شده‌اند، از جمله دفعاتی که
-جواب اول غلط بود.
+این سیستم با کمک مدل‌ها و agentهای مختلف ساخته و بازبینی شده است. نقش مالک repository تعریف هدف، انتخاب trade-off، تست روی سخت‌افزار واقعی، رد پیشنهادهای نامناسب و نگه‌داری تصمیم‌هاست.
+
+کد تولیدشده صرفاً به‌خاطر تولیدشدن پذیرفته نمی‌شود. نمونه‌های مهمی که راه اول رد شد—از command-not-found تا AI completion و Box Home-Swap—در [۱۰ تصمیم‌ها](10-decisions.md) ثبت شده‌اند.
+
+---
+
+# ادامه
+
+از [۰۱ — نقشه‌ی معماری](01-overview.md) شروع کنید.

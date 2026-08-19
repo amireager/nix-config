@@ -1,114 +1,600 @@
-# ۰۴ — خط فرمان: fish، ابزارها و پرامپت
+# ۰۴ — خط فرمان: Fish و جعبه‌ابزار عملیاتی
 
-قاعده‌ی این صفحه: **چیزی که در `man` یا `--help` هست اینجا نیست.** برای هر
-ابزار فقط آن یک یا دو چیزی نوشته شده که معمولاً کسی پیدایش نمی‌کند.
+این فصل فقط نام ابزارها را ردیف نمی‌کند. هدف این است که معلوم شود **چه ابزاری برای چه سؤال عملی انتخاب می‌شود** و چطور چند ابزار کوچک را به یک pipeline قابل اعتماد تبدیل کنیم.
+
+قاعده‌ی مثال‌ها:
+
+- commandهای read-only آزادانه نشان داده می‌شوند؛
+- commandهای تغییردهنده ابتدا با preview، `--dry-run` یا `git diff` همراه‌اند؛
+- برای نام فایل‌های دارای فاصله، از delimiter صفر (`-0`) استفاده می‌شود؛
+- regex و variableها quote می‌شوند؛
+- پیچیدگی فقط وقتی اضافه می‌شود که failure mode واقعی را حل کند.
 
 ---
 
-## fish — چرا و چه شکلی
+## Fish — رابط اصلی خط فرمان
 
-### مخفف‌ها به‌جای alias
+Fish shell اصلی کاربر است. Bash و Zsh برای compatibility و completion پشتیبانی می‌شوند، اما تنظیمات تعاملی روزانه حول Fish طراحی شده‌اند.
 
-مخفف (`abbr`) موقع تایپ **باز می‌شود**. `sw` می‌زنی و قبل از Enter، در خط
-فرمان می‌بینی `nh os switch`.
+### Abbreviation به‌جای alias پنهان
 
-تفاوتش با alias این است که همیشه می‌بینی چه چیزی اجرا می‌شود. یک alias
-مخفی که کاری غیرمنتظره کند، بعد از شش ماه یک تله است.
+Abbreviation قبل از اجرا روی خط فرمان باز می‌شود. بنابراین `sw` به شکل واقعی `nh os switch` دیده می‌شود و command تغییردهنده پنهان نمی‌ماند.
 
 | مخفف | باز می‌شود به |
 | :--- | :--- |
-| `sw` `tst` `bld` | `nh os switch` / `test` / `build` |
-| `nrs` `nrt` `nrb` | همان سه، نام دوم |
-| `nrf` | `sudo nixos-rebuild switch --flake …` |
-| `gs` `ga` `gc` | `git status` / `add` / `commit -m` |
-| `gco` `gcb` `gsw` | `git checkout` / `-b` / `switch` |
-| `gp` `gpl` | `git push` / `git pull --rebase` |
+| `sw` / `tst` / `bld` | `nh os switch` / `test` / `build` |
+| `nrs` / `nrt` / `nrb` | نام دوم همان سه عملیات |
+| `nrf` | مسیر recovery با `nixos-rebuild --flake /etc/nixos#nixos` |
+| `gs` / `ga` / `gc` | status، add و commit |
+| `gco` / `gcb` / `gsw` | checkout، ساخت branch و switch |
+| `gp` / `gpl` | push و pull با rebase |
 | `n` | `nvim` |
-| `myip` | `curl ip.me` |
+| `myip` | آدرس خروجی اینترنت با `curl ip.me` |
 
-### alias‌های واقعی
+### Aliasهایی که واقعاً جایگزین command هستند
 
-این‌ها جایگزینی‌اند، نه اختصار:
-
-| دستور | واقعاً چه اجرا می‌شود |
+| دستور | پیاده‌سازی |
 | :--- | :--- |
-| `ls` `ll` `la` | `eza` با آیکن و وضعیت git |
-| `lt` / `tree` | درخت با عمق ۲ / کامل |
+| `ls` | `eza` با icon، Git status و directory-first |
+| `ll` | long listing همراه header |
+| `la` | long listing شامل فایل‌های مخفی |
+| `lt` | tree با عمق دو |
+| `tree` | tree کامل با icon و Git status |
 | `cat` | `bat --style=plain` |
 | `top` | `btop` |
 
+برای scriptها روی alias حساب نکنید؛ command واقعی را بنویسید. Aliasها فقط رابط تعاملی‌اند.
+
+### Keybinding
+
+`Ctrl+Space` پیشنهاد فعلی autosuggestion را می‌پذیرد. این binding با Niri یا Neovim برخورد ندارد.
+
 ---
 
-## توابع خودنوشته
+## توابع محلی این repository
 
-اینجا چیزهایی است که در هیچ `man` ای نیست چون خودمان نوشتیم.
+### `proxy_on` و `proxy_off` — پروکسی همین shell
 
-### `nix_proxy` — مهم‌ترین تابع این سیستم
-
-```sh
-nix_proxy on         # پورت lib.proxy / $PROXY_PORT
-nix_proxy 1819       # یا پورت صریح
-nix_proxy off
-nix_proxy status
-```
-
-**چرا لازم است:** `nix-daemon` یک سرویس systemd جداست. متغیرهای محیطی شل
-(`HTTP_PROXY` و بقیه) روی آن **هیچ اثری ندارند**. پس یک پروکسی که در ترمینال
-کار می‌کند، `nix build` یا `sw` را عوض نمی‌کند.
-
-این تابع یک drop-in در `/run/systemd/system/nix-daemon.service.d/` می‌نویسد
-و سرویس را ریستارت می‌کند. چون در `/run` است، با ریست پاک می‌شود — عمدی، تا
-پروکسی موقت دائمی نشود.
-
-کاربرد اصلی: پلاگین‌هایی که از `codeberg.org` می‌آیند یا دانلود درایورهای تحریم‌شده.
-
-### `proxy_on` / `proxy_off` — فقط همین شل
-
-```sh
-proxy_on          # پیش‌فرض: $PROXY_PORT یا lib.proxy
-proxy_on 8080
+```bash
+proxy_on             # host/port پیش‌فرض lib.proxy
+proxy_on 8080        # port صریح، فقط 1..65535
 proxy_off
 ```
 
-فقط روی ترمینال فعلی. `NO_PROXY` لوکال‌هاست را از تونل بیرون می‌گذارد.
-پورت پیش‌فرض یک‌جاست: `lib.proxy.port`.
+این تابع نسخه‌های uppercase و lowercase متغیرهای HTTP/HTTPS/ALL proxy را تنظیم می‌کند. `NO_PROXY` آدرس‌های loopback را مستقیم نگه می‌دارد.
 
-### `px` — یک دستور از proxychains
+بررسی:
 
-```sh
-px curl https://example.com
+```bash
+env | rg -i '^(all|http|https|no)_proxy='
+myip
+proxy_off
 ```
 
-اگر متغیر `PROXY_PORT` ست شده باشد، پورت کانفیگ را نادیده می‌گیرد و به آن پورت می‌فرستد.
+### `px` — فقط یک command از proxychains
 
-### `extract` — استخراج هر فرمت آرشیو
-
-```sh
-extract archive.tar.zst
-extract file.7z
+```bash
+px curl --fail-with-body https://example.com
+PROXY_PORT=8080 px xh GET https://api.example.com/status
 ```
 
-فرمت را از پسوند تشخیص می‌دهد و ابزار درست را با فلگ‌های درست صدا می‌زند.
+اگر `PROXY_PORT` وجود داشته باشد، `px` یک config موقت permission-600 می‌سازد، فقط endpoint محلی SOCKS را عوض می‌کند، command را اجرا می‌کند و status واقعی آن را برمی‌گرداند.
+
+این روش برای command منفرد بهتر از `proxy_on` است، چون environment shell را آلوده نمی‌کند.
+
+### `nix_proxy` — پروکسی موقت daemon
+
+```bash
+nix_proxy status
+nix_proxy on          # port پیش‌فرض یا PROXY_PORT
+nix_proxy 1819        # port صریح
+nix_proxy off
+```
+
+`nix-daemon` environment ترمینال را ارث نمی‌برد. این تابع یک drop-in موقت زیر `/run/systemd/system/nix-daemon.service.d` می‌نویسد، daemon را restart می‌کند و با reboot پاک می‌شود.
+
+این تابع privileged و عمداً imperative است. کاربرد اصلی آن sourceهایی است که cache ندارند یا از شبکه‌ی مستقیم قابل دریافت نیستند.
+
+### `extract` — انتخاب extractor از روی پسوند
+
+```bash
+extract backup.tar.zst
+extract archive.7z assets.zip
+```
+
+فرمت‌های tar، gzip، bzip2، xz، zstd، zip، rar و 7z پوشش داده می‌شوند. برای archive ناشناس هیچ command حدسی اجرا نمی‌شود.
+
+### `mkcd`
+
+```bash
+mkcd reports/2026-08
+```
+
+directory را می‌سازد و فقط در صورت موفقیت وارد آن می‌شود.
 
 ---
 
-## پرامپت Starship — زیر ۳۰ میلی‌ثانیه و گویا
+# جست‌وجوی فایل و محتوا
 
-پرامپت در `modules/home/cli/starship.nix` در یک خط فشرده و متمرکز است:
+## `rg` — جست‌وجوی متن و تولید فهرست فایل
 
-* **نشانگر devShell (`nix_shell`):** تنظیم `heuristic = false;` باعث شده خارج از شل‌ها کاملاً ساکت باشد و فقط درون devShellها آیکون برفی و نام شل را چاپ کند: `(❄️ agent)`.
-* **نشانگرهای پویا:**
-  * `󰖩 1819`: وقتی پروکسی روی شل روشن است.
-  * `📦 box`: وقتی درون سندباکس `box` هستید.
-* **شمارنده‌های دقیق گیت:** `$count` به صورت صریح به هر سمبل چسبیده (`!$count`, `+$count`, `?$count`, `⇡$count`, `⇣$count`) تا شمارنده‌ها خراب رندر نشوند.
+### جست‌وجوی معمولی، شامل hidden ولی نه `.git`
+
+```bash
+rg -n --hidden -g '!.git' 'PROXY_(HOST|PORT)'
+```
+
+- `-n` شماره خط می‌دهد؛
+- `--hidden` dotfileها را می‌بیند؛
+- `-g '!.git'` metadata گیت را حذف می‌کند؛
+- pattern quote شده تا shell آن را تفسیر نکند.
+
+### فقط فایل‌های Nix، با context
+
+```bash
+rg -n -C 2 -g '*.nix' 'mkForce|mkDefault|mkAfter'
+```
+
+### استفاده از `rg --files` به‌عنوان producer
+
+```bash
+set query 'niri|noctalia'
+rg --files | rg --smart-case "$query"
+```
+
+`rg --files` محتوای فایل را جست‌وجو نمی‌کند؛ مسیر فایل‌های قابل مشاهده طبق ignore ruleها را می‌دهد. `rg` دوم روی خود pathها فیلتر می‌زند.
+
+### پیدا کردن entry pointهای Nix
+
+```bash
+rg --files -g '*.nix' |
+  rg '(^|/)(flake|default)\.nix$'
+```
+
+### pipeline امن برای نام فایل دارای فاصله
+
+```bash
+rg --files -0 -g '*.nix' |
+  xargs -0 -r rg -n --color=always 'specialArgs|extraSpecialArgs' |
+  fzf --ansi
+```
+
+`-0` و `xargs -0` delimiter را NUL می‌کنند؛ newline یا space داخل filename دیگر مرز آرگومان نیست.
+
+### خروجی machine-readable
+
+```bash
+rg --json -g '*.nix' 'proxy' |
+  jq -r 'select(.type == "match") | [.data.path.text, .data.line_number] | @tsv'
+```
+
+این روش برای automation بهتر از parse کردن output رنگی انسان‌محور است.
+
+## `rga` — همان جست‌وجو در PDF، DOCX و archive
+
+```bash
+rga -n --hidden --glob '!node_modules' \
+  'invoice|رسید|شماره پیگیری' ~/Documents
+```
+
+`ripgrep-all` converter مناسب PDF، Office document، SQLite، archive و metadata رسانه را انتخاب می‌کند. وقتی فقط source text داریم، `rg` سریع‌تر و ساده‌تر است.
+
+## `fd` — پیدا کردن path با syntax انسانی
+
+```bash
+fd -H -t f -e nix .
+fd -t f -e jpg -e png . ~/Pictures
+fd -t d '^node_modules$' .
+```
+
+- `-H` hiddenها را می‌بیند؛
+- `-t f` فقط file؛
+- `-e` extension؛
+- pattern regex است و path starting point آرگومان بعدی است.
+
+### اجرای command روی نتیجه‌ها
+
+```bash
+fd -0 -t f -e json . |
+  xargs -0 -r -n1 jq empty
+```
+
+برای preview کردن تغییر قبل از اجرا:
+
+```bash
+fd -t f -e nix . -x echo alejandra --check '{}'
+```
 
 ---
 
-## ابزارهای دائمی خط فرمان (`modules/home/cli/tools.nix`)
+# انتخاب تعاملی با FZF
 
-* **`ripgrep-all` (`rga`):** جستجوی متنی درون PDF، اسناد Word، فشرده‌ها و دیتابیس‌های SQLite.
-* **`sd`:** جایگزین بصری `sed` با سینتکس ساده: `sd 'pattern' 'replacement' file`.
-* **`doggo`:** کلاینت مدرن DNS با پشتیبانی DoH و DoT.
-* **`gping`:** پینگ با نمودار زنده در خط فرمان.
-* **`tlrc`:** کلاینت پرسرعت tldr نوشته‌شده با Rust برای مثال‌های کاربردی دستورات.
-* **`tmux`:** با تم Catppuccin، کلید prefix `Ctrl-A` و اتصال اختصاصی به Neovim REPL با `vim-slime`.
+## باز کردن فایل پیدا‌شده در Neovim
+
+```bash
+nvim (rg --files | fzf \
+  --preview 'bat --color=always --style=numbers --line-range :300 {}')
+```
+
+این syntax مخصوص Fish command substitution است. در Bash معادل `nvim "$(...)"` است.
+
+## انتخاب نتیجه‌ی جست‌وجو با preview خط
+
+```bash
+rg -n --color=always 'TODO|FIXME|HACK' |
+  fzf --ansi --delimiter : \
+      --preview 'bat --color=always --highlight-line {2} {1}'
+```
+
+`--ansi` رنگ rg را حفظ می‌کند و `{1}`/`{2}` fieldهای filename و line number هستند.
+
+## انتخاب process برای مشاهده، نه kill کورکورانه
+
+```bash
+procs --color always |
+  fzf --ansi --header 'Select a process to inspect'
+```
+
+برای signal دادن ابتدا PID و command را دوباره بررسی کنید؛ fuzzy selection نباید به عملیات destructive مستقیم وصل شود.
+
+---
+
+# مشاهده‌ی فایل، directory و دیسک
+
+## `eza`
+
+```bash
+eza -lah --git --group-directories-first
+ eza --tree --level=3 --ignore-glob='.git|node_modules|result'
+```
+
+ستون Git در `eza -l --git` برای دیدن فایل‌های modified/untracked بدون اجرای status کامل مفید است.
+
+## `bat`
+
+```bash
+bat --diff file.nix
+bat -n --line-range 120:180 modules/home/cli/fish.nix
+```
+
+`bat --diff` تغییر خطوط نسبت به Git index را کنار متن نشان می‌دهد.
+
+## `duf`، `dust` و `nix-du`
+
+```bash
+duf
+ dust -r -d 3 "$HOME"
+nix-du -s /nix/store
+```
+
+- `duf`: filesystem و mount capacity؛
+- `dust`: مصرف directory به‌شکل tree؛
+- `nix-du`: فضای store و میزان آزادشدنی با توجه به referenceها.
+
+هیچ‌کدام به‌تنهایی مجوز حذف نمی‌دهند؛ ابتدا root و generationهای نگه‌دارنده را پیدا کنید.
+
+## فایل باز و port listener
+
+```bash
+lsof ~/Downloads/archive.iso
+lsof -nP -iTCP -sTCP:LISTEN
+```
+
+`-nP` reverse DNS و تبدیل شماره port به service name را خاموش می‌کند؛ خروجی سریع‌تر و دقیق‌تر برای diagnosis است.
+
+---
+
+# تغییر متن و داده‌ی ساخت‌یافته
+
+## `sd` — جایگزینی قابل‌خواندن
+
+```bash
+rg -n 'old-name' modules docs
+sd 'old-name' 'new-name' modules/example.nix
+git diff -- modules/example.nix
+```
+
+`sd` فایل را in-place تغییر می‌دهد. اجرای `rg` قبل و `git diff` بعد، محدوده و نتیجه را قابل مشاهده می‌کند.
+
+چند فایل، امن برای فاصله:
+
+```bash
+rg -l -0 'old-name' modules |
+  xargs -0 -r sd 'old-name' 'new-name'
+```
+
+## `jq` — JSON
+
+```bash
+# انتخاب fieldها و مرتب‌سازی
+jq -r '.[] | select(.enabled) | [.name, .version] | @tsv' packages.json |
+  sort -f
+
+# گروه‌بندی و شمارش
+jq 'group_by(.status) | map({status: .[0].status, count: length})' results.json
+
+# update بدون overwrite ناامن
+jq '.settings.timeout = 30' config.json > config.json.new &&
+  jq empty config.json.new &&
+  mv config.json.new config.json
+```
+
+## `yq` — YAML
+
+```bash
+yq '.services | keys' compose.yaml
+yq '.jobs.*.runs-on' .github/workflows/*.yml
+yq -i '.version = "2"' config.yaml
+git diff -- config.yaml
+```
+
+## تبدیل output قدیمی به JSON با `jc` و query با `jq`
+
+`jc` داخل `dev cli` است:
+
+```bash
+dev cli jc ls -l /etc |
+  jq -r '.[] | select(.size > 1048576) | [.filename, .size] | @tsv'
+```
+
+این ترکیب از parse کردن columnهای متغیر output متنی قابل اعتمادتر است.
+
+## `dasel` برای چند format
+
+```bash
+dev cli dasel -f config.toml '.database.port'
+dev cli dasel -f data.xml -r xml '.users.user.[0].name'
+```
+
+وقتی یک pipeline باید JSON/YAML/TOML/XML را با interface مشابه بخواند، `dasel` مناسب‌تر از افزودن parser جدا برای هر format است.
+
+---
+
+# HTTP، دانلود و انتقال
+
+## `xh` — API تعاملی و خوانا
+
+```bash
+xh GET https://api.example.com/items page==2 limit==50
+xh POST https://api.example.com/items name='demo' enabled:=true
+xh -A bearer -a "$TOKEN" GET https://api.example.com/private
+```
+
+- `key==value` query parameter است؛
+- `key=value` JSON string؛
+- `key:=value` JSON typed value؛
+- token را در command history literal ننویسید.
+
+بررسی فقط header و status:
+
+```bash
+xh --headers --follow GET https://example.com
+```
+
+## `curl` — automation مقاوم
+
+```bash
+curl --fail-with-body --location \
+  --retry 5 --retry-all-errors --retry-delay 2 \
+  --connect-timeout 10 --max-time 120 \
+  --output artifact.tar.zst \
+  https://example.com/artifact.tar.zst
+```
+
+این optionها failure HTTP را error می‌کنند، redirect را دنبال می‌کنند، retry محدود دارند و command را بی‌نهایت معطل نمی‌کنند.
+
+دانلود resumable:
+
+```bash
+curl --fail-with-body --location --continue-at - \
+  --output large.iso https://example.com/large.iso
+```
+
+## `wget`
+
+برای mirror محدود یا ساختار directory:
+
+```bash
+wget --mirror --convert-links --adjust-extension \
+  --page-requisites --no-parent https://example.com/docs/
+```
+
+قبل از mirror، robots policy، حجم و domain scope را بررسی کنید.
+
+## `aria2c`
+
+```bash
+aria2c -x 8 -s 8 -k 1M --continue=true \
+  --max-tries=5 --retry-wait=2 \
+  https://example.com/large.iso
+```
+
+`-x` connectionهای هر server و `-s` تعداد splitهاست. عدد بالاتر همیشه بهتر نیست؛ محدودیت server و fairness را رعایت کنید.
+
+## `rsync` — همیشه اول dry-run
+
+```bash
+rsync -aHAXvn --delete --info=progress2 source/ destination/
+rsync -aHAXv  --delete --info=progress2 source/ destination/
+```
+
+- slash آخر `source/` یعنی محتوای directory؛
+- `-n` preview؛
+- `--delete` فایل اضافی مقصد را حذف می‌کند و بدون dry-run خطرناک است.
+
+ارسال remote با partial resume:
+
+```bash
+rsync -aHAX --partial --append-verify --info=progress2 \
+  ./data/ user@host:/srv/data/
+```
+
+## انتقال موقت با Magic Wormhole
+
+داخل `dev cli`:
+
+```bash
+dev cli wormhole send report.tar.zst
+dev cli wormhole receive
+```
+
+کد یک‌بارمصرف را از کانال جداگانه منتقل کنید.
+
+---
+
+# DNS و تشخیص شبکه
+
+DNS سیستم همیشه به DNSCrypt محلی اشاره می‌کند؛ ابزارهای زیر برای پرسش و diagnosis هستند، نه تغییر مالک DNS.
+
+## queryهای دقیق
+
+```bash
+dig +short A example.com
+dig +short AAAA example.com
+dig +trace example.com
+doggo example.com A @1.1.1.1
+doggo example.com HTTPS --protocol tls --server 1.1.1.1
+```
+
+مقایسه resolver محلی و خارجی:
+
+```bash
+printf 'local:  '; dig +short @127.0.0.1 example.com A
+printf 'quad9:  '; dig +short @9.9.9.9 example.com A
+```
+
+## مسیر و packet loss
+
+```bash
+mtr --report --report-cycles 20 --show-ips example.com
+gping example.com 1.1.1.1
+```
+
+packet loss روی hop میانی لزوماً loss انتها نیست؛ routerها ممکن است ICMP را rate-limit کنند. hop نهایی معیار مهم‌تری است.
+
+## port و TLS
+
+```bash
+xh --verify=yes GET https://example.com
+dev build openssl s_client -connect example.com:443 -servername example.com </dev/null
+```
+
+ابزارهای عمیق‌تر داخل `dev net`:
+
+```bash
+dev net nmap -sV --reason -Pn example.com
+dev net testssl --warnings batch example.com:443
+dev net oha -n 200 -c 10 https://example.com/health
+```
+
+فقط سامانه‌ای را scan یا load-test کنید که مالک آن هستید یا اجازه دارید.
+
+## throughput کنترل‌شده
+
+```bash
+# روی ماشین مقصد مجاز
+dev net iperf3 -s
+
+# روی client
+dev net iperf3 -c host.example -P 4 -t 20
+```
+
+`iperf3` ظرفیت مسیر را اندازه می‌گیرد، نه سرعت application یا CDN عمومی.
+
+---
+
+# Git و بررسی تغییر
+
+## قبل از commit
+
+```bash
+git status --short
+git diff --check
+git diff --stat
+git diff --word-diff=color -- docs/04-cli.md
+git diff --cached
+```
+
+`git diff --check` whitespace error و conflict markerهای واقعی را پیدا می‌کند. همیشه staged diff را جدا از working-tree diff بخوانید.
+
+## جست‌وجوی تاریخچه
+
+```bash
+git log --oneline --decorate --graph --all
+git log -S'net.ipv4.ip_forward' -- modules/nixos
+git log -G'proxy.*port' -p -- modules
+```
+
+- `-S` تغییر تعداد یک رشته را پیدا می‌کند؛
+- `-G` diffهایی را پیدا می‌کند که خطشان با regex تطبیق دارد.
+
+## مقایسه‌ی ساختاری
+
+`difftastic` در `dev agent` و `dev cli` است:
+
+```bash
+dev cli difft --display side-by-side file.old.nix file.new.nix
+GIT_EXTERNAL_DIFF=difft dev cli git diff
+```
+
+برای استفاده‌ی دائمی از external diff ابتدا رفتار exit code و pager را در repository آزمایشی بررسی کنید.
+
+---
+
+# Process، job و log
+
+ابزارهای سنگین‌تر داخل `dev cli` هستند:
+
+```bash
+dev cli procs --tree
+dev cli bandwhich
+dev cli tailspin /var/log/example.log
+dev cli pueue add -- long-running-command
+dev cli pueue status
+```
+
+`bandwhich` برای دیدن مصرف تقریبی هر process به دسترسی‌های network مناسب نیاز دارد. `pueue` commandهای طولانی را از terminal جاری جدا و صف‌بندی می‌کند؛ جای systemd service دائمی نیست.
+
+---
+
+# پرامپت Starship
+
+پرامپت عمداً کوتاه است، اما context مهم را نشان می‌دهد:
+
+- devShell فعال و نام آن؛
+- وضعیت proxy و port؛
+- حضور در Box؛
+- branch و شمارنده‌های Git؛
+- hostname فقط در SSH؛
+- exit status command شکست‌خورده.
+
+اگر prompt کند شد:
+
+```bash
+starship timings
+```
+
+ابتدا module کند را پیدا کنید؛ خاموش‌کردن تصادفی همه‌ی indicatorها diagnosis نیست.
+
+---
+
+# انتخاب ابزار بر اساس سؤال
+
+| سؤال | ابزار اول | ابزار دوم/ترکیب |
+| :--- | :--- | :--- |
+| متن کجاست؟ | `rg` | `fzf`, `jq --json` |
+| filename کجاست؟ | `fd` یا `rg --files` | `fzf` |
+| متن داخل PDF/DOCX چیست؟ | `rga` | `fzf` |
+| چه چیزی دیسک را پر کرده؟ | `duf`, `dust` | `nix-du`, `nix-tree` |
+| چه processای port را گرفته؟ | `lsof -nP -i` | `procs` |
+| JSON/YAML چه ساختاری دارد؟ | `jq`, `yq` | `fx`, `jless`, `dasel` |
+| API چه برمی‌گرداند؟ | `xh` | `jq` |
+| دانلود ناپایدار است؟ | `curl --retry` | `aria2c` |
+| sync چه چیزی را حذف می‌کند؟ | `rsync -n --delete` | سپس اجرای بدون `-n` |
+| DNS کجا متفاوت است؟ | `dig`, `doggo` | `mtr`, `testssl` |
+| command واقعاً سریع‌تر شد؟ | `hyperfine` | warmup و چند run |
+| یک تغییر Nix چرا بزرگ شد؟ | `nix-diff`, `nix-tree` | [فصل ۰۲](02-nix.md) |
+
+---
+
+بعدی: [۰۵ دسکتاپ](05-desktop.md)

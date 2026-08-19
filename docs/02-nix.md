@@ -1,122 +1,420 @@
-# ۰۲ — دستورهای Nix که واقعاً به کار می‌آیند
+# ۰۲ — عملیات Nix: ساخت، تحلیل، پاک‌سازی و بازگشت
 
-این صفحه آموزش زبان Nix نیست. فهرست دستورهایی است که در این سیستم نصب‌اند و
-روزی که چیزی خراب شود یا دیسک پر شود، همان‌هایی‌اند که سراغشان می‌روی.
-بعضی‌شان دائمی‌اند (چون وقتی به آن‌ها نیاز داری معمولاً وسط یک مشکلی) و
-بعضی داخل `dev nix` هستند.
+این فصل commandهای Nix را بر اساس ریسک و سؤال عملی مرتب می‌کند. هدف حفظ یک workflow قابل بازگشت است، نه حفظ‌کردن تعداد زیادی flag.
+
+مسیر پایدار Flake روی سیستم نصب‌شده `/etc/nixos` است. این مسیر symlink به checkout واقعی Git است:
+
+```bash
+readlink -f /etc/nixos
+git -C /etc/nixos status --short
+```
+
+در نتیجه `nh`، recovery commandها و helperها مستقل از محل واقعی checkout یک entry point مشترک دارند.
 
 ---
 
-## ساخت سیستم
+# چهار سطح عملیات
 
-| مخفف  | دستور کامل     | چه می‌کند                               |
-| :---- | :------------- | :-------------------------------------- |
-| `sw`  | `nh os switch` | بساز، اعمال کن، برای بوت بعدی هم ثبت کن |
-| `tst` | `nh os test`   | بساز و اعمال کن، ولی بعد از ریست نباشد  |
-| `bld` | `nh os build`  | فقط بساز، هیچ چیز را عوض نکن            |
+| سطح | نمونه | اثر |
+| :--- | :--- | :--- |
+| Source inspection | `git diff`, `statix`, `deadnix` | فقط فایل‌ها را می‌خواند |
+| Evaluation | `nix flake show`, `nix eval` | expression را ارزیابی می‌کند؛ build ندارد |
+| Build | `nh os build` | derivationها را می‌سازد؛ سیستم جاری را عوض نمی‌کند |
+| Activation | `nh os test/switch` | generation جدید را روی سیستم واقعی فعال می‌کند |
 
-`tst` برای وقتی است که مطمئن نیستی: اگر سیستم خراب شد، ریست کافی است.
-
-```sh
-nh os switch --ask        # اول تفاوت را نشان بده، بعد بپرس
-nh os switch -- --show-trace   # وقتی خطا مبهم است
-```
-
-`nh` روی `nixos-rebuild` نشسته و دو کار اضافه می‌کند: خروجی خوانا (با
-`nix-output-monitor`) و نمایش تفاوت نسل‌ها. اگر خودش خراب شد، راه خام هست:
-
-```sh
-nrf     # sudo nixos-rebuild switch --flake /etc/nixos#nixos
-```
-
-### به‌روزرسانی
-
-```sh
-nix flake update                          # همه ی inputها
-nix flake lock --update-input nixpkgs     # فقط یکی
-```
-
-بعدش `bld` بزن نه `sw` — اول ببین می‌سازد.
+این repository در CI فقط سطح اول را اجرا می‌کند. Evaluation، build و activation تصمیم صریح کاربر روی ماشین هدف‌اند.
 
 ---
 
-## دیسک پر شده
+# workflow امن تغییر سیستم
 
-اولین سؤال: چه چیزی جا گرفته؟
+## ۱. Source را بخوان
 
-```sh
-nix-size                  # حجم closure سیستم فعلی + ۲۵ عامل بزرگ
-nix-size /nix/store/xxx   # حجم هر مسیر دیگر
-nix-du -s /nix/store      # کدام مسیرها واقعاً دیسک می‌خورند
+```bash
+cd /etc/nixos
+git status --short
+git diff --check
+git diff --stat
+git diff
 ```
 
-`nix-size` خودنوشته است (در `dev nix`) چون فراخوانی مفیدش طولانی است:
-`nix path-info -rSh` بعد مرتب‌سازی بعد ۲۵ تای اول.
+## ۲. بررسی source-only
 
-تفاوت مهم: `nix-du` فضای **واقعاً آزادشدنی** را می‌گوید — یک مسیر ۲ گیگی که
-پنج نسل به آن اشاره می‌کنند، با پاک کردن یکی آزاد نمی‌شود.
-
-### پاک کردن
-
-```sh
-nh clean all --keep 5     # پنج نسل آخر را نگه دار، بقیه را پاک کن
-nh clean all --keep 3     # وقتی دیسک خیلی پر است
+```bash
+dev nix
+nix-check
 ```
 
-`nh clean` خودش هم `nix-collect-garbage` می‌زند و هم لاگ‌های قدیمی boot loader
-را تمیز می‌کند.
+`nix-check` در این repository چهار بررسی انجام می‌دهد:
 
-اگر سیستم بوت نشد و در حالت rescue هستی:
+1. parse کردن مستقل تمام فایل‌های `.nix`؛
+2. `statix check`؛
+3. `deadnix --fail`؛
+4. `alejandra --check`.
 
-```sh
-nix-collect-garbage -d    # همه ی نسل های قدیمی غیر از فعلی را پاک کن
+این command عمداً `nix flake check`، build، network fetch یا activation انجام نمی‌دهد.
+
+## ۳. فقط build
+
+```bash
+bld
+# معادل
+nh os build
+```
+
+اگر تغییر بزرگ است:
+
+```bash
+nh os build --ask
+```
+
+`--ask` قبل از عملیات نهایی تفاوت generation را نشان می‌دهد. build موفق هنوز اثبات نمی‌کند login manager، GPU، suspend یا network runtime درست‌اند.
+
+## ۴. test موقت
+
+```bash
+tst
+# معادل
+nh os test
+```
+
+`test` generation را فعال می‌کند ولی آن را default boot نمی‌کند. برای desktop، driver، network و service change مناسب‌تر از switch مستقیم است.
+
+## ۵. switch پایدار
+
+```bash
+sw
+# معادل
+nh os switch
+```
+
+راه recovery بدون `nh`:
+
+```bash
+nrf
+# sudo nixos-rebuild switch --flake /etc/nixos#nixos
 ```
 
 ---
 
-## چرا rebuild شد؟
+# Flake و inputها
 
-وقتی یک تغییر کوچک دادی و نیم ساعت build طول کشید، یعنی چیزی در بالای درخت
-عوض شده. برای پیدا کردنش:
+## دیدن pinها بدون خواندن JSON خام
 
-```sh
+```bash
+nix flake metadata /etc/nixos
+nix flake metadata /etc/nixos --json |
+  jq -r '.locks.nodes | to_entries[] | [.key, (.value.locked.rev // "-")] | @tsv'
+```
+
+## دیدن outputها
+
+```bash
+nix flake show /etc/nixos
+```
+
+این command evaluation انجام می‌دهد، اما package را build نمی‌کند.
+
+## به‌روزرسانی کنترل‌شده
+
+قبل از update:
+
+```bash
+git status --short
+git diff -- flake.lock
+```
+
+یک input:
+
+```bash
+nix flake update nixpkgs
+```
+
+همه‌ی inputها:
+
+```bash
+nix flake update
+```
+
+بعد از update:
+
+```bash
+git diff --stat -- flake.lock
+git diff -- flake.lock
+bld
+```
+
+Update قفل و تغییر configuration را در یک commit مخلوط نکنید، مگر وابستگی مستقیم داشته باشند. یک lock update مستقل rollback و diagnosis را آسان‌تر می‌کند.
+
+## چرا `follows` مهم است؟
+
+Home Manager، Niri، Noctalia، Zen Browser و nix-index-database به nixpkgs اصلی follow می‌کنند. بدون آن ممکن است چند nixpkgs متفاوت وارد graph شوند و package ABI، evaluation و closure را پیچیده کنند.
+
+---
+
+# فهمیدن چیزی که قرار است عوض شود
+
+## generationها
+
+```bash
+sudo nix-env --list-generations --profile /nix/var/nix/profiles/system
+```
+
+## تفاوت closure دو generation
+
+```bash
+nix store diff-closures \
+  /nix/var/nix/profiles/system-42-link \
+  /nix/var/nix/profiles/system-43-link
+```
+
+برای current و result حاصل از build:
+
+```bash
+nix store diff-closures /run/current-system ./result
+```
+
+## چرا یک dependency وجود دارد؟
+
+```bash
+nix why-depends /run/current-system /nix/store/<hash>-package
+```
+
+ابتدا path دقیق را پیدا کنید:
+
+```bash
+nix path-info -r /run/current-system | rg '/[^/]*-ffmpeg-'
+```
+
+سپس همان path را به `nix why-depends` بدهید. این command مسیر dependency را نشان می‌دهد؛ package را حذف نمی‌کند.
+
+## درخت تعاملی dependency
+
+```bash
+nix-tree /run/current-system
+```
+
+کلیدهای خود TUI را از help همان برنامه ببینید. کاربرد اصلی: یافتن package کوچکی که یک closure بسیار بزرگ را وارد کرده است.
+
+## فرق derivationها
+
+```bash
 nix-diff /run/current-system ./result
 ```
 
-خروجی نشان می‌دهد دقیقاً کدام پکیج عوض شده و باعث build شدن بقیه شده —
-مثلاً `glibc` یا `openssl` تغییر کرده و کل دنیای وابسته بازسازی شده.
+`nix-diff` برای سؤال «چرا rebuild شد؟» مناسب است؛ `diff-closures` برای سؤال «چه packageهایی اضافه یا حذف شدند؟».
 
 ---
 
-## داخل `dev nix`
+# اندازه‌ی closure و مصرف واقعی دیسک
 
-ابزارهایی برای نوشتن، تست و دیباگ پکیج‌های Nix:
+## اندازه‌ی closure
 
-```sh
-dev nix
+```bash
+nix path-info -Sh /run/current-system
+nix path-info -rSh /run/current-system |
+  sort -k2 -hr |
+  head -25
 ```
 
-| دستور | چه کار می‌کند |
-| :--- | :--- |
-| `nix-check` | اجرای statix + deadnix + flake check روی پروژه فعلی |
-| `nix-size [path]` | تحلیل حجم closure و ۲۵ پکیج بزرگ |
-| `nurl <url>` | تولید fetcher expression از یک آدرس گیت |
-| `nix-init <url>` | ساخت خودکار اسکلت یک پکیج جدید از یک URL |
-| `nix-update <attr>` | به‌روزرسانی خودکار نسخه و هش یک پکیج |
-| `nix-search-tv` | جستجوی تعاملی و TUI در میان تمام پکیج‌های nixpkgs |
-| `nixpkgs-review pr 12345` | دانلود و تست یک PR از nixpkgs قبل از مرج |
-| `nix-fast-build` | بیلد موازی خروجی‌های یک flake |
+helper داخل `dev nix`:
+
+```bash
+dev nix nix-size
+dev nix nix-size /nix/store/<path>
+```
+
+Closure size اندازه‌ی logical تمام dependencyهاست. دو closure ممکن است store pathهای مشترک داشته باشند؛ جمع اعداد آن‌ها برابر فضای فیزیکی مصرف‌شده نیست.
+
+## فضای آزادشدنی
+
+```bash
+nix-du -s /nix/store
+```
+
+یک store path بزرگ که چند root به آن اشاره می‌کنند با حذف یک generation آزاد نمی‌شود. `nix-du` referenceها را در نظر می‌گیرد و برای تصمیم cleanup مناسب‌تر است.
+
+## چه چیزی package را زنده نگه داشته؟
+
+```bash
+nix-store --query --roots /nix/store/<path>
+nix-store --gc --print-roots | rg 'dev-roots|profiles|current-system'
+```
+
+Root را بدون شناخت حذف نکنید. system generation، user profile، dev root یا result symlink ممکن است مالک آن باشد.
 
 ---
 
-## بازگشت به عقب (Rollback)
+# GC-rootهای محیط‌های توسعه
 
-اگر تغییری دادی و سیستم ناپایدار شد:
+```bash
+dev --roots
+dev --keep rust
+dev --unkeep rust
+dev --prune
+```
 
-```sh
+هر environment نگه‌داری‌شده root صریح زیر مسیر زیر دارد:
+
+```text
+~/.local/share/dev-roots/<name>/gc-root
+```
+
+بررسی مستقل daemon:
+
+```bash
+nix-store --gc --print-roots | rg "$HOME/.local/share/dev-roots"
+```
+
+اگر daemon root registry قابل خواندن نباشد، `dev` وضعیت را `unknown` گزارش می‌کند و prune مخرب انجام نمی‌دهد.
+
+---
+
+# پاک‌سازی با ترتیب درست
+
+## ابتدا ببین
+
+```bash
+dev --roots
+sudo nix-env --list-generations --profile /nix/var/nix/profiles/system
+nix-du -s /nix/store
+```
+
+## سپس generationهای قدیمی
+
+```bash
+nh clean all --keep 10 --keep-since 10d
+```
+
+همین policy در configuration نیز برای cleanup خودکار `nh` ثبت شده است.
+
+در فشار شدید دیسک می‌توان موقتاً تعداد کمتری نگه داشت، اما قبل از حذف generation سالمی که برای rollback لازم است تصمیم بگیرید.
+
+## garbage collection خام
+
+```bash
+nix-collect-garbage -d
+```
+
+`-d` generationهای قدیمی profileها را نیز حذف می‌کند. این command recovery history را کم می‌کند و نباید اولین قدم باشد.
+
+## optimize با GC فرق دارد
+
+```bash
+nix store optimise
+```
+
+Optimize فایل‌های یکسان store را hard-link می‌کند؛ package یا generation حذف نمی‌کند. در این سیستم optimize به‌صورت هفتگی هم فعال است.
+
+---
+
+# Rollback و recovery
+
+## بازگشت از سیستم فعال
+
+```bash
 nh os switch --rollback
 ```
 
-اگر سیستم بالا نیامد: در منوی boot loader (که systemd-boot است)، کلیدهای
-جهت‌نما را بزن و نسل قبلی را انتخاب کن. هر نسل یک سیستم کامل و مستقل است که
-دقیقاً مثل روز اول کار می‌کند.
+## اگر desktop بالا نیامد
+
+1. reboot؛
+2. در systemd-boot generation قبلی را انتخاب کنید؛
+3. وارد TTY شوید؛
+4. diff آخرین commit را بررسی کنید؛
+5. generation سالم را switch کنید یا commit مشکل‌دار را revert کنید.
+
+## Revert بهتر از پاک‌کردن دستی source است
+
+```bash
+git log --oneline -10
+git revert <bad-commit>
+bld
+tst
+```
+
+Revert تاریخچه و دلیل تغییر را حفظ می‌کند. `git reset --hard` برای repository عمومی و patch series معمولاً انتخاب مناسبی نیست.
+
+---
+
+# ابزارهای دائمی Nix
+
+این‌ها بیرون از devShell نصب‌اند چون هنگام خرابی باید فوراً در دسترس باشند:
+
+| ابزار | سؤال |
+| :--- | :--- |
+| `nix-tree` | چه dependencyهایی در closure هستند؟ |
+| `nix-diff` | چرا دو derivation فرق دارند؟ |
+| `nix-du` | چه چیزی واقعاً فضای store را نگه داشته؟ |
+| `nix-melt` | lock file چه graphی دارد؟ |
+| `nix-output-monitor` | build در کدام مرحله است؟ |
+| `statix` | anti-patternهای Nix کجاست؟ |
+| `deadnix` | binding بلااستفاده کجاست؟ |
+| `alejandra` | format canonical repository چیست؟ |
+| `nixd` | LSP فایل‌های Nix چگونه فراهم می‌شود؟ |
+| `nix-locate` | کدام package یک binary/file را دارد؟ |
+| `,` | چگونه package را یک‌بار بدون نصب اجرا کنم؟ |
+
+نمونه:
+
+```bash
+nix-locate --minimal --whole-name bin/rg
+, cowsay hello
+```
+
+`,` environment موقت می‌سازد؛ package را به configuration اضافه نمی‌کند.
+
+---
+
+# `dev nix` برای packaging و review
+
+```bash
+dev nix
+```
+
+| ابزار | کاربرد |
+| :--- | :--- |
+| `nurl` | تولید fetcher expression از URL |
+| `nix-init` | ساخت scaffold پکیج |
+| `nix-update` | update نسخه و hash |
+| `nix-prefetch` / `nix-prefetch-git` | محاسبه hash source |
+| `nixpkgs-review` | بررسی PR nixpkgs |
+| `nix-fast-build` | build موازی outputها |
+| `nix-search-tv` | جست‌وجوی تعاملی package |
+| `nix-check` | parser + Statix + Deadnix + Alejandra، بدون Flake evaluation |
+| `nix-size` | closure size و بزرگ‌ترین contributorها |
+
+Recipe ساخت package جدید:
+
+```bash
+mkdir -p /tmp/package-review && cd /tmp/package-review
+dev nix
+nix-init https://github.com/owner/project
+alejandra package.nix
+statix check package.nix
+```
+
+هیچ expression تولیدشده‌ای را بدون خواندن license، source، install phase و dependencyها وارد system configuration نکنید.
+
+---
+
+# checklist قبل و بعد از تغییر بزرگ
+
+```text
+قبل:
+[ ] working tree را می‌شناسم
+[ ] generation سالم برای rollback دارم
+[ ] rootهای dev مهم ثبت‌اند
+[ ] تغییر hardware/network را مستقیم switch نمی‌کنم
+
+بعد:
+[ ] source checks پاس شده
+[ ] build موفق بوده
+[ ] diff closure خوانده شده
+[ ] test روی desktop/network/suspend انجام شده
+[ ] فقط سپس switch و commit نهایی انجام شده
+```
+
+---
+
+بعدی: [۰۳ محیط‌های توسعه](03-dev.md)
