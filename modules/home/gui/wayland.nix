@@ -48,7 +48,6 @@
 
     # Clipboard & Wayland Utilities
     wl-clipboard # Wayland clipboard utilities (wl-copy / wl-paste)
-    cliphist # Clipboard history CLI (To wipe all: `cliphist wipe && wl-copy --clear`)
 
     # Keyboard-Centric Fuzzel Utilities
     networkmanager_dmenu # NetworkManager dmenu/fuzzel WiFi switcher

@@ -4,10 +4,12 @@ _box() {
   opts=(
     '-e[Pure in-memory RAM mode (tmpfs)]'
     '--ephemeral[Pure in-memory RAM mode (tmpfs)]'
+    '--tmp[Pure in-memory RAM mode (tmpfs)]'
     '--secure[Clear inherited env and hide broad /run and /var mounts]'
     '--dry-run[Print sandbox plan without starting it]'
     '-n[Completely cut off network access]'
     '--offline[Completely cut off network access]'
+    '--no-net[Completely cut off network access]'
     '--net[Network mode]:mode:(host none proxy proxy\:@proxyPort@)'
     '-P[Set local SOCKS5 proxy environment]:port:'
     '--proxy[Set local SOCKS5 proxy environment]:port:'

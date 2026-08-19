@@ -6,8 +6,8 @@
     ../../modules/nixos/network.nix
     ../../modules/nixos/security.nix
     # ../../modules/nixos/desktop.nix
-    # ../../modules/nixos/laptop.nix
-    # ../../modules/nixos/nvidia.nix
+    # ../../modules/nixos/hardware/laptop.nix
+    # ../../modules/nixos/hardware/nvidia.nix
   ];
 
   # boot.loader.systemd-boot.enable = true;

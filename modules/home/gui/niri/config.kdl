@@ -129,6 +129,9 @@ debug {
 }
 
 binds {
+    // === Help ===
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
     // === Launchers ===
     Mod+Space { spawn-sh "noctalia msg panel-toggle launcher"; }
     Mod+S { spawn-sh "noctalia msg panel-toggle control-center"; }
@@ -240,12 +243,5 @@ binds {
     Mod+I { spawn-sh "noctalia msg caffeine-toggle"; }
 }
 
-// Idle management:
-// - 10 min: lock screen (noctalia or swaylock fallback)
-// - 15 min: monitors off
-// - 30 min: suspend
-// spawn-at-startup "swayidle" "-w" \
-//     "timeout" "600" "noctalia msg session lock || swaylock -f -c 1e1e2e" \
-//     "timeout" "900" "niri msg action power-off-monitors" \
-//     "resume" "niri msg action power-on-monitors" \
-//     "timeout" "1800" "systemctl suspend"
+// Idle timeouts are intentionally managed in Noctalia Settings. This keeps the
+// caffeine toggle available for temporarily inhibiting the configured actions.

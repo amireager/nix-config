@@ -17,16 +17,35 @@ let
   # Scan the running system's closure for known CVEs.
   sysAudit = pkgs.writeShellScriptBin "audit-system" ''
     set -u
+    status=0
+
     echo -e "\033[1;36m━━━ [1/2] CVEs in the current system closure ━━━\033[0m"
-    ${pkgs.vulnix}/bin/vulnix --system || true
+    ${pkgs.vulnix}/bin/vulnix --system || status=1
 
     echo
     echo -e "\033[1;36m━━━ [2/2] Insecure packages permitted in config ━━━\033[0m"
-    if grep -rn "permittedInsecurePackages" "''${NIX_CONFIG_FLAKE:-/etc/nixos}" 2>/dev/null; then
-      echo "  ^ audit these: is the CVE still relevant, or is this stale?"
+    target="''${NIX_CONFIG_FLAKE:-/etc/nixos}"
+    if [ ! -d "$target" ]; then
+      echo "  audit-system: config directory not found: $target" >&2
+      status=1
     else
-      echo "  none — clean & secure"
+      grep -RIn --include='*.nix' --exclude-dir=.git --exclude-dir=.direnv \
+        -E '(^|[.;[:space:]])permittedInsecurePackages[[:space:]]*=' "$target" 2>/dev/null
+      grep_status=$?
+      case "$grep_status" in
+        0)
+          echo "  ^ audit these: is the CVE still relevant, or is this stale?"
+          status=1
+          ;;
+        1) echo "  none — clean & secure" ;;
+        *)
+          echo "  audit-system: could not scan $target" >&2
+          status=1
+          ;;
+      esac
     fi
+
+    exit "$status"
   '';
 
   # Secret-leak sweep over a repository, including its history.
@@ -34,29 +53,39 @@ let
     set -u
     TARGET="''${1:-.}"
     cd "$TARGET" || exit 1
+    status=0
 
     echo -e "\033[1;36m━━━ [1/2] Secrets in working tree and git history ━━━\033[0m"
-    ${pkgs.gitleaks}/bin/gitleaks detect --source . --redact --no-banner || true
+    ${pkgs.gitleaks}/bin/gitleaks detect --source . --redact --no-banner || status=1
 
     echo
     echo -e "\033[1;36m━━━ [2/2] Known vulnerabilities in lockfiles ━━━\033[0m"
-    if ls flake.lock Cargo.lock package-lock.json pnpm-lock.yaml \
-          poetry.lock uv.lock go.sum requirements.txt >/dev/null 2>&1; then
-      ${pkgs.osv-scanner}/bin/osv-scanner scan source -r . || true
+    if ! lockfile="$(${pkgs.findutils}/bin/find . -path './.git' -prune -o -type f \
+      \( -name flake.lock -o -name Cargo.lock -o -name package-lock.json \
+      -o -name pnpm-lock.yaml -o -name poetry.lock -o -name uv.lock \
+      -o -name go.sum -o -name requirements.txt \) -print -quit)"; then
+      echo "  audit-repo: could not search for lockfiles" >&2
+      status=1
+    elif [ -n "$lockfile" ]; then
+      ${pkgs.osv-scanner}/bin/osv-scanner scan source -r . || status=1
     else
       echo "  no recognised lockfile here"
     fi
+
+    exit "$status"
   '';
 
   # Master 1-click audit command
   auditAll = pkgs.writeShellScriptBin "audit-all" ''
     set -u
+    status=0
     echo -e "\033[1;35m════════════════════════════════════════════════════════════\033[0m"
     echo -e "\033[1;35m           🔒 FULL REPO & SYSTEM AUDIT SUITE                \033[0m"
     echo -e "\033[1;35m════════════════════════════════════════════════════════════\033[0m\n"
-    ${repoAudit}/bin/audit-repo "''${1:-.}"
+    ${repoAudit}/bin/audit-repo "''${1:-.}" || status=1
     echo
-    ${sysAudit}/bin/audit-system
+    ${sysAudit}/bin/audit-system || status=1
+    exit "$status"
   '';
 in
   mkDevShell {
@@ -87,7 +116,7 @@ in
       # ── Signing & secrets at rest ──
       cosign # Sign and verify artifacts
       age # Modern file encryption
-      sops # Encrypted config files (pairs with agenix already in use)
+      sops # Encrypted config files
 
       # ── Master Helpers ──
       sysAudit

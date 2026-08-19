@@ -1,5 +1,5 @@
 # ============================================================
-# KEYD — Kernel-level Key Remapper Daemon (CapsLock Navigation)
+# KEYD — Kernel-level CapsLock tap/hold remapping
 # ============================================================
 _: {
   services.keyd = {
@@ -7,20 +7,9 @@ _: {
     keyboards = {
       default = {
         ids = ["*"];
-        settings = {
-          main = {
-            # Tap = Escape, Hold = Navigation Layer (Vim motion & scrolling)
-            capslock = "overload(navigation, esc)";
-          };
-
-          navigation = {
-            h = "left";
-            j = "down";
-            k = "up";
-            l = "right";
-            u = "pageup";
-            d = "pagedown";
-          };
+        settings.main = {
+          # Tap = Escape; hold = Meta/Super for Niri's Mod shortcuts.
+          capslock = "overload(meta, esc)";
         };
       };
     };

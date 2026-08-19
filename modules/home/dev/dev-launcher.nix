@@ -127,6 +127,9 @@
       OPT_VERBOSE=0
       OPT_SHELL_SET=0
       INTERACTIVE_SHELL="''${DEV_SHELL:-fish}"
+      GC_ROOTS=""
+      GC_ROOTS_LOADED=0
+      GC_ROOTS_OK=0
 
       _require_flake() {
         if [ ! -f "$FLAKE_PATH/flake.nix" ]; then
@@ -157,6 +160,28 @@
           ${registeredCases}
           *) return 1 ;;
         esac
+      }
+
+      _load_gc_roots() {
+        if [ "$GC_ROOTS_LOADED" -eq 1 ]; then
+          [ "$GC_ROOTS_OK" -eq 1 ]
+          return
+        fi
+
+        GC_ROOTS_LOADED=1
+        if GC_ROOTS="$(nix-store --gc --print-roots 2>/dev/null)"; then
+          GC_ROOTS_OK=1
+          return 0
+        fi
+
+        GC_ROOTS=""
+        GC_ROOTS_OK=0
+        return 1
+      }
+
+      _root_is_daemon_registered() {
+        local root="$1"
+        [ "$GC_ROOTS_OK" -eq 1 ] && grep -Fq "$root -> " <<< "$GC_ROOTS"
       }
 
       _safe_name() {
@@ -203,7 +228,15 @@
       _root_state() {
         local name="$1" dir="$ROOT_BASE/$1"
         if [ -L "$dir/gc-root" ]; then
-          [ -e "$dir/gc-root" ] && printf 'kept\n' || printf 'broken\n'
+          if [ ! -e "$dir/gc-root" ]; then
+            printf 'broken\n'
+          elif [ "$GC_ROOTS_OK" -ne 1 ]; then
+            printf 'unknown\n'
+          elif _root_is_daemon_registered "$dir/gc-root"; then
+            printf 'kept\n'
+          else
+            printf 'unregistered\n'
+          fi
         elif [ -e "$dir/gc-root" ]; then
           printf 'broken\n'
         elif [ -L "$ROOT_BASE/$name-profile" ]; then
@@ -215,11 +248,29 @@
         fi
       }
 
+      _root_closure_size() {
+        local dir="$1" target line size
+        [ -L "$dir/gc-root" ] && [ -e "$dir/gc-root" ] || {
+          printf 'unknown\n'
+          return 0
+        }
+        target="$(readlink -f -- "$dir/gc-root" 2>/dev/null || true)"
+        [ -n "$target" ] || {
+          printf 'unknown\n'
+          return 0
+        }
+        line="$(nix path-info -Sh "$target" 2>/dev/null || true)"
+        size="$(printf '%s\n' "$line" | sed -n '1{s/^[^[:space:]]*[[:space:]]*//;p;}')"
+        printf '%s\n' "''${size:-unknown}"
+      }
+
       _root_mark() {
         case "$(_root_state "$1")" in
           kept) ROOT_MARK="\033[1;32m●\033[0m"; ROOT_LABEL="kept" ;;
           legacy) ROOT_MARK="\033[1;33m◆\033[0m"; ROOT_LABEL="legacy" ;;
+          unregistered) ROOT_MARK="\033[1;31m!\033[0m"; ROOT_LABEL="unregistered" ;;
           broken | stale) ROOT_MARK="\033[1;31m!\033[0m"; ROOT_LABEL="broken" ;;
+          unknown) ROOT_MARK="\033[1;33m?\033[0m"; ROOT_LABEL="unknown" ;;
           *) ROOT_MARK="\033[1;30m○\033[0m"; ROOT_LABEL="not kept" ;;
         esac
       }
@@ -247,7 +298,10 @@
       }
 
       _forget_stale_indirect_roots() {
-        nix-store --gc --print-roots >/dev/null 2>&1 || true
+        if ! nix-store --gc --print-roots >/dev/null 2>&1; then
+          echo "dev: roots were removed, but the Nix daemon could not refresh its indirect-root registry" >&2
+          return 1
+        fi
       }
 
       _list_roots() {
@@ -257,8 +311,11 @@
           return 0
         fi
 
-        local gc_roots found=0 dir name state generations used registered label mark
-        gc_roots="$(nix-store --gc --print-roots 2>/dev/null || true)"
+        if ! _load_gc_roots; then
+          printf '\033[1;33m│\033[0m  ? Nix daemon root registry unavailable; registration states are unknown\n' >&2
+        fi
+
+        local found=0 dir name state generations used registered label mark closure_size
         for dir in "$ROOT_BASE"/*/; do
           dir="''${dir%/}"
           if [ ! -d "$dir" ] || [ -L "$dir" ]; then continue; fi
@@ -272,15 +329,16 @@
 
           if [ "$registered" -eq 0 ]; then
             mark="\033[1;33m◆\033[0m"; label="orphan"
-          elif [ "$state" = "kept" ] && grep -Fq "$dir/gc-root -> " <<< "$gc_roots"; then
-            mark="\033[1;32m●\033[0m"; label="kept"
           elif [ "$state" = "kept" ]; then
-            mark="\033[1;31m!\033[0m"; label="unregistered"
+            mark="\033[1;32m●\033[0m"; label="kept"
+          elif [ "$state" = "unknown" ]; then
+            mark="\033[1;33m?\033[0m"; label="unknown"
           else
             mark="\033[1;31m!\033[0m"; label="$state"
           fi
-          printf '\033[1;36m│\033[0m  %b %-12s %-12s generations=%-2s last=%s\n' \
-            "$mark" "$name" "$label" "$generations" "$used"
+          closure_size="$(_root_closure_size "$dir")"
+          printf '\033[1;36m│\033[0m  %b %-12s %-12s generations=%-2s closure=%-10s last=%s\n' \
+            "$mark" "$name" "$label" "$generations" "$closure_size" "$used"
           found=1
         done
 
@@ -293,7 +351,12 @@
           found=1
         done
 
-        [ "$found" -eq 1 ] && printf '\033[1;36m╰─\033[0m root: %s\n' "$ROOT_BASE" || printf '\033[1;36m╰─\033[0m none\n'
+        if [ "$found" -eq 1 ]; then
+          printf '\033[1;36m╰─\033[0m root: %s\n' "$ROOT_BASE"
+          printf '   closure sizes include shared store paths and are not additive.\n'
+        else
+          printf '\033[1;36m╰─\033[0m none\n'
+        fi
       }
 
       _prune_roots() {
@@ -302,9 +365,13 @@
           return 0
         fi
 
+        if ! _load_gc_roots; then
+          echo "dev: cannot query the Nix daemon root registry; prune aborted without changes" >&2
+          return 1
+        fi
+
         local -a prune_dirs=() prune_legacy=()
-        local gc_roots dir name state reason legacy legacy_name
-        gc_roots="$(nix-store --gc --print-roots 2>/dev/null || true)"
+        local dir name state reason legacy legacy_name
         for dir in "$ROOT_BASE"/*/; do
           dir="''${dir%/}"
           if [ ! -d "$dir" ] || [ -L "$dir" ]; then continue; fi
@@ -315,8 +382,6 @@
             reason="orphan"
           elif [ "$state" != "kept" ]; then
             reason="$state"
-          elif ! grep -Fq "$dir/gc-root -> " <<< "$gc_roots"; then
-            reason="unregistered"
           fi
           if [ -n "$reason" ]; then
             prune_dirs+=("$dir")
@@ -377,7 +442,7 @@
       GC-root management:
         dev --keep ENV            Realise/refresh the named root without entering
         dev --no-keep ENV ...     Run without creating or refreshing a root
-        dev --roots               List kept, broken, legacy and orphan roots
+        dev --roots               List registration, last use and closure size for every root
         dev --unkeep ENV          Remove one named root, including an orphan
         dev --unkeep-all          Remove every devShell root with confirmation
         dev --prune               Remove broken, legacy and orphan roots with confirmation
@@ -458,6 +523,12 @@
 
       _require_flake
 
+      # The fast menu remains evaluation-free, but reads the daemon's root list
+      # once so a plain symlink is never presented as GC-protected.
+      if [ "$OPT_INTERACTIVE" -eq 1 ] || { [ "$ACTION" = "launch" ] && [ $# -eq 0 ]; }; then
+        _load_gc_roots || true
+      fi
+
       if [ "$OPT_INTERACTIVE" -eq 1 ]; then
         [ "$ACTION" = "launch" ] || { echo "dev: --interactive cannot be combined with $ACTION" >&2; exit 1; }
         [ $# -eq 0 ] || { echo "dev: --interactive does not take an environment name" >&2; exit 1; }
@@ -477,7 +548,7 @@
         printf '\033[1;36m╭────────────────────────────────────────────────────────────╮\033[0m\n'
         printf '\033[1;36m│ \033[1;35m🚀 On-Demand DevShell Manager                            \033[1;36m│\033[0m\n'
         printf '\033[1;36m╰────────────────────────────────────────────────────────────╯\033[0m\n'
-        printf '\033[1;30m  ● kept   ○ not kept   ◆ legacy   ! broken   ·   dev -i to select\033[0m\n\n'
+        printf '\033[1;30m  ● kept   ○ not kept   ◆ legacy   ! broken/unregistered   ? unknown   ·   dev -i to select\033[0m\n\n'
         ${menuGroups}
         printf '  aliases: %s\n' ${lib.escapeShellArg menuAliases}
         printf '  \033[1;30mdev --keep <env> · dev --roots · dev --prune · dev --help\033[0m\n'

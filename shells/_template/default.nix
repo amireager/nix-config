@@ -7,19 +7,19 @@
 # DEVSHELL TEMPLATE — copy this directory to create a new environment
 # ==============================================================================
 #   cp -r shells/_template shells/mynew
-# then register it in shells/default.nix (two lines: the import and the attr).
+# then add "mynew" to shellDirs and the appropriate group in shells/registry.nix.
 #
 # ── Why mkDevShell instead of pkgs.mkShell ────────────────────────────────
 # Every shell here used to hand-roll the same banner, the same DEVSHELL_*
 # exports and the same `name = "x-env"`. That was roughly 30% of each file,
-# duplicated 11 times, and the ASCII box had to be re-aligned by hand every
+# duplicated 12 times, and the ASCII box had to be re-aligned by hand every
 # time a line of text changed. mkDevShell takes the data and generates the
 # rest, measuring the box at runtime so emoji do not break the alignment.
 #
 # ── Escape hatch ──────────────────────────────────────────────────────────
 # Nothing forces you through this builder. A shell may still be a plain
-# `pkgs.mkShell { ... }` — the registry in shells/default.nix does not care
-# what a directory returns, as long as it is a derivation.
+# `pkgs.mkShell { ... }` — shells/default.nix resolves entries from the central
+# registry and only requires each registered directory to return a derivation.
 #
 # For the original raw-mkShell reference template, see git history:
 #

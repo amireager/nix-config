@@ -15,10 +15,6 @@
     settings = {
       experimental-features = ["nix-command" "flakes"];
 
-      # GC resilience: keep build outputs and derivations of live profiles/devShells from being collected.
-      keep-outputs = false;
-      keep-derivations = false;
-
       # Store optimization: deduplicate identical files in /nix/store.
       auto-optimise-store = true;
 

@@ -2,7 +2,14 @@
 set -euo pipefail
 
 _BAKED_PROXY_PORT="@proxyPort@"
-if [[ "${PROXY_PORT:-}" =~ ^[0-9]+$ ]] && [ "$PROXY_PORT" -ge 1 ] && [ "$PROXY_PORT" -le 65535 ]; then
+
+is_valid_port() {
+  local port="$1"
+  [[ "$port" =~ ^[0-9]{1,5}$ ]] || return 1
+  ((10#$port >= 1 && 10#$port <= 65535))
+}
+
+if is_valid_port "${PROXY_PORT:-}"; then
   DEFAULT_PROXY_PORT="$PROXY_PORT"
 else
   DEFAULT_PROXY_PORT="$_BAKED_PROXY_PORT"
@@ -265,8 +272,8 @@ while [ $# -gt 0 ]; do
         proxy:*)
           OPT_OFFLINE=0
           OPT_PROXY="${2#proxy:}"
-          [[ "$OPT_PROXY" =~ ^[0-9]+$ ]] || {
-            echo -e "${C_RED}box: invalid proxy port in --net $2${C_RESET}" >&2
+          is_valid_port "$OPT_PROXY" || {
+            echo -e "${C_RED}box: invalid proxy port in --net $2 (expected 1..65535)${C_RESET}" >&2
             exit 1
           }
           ;;
@@ -286,6 +293,9 @@ while [ $# -gt 0 ]; do
       if [ $# -ge 2 ] && [[ "$2" =~ ^[0-9]+$ ]]; then
         OPT_PROXY="$2"
         shift 2
+      elif [ $# -ge 2 ] && [[ "$2" =~ ^[-+][0-9]+$ ]]; then
+        echo -e "${C_RED}box: invalid proxy port: $2 (expected 1..65535)${C_RESET}" >&2
+        exit 1
       else
         OPT_PROXY="$DEFAULT_PROXY_PORT"
         shift
@@ -335,6 +345,11 @@ while [ $# -gt 0 ]; do
       ;;
   esac
 done
+
+if [ -n "$OPT_PROXY" ] && ! is_valid_port "$OPT_PROXY"; then
+  echo -e "${C_RED}box: invalid proxy port: $OPT_PROXY (expected 1..65535)${C_RESET}" >&2
+  exit 1
+fi
 
 # ── Workspace & Storage Resolution ───────────────────────────────────────
 BOX_DIR="$PROJECT_ROOT/.box"

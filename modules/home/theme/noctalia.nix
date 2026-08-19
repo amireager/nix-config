@@ -6,9 +6,14 @@
     systemd.enable = true;
     settings = {
       shell = {
-        font = "JetBrainsMono Nerd Font";
+        font_family = "JetBrainsMono Nerd Font";
         settings_show_advanced = true;
         launch_apps_as_systemd_services = true;
+        niri_overview_type_to_launch_enabled = true;
+
+        # Niri enables Polkit itself; Noctalia supplies the graphical agent that
+        # presents authentication prompts inside the desktop session.
+        polkit_agent = true;
       };
       theme = {
         mode = "dark";
@@ -16,23 +21,16 @@
         builtin = "Catppuccin";
       };
       wallpaper.enabled = true;
-      bar = {
+      bar.default = {
         position = "top";
-        margin_top = 8;
-        margin_left = 12;
-        margin_right = 12;
+        margin_edge = 8;
+        margin_ends = 12;
       };
-      notifications = {
-        enabled = true;
-        timeout = 5000;
-      };
-      launcher.enable = true;
-      control_center.enable = true;
+      notifications.enable_daemon = true;
       dock = {
         enabled = true;
         position = "bottom";
       };
-      niri.overview_type_to_launch_enabled = true;
     };
   };
 }

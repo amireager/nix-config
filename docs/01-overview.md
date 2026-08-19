@@ -70,7 +70,7 @@ home-manager
 را به‌همراه بنر و متغیرهای محیطی می‌سازد. ثبت و مرتب‌سازی GC-root وظیفه‌ی launcher سراسری `dev` است.
 
 قبل از این سازنده، هر شل همان سه کار را دستی تکرار می‌کرد — حدود ۳۰٪ هر فایل،
-یازده بار. حالا هر شل فقط داده است.
+دوازده بار. حالا هر شل فقط داده است.
 
 ---
 
@@ -107,7 +107,7 @@ users/amir/
 | `network.nix` | NetworkManager، DNSCrypt با resolv.conf پین، proxychains، MTR، vnStat. پورت از `lib.proxy` |
 | `security.nix` | فایروال، sudo-rs، AppArmor، USBGuard، fwupd |
 | `desktop.nix` | Niri/SDDM، portalها، PipeWire، Thunar |
-| `keyd.nix` | تغییر نگاشت کلید در سطح evdev (تبدیل CapsLock به Esc/Control) |
+| `keyd.nix` | تغییر نگاشت کلید در سطح evdev (ضربه‌ی CapsLock به Esc، نگه‌داشتن به Super) |
 | `hardware/nvidia.nix` | گرافیک هیبریدی Prime با `open = false` |
 | `hardware/laptop.nix` | lid/power، پروفایل AC/باتری، UPower، SMART |
 

@@ -26,7 +26,7 @@ nh os switch -- --show-trace   # وقتی خطا مبهم است
 `nix-output-monitor`) و نمایش تفاوت نسل‌ها. اگر خودش خراب شد، راه خام هست:
 
 ```sh
-nrf     # sudo nixos-rebuild switch --flake /home/user/nix-config#nixos
+nrf     # sudo nixos-rebuild switch --flake /etc/nixos#nixos
 ```
 
 ### به‌روزرسانی

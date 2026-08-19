@@ -53,13 +53,13 @@ dev --unkeep rust           حذف حفاظت GC یک محیط
 ```sh
 dev --keep <name>       ایجاد یا refresh کردن root بدون ورود
 dev --no-keep <name>    اجرا بدون ایجاد یا refresh کردن root
-dev --roots             بررسی registration، generation و زمان آخرین استفاده
+dev --roots             بررسی registration، generation، حجم closure و زمان آخرین استفاده
 dev --unkeep <name>     حذف root مشخص، حتی اگر shell از registry حذف شده باشد
 dev --unkeep-all        حذف همه‌ی rootها با تأیید کاربر
 dev --prune             حذف rootهای broken، legacy، unregistered و orphan با تأیید
 ```
 
-`--no-keep` یک root موجود را حذف نمی‌کند؛ فقط آن را refresh نمی‌کند. برای آزاد کردن واقعی closure باید `--unkeep` اجرا شود. وضعیت‌های منو و `--roots` نیز دقیق‌اند: `kept`، `not kept`، `broken`، `legacy`، `unregistered` و `orphan`. ثبت daemon را می‌توان مستقل نیز دید:
+`--no-keep` یک root موجود را حذف نمی‌کند؛ فقط آن را refresh نمی‌کند. برای آزاد کردن واقعی closure باید `--unkeep` اجرا شود. وضعیت‌های منو و `--roots` نیز دقیق‌اند: `kept`، `not kept`، `broken`، `legacy`، `unregistered`، `orphan` و در صورت در دسترس نبودن daemon، `unknown`. حجم نمایش‌داده‌شده اندازه‌ی closure هر root است؛ چون store pathهای مشترک در چند closure تکرار می‌شوند، این عددها را نباید با هم جمع کرد. ثبت daemon را می‌توان مستقل نیز دید:
 
 ```sh
 nix-store --gc --print-roots | grep dev-roots
