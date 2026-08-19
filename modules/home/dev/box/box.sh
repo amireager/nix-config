@@ -1,6 +1,13 @@
 # shellcheck shell=bash
 set -euo pipefail
 
+_BAKED_PROXY_PORT="@proxyPort@"
+if [[ "${PROXY_PORT:-}" =~ ^[0-9]+$ ]] && [ "$PROXY_PORT" -ge 1 ] && [ "$PROXY_PORT" -le 65535 ]; then
+  DEFAULT_PROXY_PORT="$PROXY_PORT"
+else
+  DEFAULT_PROXY_PORT="$_BAKED_PROXY_PORT"
+fi
+
 # ── Color Palette (Evaluated via printf for clean terminal display) ───────
 C_RESET="$(printf '\033[0m')"
 C_BOLD="$(printf '\033[1m')"
@@ -33,7 +40,7 @@ ${C_BOLD}FLAGS & MODIFIERS:${C_RESET}
   ${C_YELLOW}--dry-run${C_RESET}                    Print the sandbox plan without creating or running anything.
   ${C_YELLOW}-n, --offline, --no-net${C_RESET}      Completely cut off network access (Zero-Net).
   ${C_YELLOW}--net <MODE>${C_RESET}                 Network mode: host, none, or proxy[:PORT].
-  ${C_YELLOW}-P, --proxy [PORT]${C_RESET}           Set SOCKS5 proxy environment (default: 1819).
+  ${C_YELLOW}-P, --proxy [PORT]${C_RESET}           Set SOCKS5 proxy environment (default: ${DEFAULT_PROXY_PORT}).
   ${C_YELLOW}-g, --gpu${C_RESET}                    Grant access to Nvidia GPU and CUDA devices.
   ${C_YELLOW}-s, --share <SRC>[:<DST>]${C_RESET}   Read-Only share (repeatable).
   ${C_YELLOW}-S, --share-rw <SRC>[:<DST>]${C_RESET} Read-Write share (repeatable).
@@ -253,7 +260,7 @@ while [ $# -gt 0 ]; do
           ;;
         proxy)
           OPT_OFFLINE=0
-          OPT_PROXY="1819"
+          OPT_PROXY="$DEFAULT_PROXY_PORT"
           ;;
         proxy:*)
           OPT_OFFLINE=0
@@ -280,7 +287,7 @@ while [ $# -gt 0 ]; do
         OPT_PROXY="$2"
         shift 2
       else
-        OPT_PROXY="1819"
+        OPT_PROXY="$DEFAULT_PROXY_PORT"
         shift
       fi
       ;;
@@ -657,6 +664,8 @@ if [ -n "$OPT_PROXY" ]; then
     --setenv http_proxy "$PROXY_URL"
     --setenv https_proxy "$PROXY_URL"
     --setenv SOCKS5_SERVER "127.0.0.1:$OPT_PROXY"
+    --setenv NO_PROXY "127.0.0.1,localhost,::1"
+    --setenv no_proxy "127.0.0.1,localhost,::1"
   )
 fi
 

@@ -1,38 +1,60 @@
 {
   pkgs,
   lib,
+  proxy,
   ...
 }: {
   # ============================================================
-  # NETWORKING — Amir's NixOS
+  # NETWORKING — static resolv.conf (pre-harden method) + opt-in proxy
   # ============================================================
 
   networking = {
+    enableIPv6 = false;
+
     networkmanager = {
       enable = true;
-      dns = "none"; # dnscrypt-proxy handles DNS
+      # DNS is owned by the static resolv.conf below, not by DHCP.
+      dns = "none";
     };
+
+    # Never let openresolv regenerate the file. That path wrote 127.0.0.1
+    # as a regular file and NixOS would not replace it.
     resolvconf.enable = false;
     nameservers = ["127.0.0.1"];
   };
 
-  # === TCP Optimization (BBR) ===
+  environment = {
+    etc."resolv.conf".text = lib.mkForce ''
+      nameserver 127.0.0.1
+    '';
+
+    sessionVariables = {
+      PROXY_HOST = proxy.host;
+      PROXY_PORT = toString proxy.port;
+    };
+  };
+
+  # environment.etc skips a leftover regular file. Force the symlink so a
+  # previous generation's resolvconf output cannot stick around.
+  system.activationScripts.forceResolvConf = {
+    deps = ["etc"];
+    text = ''
+      ln -sfn /etc/static/resolv.conf /etc/resolv.conf
+    '';
+  };
+
   boot.kernel.sysctl = {
     "net.core.default_qdisc" = "fq";
     "net.ipv4.tcp_congestion_control" = "bbr";
-    "net.ipv4.tcp_fastopen" = 3;
-    "net.core.rmem_max" = 16777216;
-    "net.core.wmem_max" = 16777216;
-    "net.ipv4.tcp_rmem" = "4096 87380 16777216";
-    "net.ipv4.tcp_wmem" = "4096 65536 16777216";
     "net.ipv4.tcp_mtu_probing" = 1;
-    "net.ipv4.ip_forward" = 1; # Required for tun2proxy / sing-box TUN interfaces
+    "net.ipv4.ip_forward" = 1;
   };
 
-  # === Services: DNSCrypt & Resolved ===
   services = {
     resolved.enable = false;
 
+    # Same resolver settings that worked at 3501d38. Do not tighten filters
+    # or hand ownership to resolvconf.
     dnscrypt-proxy = {
       enable = true;
       settings = {
@@ -61,38 +83,28 @@
         block_ipv6 = true;
       };
     };
+
+    vnstat.enable = true;
   };
 
-  # Prevent dnscrypt-proxy from delaying shutdown
-  systemd.services.dnscrypt-proxy.serviceConfig.TimeoutStopSec = "5";
+  systemd.services = {
+    NetworkManager-wait-online.enable = false;
+    dnscrypt-proxy.serviceConfig.TimeoutStopSec = "5";
+  };
 
-  # === Proxychains Configuration ===
-  programs.proxychains = {
-    enable = true;
-    proxies.default = {
+  programs = {
+    mtr.enable = true;
+
+    proxychains = {
       enable = true;
-      type = "socks5";
-      host = "127.0.0.1";
-      port = 1819; # Default Aether port.
+      package = pkgs.proxychains-ng;
+      proxyDNS = true;
+      chain.type = "strict";
+      proxies.default = {
+        enable = true;
+        type = "socks5";
+        inherit (proxy) host port;
+      };
     };
-  };
-
-  # === Environment Settings & System Packages ===
-  environment = {
-    etc."resolv.conf".text = lib.mkForce ''
-      nameserver 127.0.0.1
-    '';
-
-    systemPackages = with pkgs; [
-      sing-box
-      tun2proxy
-      proxychains-ng
-      byedpi
-      xray # Modern core for v2rayA (Vless/Reality)
-      v2rayn # Desktop alternative
-      wireguard-tools
-      iproute2
-      tor
-    ];
   };
 }

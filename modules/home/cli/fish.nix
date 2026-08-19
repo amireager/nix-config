@@ -2,6 +2,7 @@
   pkgs,
   hostname,
   flakePath,
+  proxy,
   ...
 }: {
   # ============================================================
@@ -134,10 +135,6 @@
 
       # === Proxy Management ===
       myip = "curl ip.me";
-
-      # === Sandbox (Firejail) ===
-      fj = "firejail --private=. --whitelist=$(pwd)";
-      fjx = "firejail --private=. --net=none --whitelist=$(pwd)";
     };
 
     functions = {
@@ -156,14 +153,28 @@
       proxy_on = {
         description = "Enable proxy for the current shell session";
         body = ''
-          set -l port 1819
+          set -l port ${toString proxy.port}
           if test (count $argv) -gt 0
             set port $argv[1]
+          else if set -q PROXY_PORT; and string match -qr '^[0-9]+$' -- $PROXY_PORT
+            set port $PROXY_PORT
           end
-          set -gx ALL_PROXY "socks5h://127.0.0.1:$port"
-          set -gx HTTP_PROXY "socks5h://127.0.0.1:$port"
-          set -gx HTTPS_PROXY "socks5h://127.0.0.1:$port"
-          echo -e "\033[1;32m[+] Proxy Enabled in this terminal (127.0.0.1:$port)\033[0m"
+          if not string match -qr '^[0-9]+$' -- $port; or test $port -lt 1; or test $port -gt 65535
+            echo "proxy_on: invalid port: $port" >&2
+            return 2
+          end
+
+          set -l url "socks5h://${proxy.host}:$port"
+          set -l bypass "127.0.0.1,localhost,::1"
+          set -gx ALL_PROXY $url
+          set -gx HTTP_PROXY $url
+          set -gx HTTPS_PROXY $url
+          set -gx all_proxy $url
+          set -gx http_proxy $url
+          set -gx https_proxy $url
+          set -gx NO_PROXY $bypass
+          set -gx no_proxy $bypass
+          echo -e "\033[1;32m[+] Proxy Enabled in this terminal (${proxy.host}:$port)\033[0m"
         '';
       };
 
@@ -173,8 +184,12 @@
         body = ''
           set -l dir /run/systemd/system/nix-daemon.service.d
           set -l conf $dir/zz-nix-proxy.conf
+          set -l action status
+          if test (count $argv) -gt 0
+            set action $argv[1]
+          end
 
-          switch "$argv[1]"
+          switch $action
             case off
               sudo rm -f $conf
               sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
@@ -189,16 +204,25 @@
               else
                 echo -e "\033[1;30m[-] nix-daemon: direct\033[0m"
               end
-              echo "    usage: nix_proxy <port> | nix_proxy off | nix_proxy status"
+              echo "    usage: nix_proxy on | nix_proxy <port> | nix_proxy off | nix_proxy status"
 
-            case '*'
-              set -l port $argv[1]
-              if not string match -qr '^[0-9]+$' -- $port
-                echo -e "\033[1;31mnix_proxy: '$port' is not a port number\033[0m" >&2
-                echo "    usage: nix_proxy <port> | nix_proxy off | nix_proxy status" >&2
-                return 1
+            case on '*'
+              set -l port
+              if test $action = on
+                set port ${toString proxy.port}
+                if set -q PROXY_PORT; and string match -qr '^[0-9]+$' -- $PROXY_PORT
+                  set port $PROXY_PORT
+                end
+              else
+                set port $argv[1]
               end
-              set -l url "socks5h://127.0.0.1:$port"
+              if not string match -qr '^[0-9]+$' -- $port; or test $port -lt 1; or test $port -gt 65535
+                echo -e "\033[1;31mnix_proxy: invalid port: '$port'\033[0m" >&2
+                echo "    usage: nix_proxy on | nix_proxy <port> | nix_proxy off | nix_proxy status" >&2
+                return 2
+              end
+              set -l url "socks5h://${proxy.host}:$port"
+              set -l bypass "127.0.0.1,localhost,::1"
 
               sudo mkdir -p $dir
               printf '%s\n' \
@@ -206,7 +230,11 @@
                 "Environment=\"http_proxy=$url\"" \
                 "Environment=\"https_proxy=$url\"" \
                 "Environment=\"all_proxy=$url\"" \
-                "Environment=\"no_proxy=127.0.0.1,localhost,::1,cache.nixos.org\"" \
+                "Environment=\"HTTP_PROXY=$url\"" \
+                "Environment=\"HTTPS_PROXY=$url\"" \
+                "Environment=\"ALL_PROXY=$url\"" \
+                "Environment=\"no_proxy=$bypass\"" \
+                "Environment=\"NO_PROXY=$bypass\"" \
                 | sudo tee $conf >/dev/null
 
               sudo systemctl daemon-reload
@@ -220,22 +248,53 @@
       proxy_off = {
         description = "Disable proxy for the current shell session";
         body = ''
-          set -e ALL_PROXY HTTP_PROXY HTTPS_PROXY
+          for name in ALL_PROXY HTTP_PROXY HTTPS_PROXY all_proxy http_proxy https_proxy NO_PROXY no_proxy
+            set -e $name
+          end
           echo -e "\033[1;31m[-] Proxy Disabled\033[0m"
         '';
       };
 
       # === Dynamic Proxychains Wrapper ===
       px = {
-        description = "Run a command with proxychains, ignoring hardcoded port if PROXY_PORT is set";
+        description = "Run one command through proxychains (PROXY_PORT overrides the default)";
         body = ''
-          if set -q PROXY_PORT
-            set tmp_conf "/tmp/proxychains_dynamic.conf"
-            cat /etc/proxychains.conf | sed -E "s/socks5 \+127.0.0.1 \+[0-9]+/socks5  127.0.0.1  $PROXY_PORT/" > $tmp_conf
-            proxychains4 -f $tmp_conf $argv
-          else
-            proxychains4 -q $argv
+          if test (count $argv) -eq 0
+            echo "usage: px <command> [args...]" >&2
+            return 2
           end
+
+          if not set -q PROXY_PORT
+            command proxychains4 -q $argv
+            return $status
+          end
+
+          if not string match -qr '^[0-9]+$' -- $PROXY_PORT; or test $PROXY_PORT -lt 1; or test $PROXY_PORT -gt 65535
+            echo "px: invalid PROXY_PORT: $PROXY_PORT" >&2
+            return 2
+          end
+
+          if not grep -Eq '^[[:space:]]*socks5[[:space:]]+127\\.0\\.0\\.1[[:space:]]+[0-9]+' /etc/proxychains.conf
+            echo "px: local SOCKS5 entry not found in /etc/proxychains.conf" >&2
+            return 1
+          end
+
+          set -l tmp_dir /tmp
+          set -q TMPDIR; and set tmp_dir $TMPDIR
+          set -l tmp_conf (mktemp -p "$tmp_dir" proxychains.XXXXXX.conf)
+          or return 1
+          chmod 600 $tmp_conf
+
+          if not sed -E "s|^([[:space:]]*socks5[[:space:]]+127\\.0\\.0\\.1[[:space:]]+)[0-9]+|\\1$PROXY_PORT|" \
+            /etc/proxychains.conf > $tmp_conf
+            rm -f -- $tmp_conf
+            return 1
+          end
+
+          command proxychains4 -q -f $tmp_conf $argv
+          set -l command_status $status
+          rm -f -- $tmp_conf
+          return $command_status
         '';
       };
 

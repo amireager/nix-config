@@ -37,9 +37,8 @@
     # Screenshot, Recording & Keycasting Tools
     grim # Wayland screenshot tool
     slurp # Interactive region selection for grim
-    wl-screenrec # Hardware-accelerated Wayland screen recorder (Vulkan/VA-API)
-    gpu-screen-recorder # Ultra-fast GPU screen recorder
-    gpu-screen-recorder-gtk # Initial GUI menu for recording (region/window/audio toggle)
+    # GTK frontend wraps the GPU recorder backend.
+    gpu-screen-recorder-gtk
     wshowkeys # Live Wayland keycaster (shows pressed keys on screen during recording)
 
     # Hardware & Audio Controls
@@ -71,14 +70,10 @@
 
     # --- Helper Script: Open Recording GUI Menu or Toggle Recording ---
     (writeShellScriptBin "record-screen" ''
-      if pgrep -x wl-screenrec > /dev/null; then
-        pkill -INT -x wl-screenrec
-        notify-send -t 4000 "🎥 Screen Recorder" "Recording stopped and saved to $HOME/Videos."
-      elif pgrep -x gpu-screen-rec > /dev/null; then
-        pkill -INT -x gpu-screen-rec
+      if pgrep -f '(^|/)gpu-screen-recorder([[:space:]]|$)' > /dev/null; then
+        pkill -INT -f '(^|/)gpu-screen-recorder([[:space:]]|$)'
         notify-send -t 4000 "🎥 Screen Recorder" "Recording stopped."
       else
-        # Launch the intuitive GUI menu to select window/region, toggle audio and start
         gpu-screen-recorder-gtk &
       fi
     '')

@@ -42,8 +42,7 @@ home-manager
 
 ## `flake.nix` — ورودی
 
-هفت input، همه با `follows = "nixpkgs"` تا فقط یک نسخه‌ی nixpkgs در کل درخت
-باشد:
+شش input؛ وابسته‌ها با `follows = "nixpkgs"` به nixpkgs اصلی وصل‌اند:
 
 | input | برای چه |
 | :--- | :--- |
@@ -52,7 +51,6 @@ home-manager
 | `niri` | کامپوزیتور گرافیکی |
 | `noctalia` | نوار و ویجت‌ها |
 | `zen-browser` | مرورگر وب |
-| `agenix` | رمزگذاری رازها با age |
 | `nix-index-database` | ایندکس از پیش ساخته |
 
 `nix-index-database` یک تصمیم زمانی است: بدون آن، `nix-locate` و `,` تا وقتی
@@ -106,12 +104,12 @@ users/amir/
 | فایل | چه کار می‌کند |
 | :--- | :--- |
 | `core.nix` | تنظیمات Nix، بوت، کرنل Zen، ZRAM، داکر/پادمن، `nh`، فونت‌های Vazirmatn و JetBrainsMono |
-| `network.nix` | NetworkManager، BBR، DNS رمزگذاری‌شده، proxychains |
-| `security.nix` | فایروال، sudo-rs، AppArmor، firejail، OpenSnitch، USBGuard |
-| `desktop.nix` | niri، greeter، thunar |
+| `network.nix` | NetworkManager، DNSCrypt با resolv.conf پین، proxychains، MTR، vnStat. پورت از `lib.proxy` |
+| `security.nix` | فایروال، sudo-rs، AppArmor، USBGuard، fwupd |
+| `desktop.nix` | Niri/SDDM، portalها، PipeWire، Thunar |
 | `keyd.nix` | تغییر نگاشت کلید در سطح evdev (تبدیل CapsLock به Esc/Control) |
 | `hardware/nvidia.nix` | گرافیک هیبریدی Prime با `open = false` |
-| `hardware/laptop.nix` | برق و حرارت لپ‌تاپ |
+| `hardware/laptop.nix` | lid/power، پروفایل AC/باتری، UPower، SMART |
 
 شرحش در [۰۹ باید و نباید](09-rules.md) — چون بیشترشان تصمیم‌اند نه تنظیم.
 
@@ -140,7 +138,7 @@ users/amir/
 
 ---
 
-## `shells/` — یازده محیط
+## `shells/` — دوازده محیط
 
 هیچ‌کدام نصب نیستند. `dev <name>` می‌سازدشان.
 
@@ -155,17 +153,11 @@ users/amir/
 | `build` | GCC، Clang، CMake، Ninja — با نام `dev c` هم |
 | `cli` | ابزارهای تحلیل و پروفایلینگ سنگین (`hyperfine`, `watchexec`, `tokei`, `bandwhich`) |
 | `media` | ffmpeg-full، vips، ImageMagick، OCR (`ocrmypdf`), PDF |
+| `net` | هسته‌های پروکسی و ابزار packet/TLS؛ سرویس نیستند |
 | `nix` | بسته‌بندی، بازبینی، تحلیل closure (`nix-check`, `nix-size`) |
 | `audit` | بررسی CVE، سکرت‌ها، قفل‌فایل‌ها، سخت‌سازی سیستم (`audit-all`) |
 
 `shells/registry.nix` نام‌ها، گروه‌ها و aliasها را یک‌جا نگه می‌دارد. منوی سریع و completionهای `dev` از همین داده و metadata فایل‌های shell می‌خوانند و برای نمایش فهرست هیچ Flake evaluationی انجام نمی‌دهند. `devShellsMeta` نیز برای مصرف‌کنندگان Flake صادر می‌شود.
-
----
-
-## `secrets/` — agenix
-
-رازها با `age` رمز شده‌اند و در گیت هستند. کلید خصوصی روی ماشین است، نه در
-مخزن. هیچ رمزی به‌صورت متن ساده در این درخت نیست.
 
 ---
 

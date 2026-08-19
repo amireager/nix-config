@@ -24,11 +24,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    agenix = {
-      url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Pre-built nix-index database, rebuilt daily upstream.
     # Replaces local `nix-index` runs (~10 min of CPU) and makes `comma`
     # work immediately after a fresh install.

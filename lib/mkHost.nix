@@ -1,4 +1,7 @@
-{inputs}: {
+{
+  inputs,
+  proxy,
+}: {
   hostname,
   hostModules ? [],
   users ? {},
@@ -17,23 +20,24 @@ in
     #   'stdenv.hostPlatform.system'
     # Setting nixpkgs.hostPlatform in a module is the supported way, and it
     # is what the deprecated argument does internally anyway.
-    specialArgs = {inherit inputs hostname system flakePath;};
+    specialArgs = {inherit inputs hostname system flakePath proxy;};
     modules =
       hostModules
       ++ userSystemModules
       ++ [
-        {nixpkgs.hostPlatform = system;}
-        inputs.agenix.nixosModules.default
+        {
+          nixpkgs.hostPlatform = system;
+          networking.hostName = hostname;
+        }
         inputs.home-manager.nixosModules.home-manager
         {
           home-manager = {
             useGlobalPkgs = true;
             useUserPackages = true;
             backupFileExtension = "backup";
-            extraSpecialArgs = {inherit inputs hostname system flakePath;};
+            extraSpecialArgs = {inherit inputs hostname system flakePath proxy;};
             users = userHomeModules;
 
-            # Modules applied to every user of this host.
             sharedModules = [
               inputs.nix-index-database.homeModules.nix-index
             ];

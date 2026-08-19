@@ -164,3 +164,23 @@ PATH» است.**
 ۱. تعریف صریح آرایه رنگ‌های ۸ گانه (`SnacksIndent1` تا `SnacksIndent8`) در کانفیگ `indent` و `scope`.
 ۲. نگاشت این ۸ سطح به پالت هارمونیک تم‌های Catppuccin Mocha و Nightfox.
 ۳. غیرفعال‌سازی انیمیشن اسکوپ (`animate = { enabled = false }`) برای پاسخ‌دهی بلادرنگ.
+
+---
+
+## OpenSnitch و Firejail حذف شدند
+
+**وضعیت:** هر دو روی سیستم بودند. `box` سندباکس واقعی است.
+
+**OpenSnitch:** تا UI وصل نباشد practically خاموش است. وقتی UI به session چسبید، default deny روی Niri پاپ‌آپ را نشان نداد و DNS/پروکسی ساکت drop شدند.
+
+**Firejail:** با `box` دو مدل سندباکس موازی بود. aliasهای `fj`/`fjx` دیگر منبع حقیقت نیستند.
+
+**مانده:** فایروال ورودی، sudo-rs، AppArmor، USBGuard (BadUSB + allow)، و `fwupd`.
+
+---
+
+## مالکیت DNS برگشت به روش قبل از harden
+
+`resolvconf.enable = false` و `mkForce` روی `/etc/resolv.conf` ماند. Activation هر بار
+`ln -sfn /etc/static/resolv.conf` می‌زند تا خروجی کهنهٔ resolvconf نماند.
+DNSCrypt همان تنظیم `3501d38` است. پورت پروکسی یک‌جاست: `lib.proxy`.

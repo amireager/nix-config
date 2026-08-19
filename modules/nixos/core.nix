@@ -1,7 +1,6 @@
 {
   pkgs,
   flakePath,
-  inputs ? {},
   ...
 }: {
   # ============================================================
@@ -60,14 +59,10 @@
     };
   };
 
-  # === IPv6 ===
-  networking.enableIPv6 = false;
-
   # === Firmware ===
-  hardware = {
-    enableAllFirmware = true;
-    enableRedistributableFirmware = true;
-  };
+  # AMD microcode and common Wi-Fi/audio/Bluetooth blobs. Non-redistributable
+  # extras stay out until a device actually needs them.
+  hardware.enableRedistributableFirmware = true;
 
   # === Fast & Silent Boot Architecture (Zen Kernel for Low Latency) ===
   boot = {
@@ -101,10 +96,8 @@
 
   # === Service & Shutdown Timeouts + OOM Daemon ===
   systemd = {
-    # Speed up shutdown: default 90s -> 10s, prevent 2-minute stalls.
-    settings.Manager.DefaultTimeoutStopSec = "10s";
-    # Do not wait for network at boot -- services that need it will wait on their own.
-    services.NetworkManager-wait-online.enable = false;
+    # 10s cut off disk flushes and containers; 30s stays responsive.
+    settings.Manager.DefaultTimeoutStopSec = "30s";
     oomd = {
       enable = true;
       enableUserSlices = true;
@@ -224,7 +217,6 @@
     nvme-cli
     efibootmgr
     lm_sensors
-    inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 
   # === Programs & CLI Wrappers ===

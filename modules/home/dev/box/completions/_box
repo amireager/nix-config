@@ -8,7 +8,7 @@ _box() {
     '--dry-run[Print sandbox plan without starting it]'
     '-n[Completely cut off network access]'
     '--offline[Completely cut off network access]'
-    '--net[Network mode]:mode:(host none proxy proxy\:1819)'
+    '--net[Network mode]:mode:(host none proxy proxy\:@proxyPort@)'
     '-P[Set local SOCKS5 proxy environment]:port:'
     '--proxy[Set local SOCKS5 proxy environment]:port:'
     '-g[Grant access to Nvidia GPU and CUDA devices]'

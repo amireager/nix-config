@@ -1,7 +1,7 @@
 # ۰۳ — محیط‌های توسعه: On-Demand و ایزوله
 
 هیچ کامپایلری، هیچ زبان‌سرور سنگینی، هیچ ابزار پروفایلینگی در سیستم پایه نصب
-نیست. یازده محیط وجود دارند که **لحظه‌ی ورود** ساخته می‌شوند.
+نیست. دوازده محیط وجود دارند که **لحظه‌ی ورود** ساخته می‌شوند.
 
 دلیلش فقط حجم نیست. یک پروفایل سیستم که همه‌چیز در آن است، هر بار
 `nix flake update` می‌زنی همه‌چیز را دوباره می‌سازد.
@@ -67,7 +67,7 @@ nix-store --gc --print-roots | grep dev-roots
 
 ---
 
-## تشریح ۱۱ محیط توسعه و ابزارهای آن‌ها
+## تشریح ۱۲ محیط توسعه و ابزارهای آن‌ها
 
 ### ۱. `dev agent` — عامل‌های هوش مصنوعی و خودکارسازی
 محیط عملیاتی برای اجرای عامل‌های خودکار (مانند Hermes و OpenCode) با ابزارهای AST:
@@ -130,16 +130,23 @@ nix-store --gc --print-roots | grep dev-roots
 
 ---
 
-### ۹. `dev media` — پردازش تصویر و ویدیو
+### ۹. `dev net` — هسته‌های پروکسی و تشخیص شبکه
+بسته‌اند، سرویس نیستند. فیلتر را خودت روی `$PROXY_PORT` بالا می‌آوری.
+* **هسته‌ها:** `sing-box`, `xray`, `v2rayn`, `tor`, `tun2proxy`, `byedpi`, `wireguard-tools`
+* **تشخیص:** `nmap`, `tcpdump`, `termshark`, `iperf3`, `testssl`
+
+---
+
+### ۱۰. `dev media` — پردازش تصویر و ویدیو
 * **تصویر و ویدیو:** `ffmpeg-full` (با همه کدک‌ها)، `vips` (پردازش تصویر سریع)، `imagemagick`, `oxipng`, `jpegoptim`
 * **اسناد و OCR:** `ocrmypdf`, `tesseract`, `pdfarranger`, `qpdf`
 
 ---
 
-### ۱۰. `dev nix` — پکیجینگ و بررسی بسته‌ها
+### ۱۱. `dev nix` — پکیجینگ و بررسی بسته‌ها
 * **ابزارها:** `nurl`, `nix-init`, `nix-update`, `nixpkgs-review`, `nix-search-tv`, `nix-check`, `nix-size`
 
 ---
 
-### ۱۱. `dev audit` — ممیزی و امنیت
+### ۱۲. `dev audit` — ممیزی و امنیت
 * **ابزارها:** `vulnix`, `gitleaks`, `osv-scanner`, `grype`, `syft`, `trivy`, `lynis`, `audit-all`

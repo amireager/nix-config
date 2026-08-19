@@ -9,6 +9,7 @@
     "cli"
     "go"
     "media"
+    "net"
     "nix"
     "python"
     "rust"
@@ -33,8 +34,8 @@
       members = ["cli" "build" "nix"];
     }
     {
-      title = "Security & Audit";
-      members = ["audit"];
+      title = "Network & Security";
+      members = ["net" "audit"];
     }
   ];
 

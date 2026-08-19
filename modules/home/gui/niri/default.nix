@@ -1,7 +1,6 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
     networkmanagerapplet
-    blueman
     swayidle
     swaylock # lock screen fallback
     xwayland-satellite
@@ -14,7 +13,7 @@
     MOZ_ENABLE_WAYLAND = "1";
     XDG_CURRENT_DESKTOP = "niri";
     XDG_SESSION_TYPE = "wayland";
-    QT_QPA_PLATFORM = "wayland";
+    QT_QPA_PLATFORM = "wayland;xcb";
     # DISPLAY is auto-set by XWayland — do NOT set manually for Wayland sessions
   };
 }

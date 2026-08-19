@@ -25,7 +25,6 @@
 | `gp` `gpl` | `git push` / `git pull --rebase` |
 | `n` | `nvim` |
 | `myip` | `curl ip.me` |
-| `fj` `fjx` | firejail سریع (نسخه‌ی کامل: [۰۸](08-sandbox.md)) |
 
 ### alias‌های واقعی
 
@@ -47,7 +46,8 @@
 ### `nix_proxy` — مهم‌ترین تابع این سیستم
 
 ```sh
-nix_proxy 1819       # دانلودهای nix-daemon از پروکسی
+nix_proxy on         # پورت lib.proxy / $PROXY_PORT
+nix_proxy 1819       # یا پورت صریح
 nix_proxy off
 nix_proxy status
 ```
@@ -65,13 +65,13 @@ nix_proxy status
 ### `proxy_on` / `proxy_off` — فقط همین شل
 
 ```sh
-proxy_on          # پیش فرض 1819
+proxy_on          # پیش‌فرض: $PROXY_PORT یا lib.proxy
 proxy_on 8080
 proxy_off
 ```
 
-فقط روی ترمینال فعلی. تب دیگر تحت تأثیر نیست — که همان چیزی است که موقع
-دیباگ می‌خواهی.
+فقط روی ترمینال فعلی. `NO_PROXY` لوکال‌هاست را از تونل بیرون می‌گذارد.
+پورت پیش‌فرض یک‌جاست: `lib.proxy.port`.
 
 ### `px` — یک دستور از proxychains
 

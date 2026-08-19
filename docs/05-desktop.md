@@ -34,6 +34,9 @@
 | `thunar` | مدیر فایل گرافیکی |
 | `zen-browser` | مرورگر وب اصلی با تب‌های عمودی |
 | `cliphist` | تاریخچه‌ی کلیپ‌بورد |
+| `gpu-screen-recorder-gtk` | ضبط صفحه از `Mod+Alt+R` |
+
+Bluetooth هنگام boot خاموش است. Qt اول Wayland و در صورت نیاز XCB را امتحان می‌کند.
 
 ---
 
