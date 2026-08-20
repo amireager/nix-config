@@ -91,7 +91,7 @@ nix_proxy 1819        # port صریح
 nix_proxy off
 ```
 
-`nix-daemon` environment ترمینال را ارث نمی‌برد. این تابع یک drop-in موقت زیر `/run/systemd/system/nix-daemon.service.d` می‌نویسد، daemon را restart می‌کند و با reboot پاک می‌شود.
+`nix-daemon` environment ترمینال را ارث نمی‌برد. این تابع یک drop-in موقت زیر `/run/systemd/system/nix-daemon.service.d` می‌نویسد، ابتدا listener را بررسی می‌کند و daemon را restart می‌کند. `status` وضعیت واقعی service و environment مؤثر را نشان می‌دهد. شکست activation باعث حذف override و تلاش برای بازگرداندن daemon مستقیم می‌شود؛ reboot نیز drop-in را پاک می‌کند.
 
 این تابع privileged و عمداً imperative است. کاربرد اصلی آن sourceهایی است که cache ندارند یا از شبکه‌ی مستقیم قابل دریافت نیستند.
 

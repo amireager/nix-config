@@ -10,7 +10,8 @@
   proxy,
   ...
 }: let
-  proxyValues = builtins.replaceStrings
+  proxyValues =
+    builtins.replaceStrings
     ["@proxyHost@" "@proxyPort@"]
     [proxy.host (toString proxy.port)];
 

@@ -38,8 +38,8 @@
       fi
 
       status=0
-      git diff --check || status=1
-      git diff --cached --check || status=1
+      git --no-pager diff --check || status=1
+      git --no-pager diff --cached --check || status=1
       trailing="$(git grep -I -n -E '[[:blank:]]+$' -- . || true)"
       if [ -n "$trailing" ]; then
         printf '%s\n' "$trailing" >&2

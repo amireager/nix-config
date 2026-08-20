@@ -37,4 +37,4 @@
   aliasShells = lib.mapAttrs (_alias: target: shells.${target}) registry.aliases;
 in
   assert missingModules == [] || throw "devShell registry: missing modules: ${lib.concatStringsSep ", " missingModules}";
-  shells // aliasShells
+    shells // aliasShells

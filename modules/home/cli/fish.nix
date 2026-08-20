@@ -184,6 +184,7 @@
         body = ''
           set -l dir /run/systemd/system/nix-daemon.service.d
           set -l conf $dir/zz-nix-proxy.conf
+          set -l pending $conf.tmp
           set -l action status
           if test (count $argv) -gt 0
             set action $argv[1]
@@ -191,18 +192,41 @@
 
           switch $action
             case off
-              sudo rm -f $conf
+              if not sudo rm -f $conf $pending
+                echo "nix_proxy: failed to remove the transient override" >&2
+                return 1
+              end
               sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
-              sudo systemctl daemon-reload
-              sudo systemctl restart nix-daemon
+              if not sudo systemctl daemon-reload
+                echo "nix_proxy: failed to reload systemd; daemon state was not changed" >&2
+                return 1
+              end
+              if not sudo systemctl restart nix-daemon
+                echo "nix_proxy: override was removed, but nix-daemon failed to restart" >&2
+                return 1
+              end
               echo -e "\033[1;31m[-] nix-daemon: direct\033[0m"
 
             case status ""
-              if test -f $conf
-                echo -e "\033[1;32m[+] nix-daemon: proxied\033[0m"
-                grep -o 'all_proxy=[^"]*' $conf | sed 's/^/    /'
+              set -l daemon_state (systemctl is-active nix-daemon 2>/dev/null)
+              set -l daemon_env (systemctl show nix-daemon --property=Environment --value 2>/dev/null)
+              test -n "$daemon_state"; or set daemon_state unknown
+              echo "    daemon service: $daemon_state"
+              if string match -rq '(^|[ \"])(all_proxy|ALL_PROXY|http_proxy|HTTP_PROXY|https_proxy|HTTPS_PROXY)=' -- "$daemon_env"
+                echo -e "\033[1;32m[+] nix-daemon unit environment: proxied\033[0m"
+                printf '%s\n' "$daemon_env" \
+                  | grep -oE '(all_proxy|ALL_PROXY|http_proxy|HTTP_PROXY|https_proxy|HTTPS_PROXY)=[^\" ]+' \
+                  | sort -u \
+                  | sed 's/^/    effective: /'
+                printf '%s\n' "$daemon_env" | grep -oE 'NIX_CONNECT_TIMEOUT=[^\" ]+' | sed 's/^/    effective: /'
+                printf '%s\n' "$daemon_env" | grep -oE 'NIX_CURL_FLAGS=[^\"]+' | sed 's/^/    effective: /'
               else
-                echo -e "\033[1;30m[-] nix-daemon: direct\033[0m"
+                echo -e "\033[1;30m[-] nix-daemon unit environment: direct\033[0m"
+              end
+              if test -f $conf
+                echo "    transient override: $conf"
+              else
+                echo "    transient override: absent"
               end
               echo "    usage: nix_proxy on | nix_proxy <port> | nix_proxy off | nix_proxy status"
 
@@ -221,6 +245,12 @@
                 echo "    usage: nix_proxy on | nix_proxy <port> | nix_proxy off | nix_proxy status" >&2
                 return 2
               end
+
+              if not command bash -c 'exec 3<>"/dev/tcp/$1/$2"' nix-proxy-check ${proxy.host} $port 2>/dev/null
+                echo "nix_proxy: no TCP listener at ${proxy.host}:$port" >&2
+                return 1
+              end
+
               set -l url "socks5h://${proxy.host}:$port"
               set -l bypass "127.0.0.1,localhost,::1"
 
@@ -235,10 +265,42 @@
                 "Environment=\"ALL_PROXY=$url\"" \
                 "Environment=\"no_proxy=$bypass\"" \
                 "Environment=\"NO_PROXY=$bypass\"" \
-                | sudo tee $conf >/dev/null
+                "Environment=\"NIX_CONNECT_TIMEOUT=30\"" \
+                "Environment=\"NIX_CURL_FLAGS=--connect-timeout 30 --retry 8 --retry-delay 2 --retry-max-time 300\"" \
+                | sudo tee $pending >/dev/null
+              and sudo mv $pending $conf
+              or begin
+                sudo rm -f $pending
+                echo "nix_proxy: failed to write the transient override" >&2
+                return 1
+              end
 
-              sudo systemctl daemon-reload
-              sudo systemctl restart nix-daemon
+              if not sudo systemctl daemon-reload
+                if sudo rm -f $conf $pending
+                  sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
+                  if sudo systemctl daemon-reload
+                    echo "nix_proxy: systemd reload failed; transient override was removed" >&2
+                  else
+                    echo "nix_proxy: systemd reload and rollback reload failed; check nix-daemon" >&2
+                  end
+                else
+                  echo "nix_proxy: systemd reload failed and the override could not be removed" >&2
+                end
+                return 1
+              end
+              if not sudo systemctl restart nix-daemon
+                if sudo rm -f $conf $pending
+                  sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
+                  if sudo systemctl daemon-reload; and sudo systemctl restart nix-daemon
+                    echo "nix_proxy: proxy activation failed; daemon restarted without the override" >&2
+                  else
+                    echo "nix_proxy: proxy activation and rollback failed; check nix-daemon" >&2
+                  end
+                else
+                  echo "nix_proxy: proxy activation failed and the override could not be removed" >&2
+                end
+                return 1
+              end
               echo -e "\033[1;32m[+] nix-daemon proxied via $url\033[0m"
               echo -e "\033[1;30m    until reboot, or: nix_proxy off\033[0m"
           end

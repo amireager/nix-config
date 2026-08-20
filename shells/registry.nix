@@ -73,7 +73,8 @@ let
   ungroupedShells = builtins.filter (name: !(builtins.elem name groupMembers)) shellNames;
   repeatedMembers = duplicates groupMembers;
   invalidAliases = builtins.filter (name: !(validName name)) aliasNames;
-  unknownAliasTargets = builtins.filter
+  unknownAliasTargets =
+    builtins.filter
     (name: !(builtins.elem registry.aliases.${name} shellNames))
     aliasNames;
   aliasCollisions = builtins.filter (name: builtins.elem name shellNames) aliasNames;
@@ -89,5 +90,4 @@ in
   assert repeatedMembers == [] || throw "devShell registry: shells in more than one group: ${show repeatedMembers}";
   assert invalidAliases == [] || throw "devShell registry: invalid aliases: ${show invalidAliases}";
   assert unknownAliasTargets == [] || throw "devShell registry: aliases with unknown targets: ${show unknownAliasTargets}";
-  assert aliasCollisions == [] || throw "devShell registry: aliases collide with shell names: ${show aliasCollisions}";
-  registry
+  assert aliasCollisions == [] || throw "devShell registry: aliases collide with shell names: ${show aliasCollisions}"; registry
