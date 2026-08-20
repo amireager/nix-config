@@ -75,10 +75,14 @@
           minisign_key = "RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3";
           refresh_delay = 72;
         };
+        # Upstream's home-network defaults avoid repeated encrypted lookups
+        # without adding another resolver or changing DNS ownership.
         cache = true;
-        cache_size = 512;
-        cache_min_ttl = 60;
-        cache_max_ttl = 3600;
+        cache_size = 4096;
+        cache_min_ttl = 2400;
+        cache_max_ttl = 86400;
+        cache_neg_min_ttl = 60;
+        cache_neg_max_ttl = 600;
         ipv6_servers = false;
         block_ipv6 = true;
       };

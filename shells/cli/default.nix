@@ -44,6 +44,9 @@ mkDevShell {
     # Transfer & sync
     rclone # Cloud & remote sync
     magic-wormhole # Secure P2P file transfer
+
+    nvtopPackages.full
+    ncdu
   ];
 
   tips = [

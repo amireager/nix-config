@@ -4,7 +4,20 @@
   flakePath,
   proxy,
   ...
-}: {
+}: let
+  nixProxyScript =
+    builtins.replaceStrings
+    ["@PROXY_HOST@" "@PROXY_PORT@"]
+    [proxy.host (toString proxy.port)]
+    (builtins.readFile ./nix-proxy.sh);
+  nixProxy = pkgs.writeShellApplication {
+    name = "nix-proxy";
+    runtimeInputs = with pkgs; [bash coreutils curl gnugrep gnused systemd];
+    text = nixProxyScript;
+  };
+in {
+  home.packages = [nixProxy];
+
   # ============================================================
   # FISH SHELL — Aliases, Abbrs, Keybindings & Custom Functions
   # ============================================================
@@ -156,10 +169,10 @@
           set -l port ${toString proxy.port}
           if test (count $argv) -gt 0
             set port $argv[1]
-          else if set -q PROXY_PORT; and string match -qr '^[0-9]+$' -- $PROXY_PORT
+          else if set -q PROXY_PORT; and string match -qr '^[0-9]{1,5}$' -- $PROXY_PORT
             set port $PROXY_PORT
           end
-          if not string match -qr '^[0-9]+$' -- $port; or test $port -lt 1; or test $port -gt 65535
+          if not string match -qr '^[0-9]{1,5}$' -- $port; or test $port -lt 1; or test $port -gt 65535
             echo "proxy_on: invalid port: $port" >&2
             return 2
           end
@@ -169,9 +182,11 @@
           set -gx ALL_PROXY $url
           set -gx HTTP_PROXY $url
           set -gx HTTPS_PROXY $url
+          set -gx FTP_PROXY $url
           set -gx all_proxy $url
           set -gx http_proxy $url
           set -gx https_proxy $url
+          set -gx ftp_proxy $url
           set -gx NO_PROXY $bypass
           set -gx no_proxy $bypass
           echo -e "\033[1;32m[+] Proxy Enabled in this terminal (${proxy.host}:$port)\033[0m"
@@ -180,137 +195,14 @@
 
       # === Proxy for nix builds ===
       nix_proxy = {
-        description = "Route nix-daemon downloads through a local proxy (until reboot)";
-        body = ''
-          set -l dir /run/systemd/system/nix-daemon.service.d
-          set -l conf $dir/zz-nix-proxy.conf
-          set -l pending $conf.tmp
-          set -l action status
-          if test (count $argv) -gt 0
-            set action $argv[1]
-          end
-
-          switch $action
-            case off
-              if not sudo rm -f $conf $pending
-                echo "nix_proxy: failed to remove the transient override" >&2
-                return 1
-              end
-              sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
-              if not sudo systemctl daemon-reload
-                echo "nix_proxy: failed to reload systemd; daemon state was not changed" >&2
-                return 1
-              end
-              if not sudo systemctl restart nix-daemon
-                echo "nix_proxy: override was removed, but nix-daemon failed to restart" >&2
-                return 1
-              end
-              echo -e "\033[1;31m[-] nix-daemon: direct\033[0m"
-
-            case status ""
-              set -l daemon_state (systemctl is-active nix-daemon 2>/dev/null)
-              set -l daemon_env (systemctl show nix-daemon --property=Environment --value 2>/dev/null)
-              test -n "$daemon_state"; or set daemon_state unknown
-              echo "    daemon service: $daemon_state"
-              if string match -rq '(^|[ \"])(all_proxy|ALL_PROXY|http_proxy|HTTP_PROXY|https_proxy|HTTPS_PROXY)=' -- "$daemon_env"
-                echo -e "\033[1;32m[+] nix-daemon unit environment: proxied\033[0m"
-                printf '%s\n' "$daemon_env" \
-                  | grep -oE '(all_proxy|ALL_PROXY|http_proxy|HTTP_PROXY|https_proxy|HTTPS_PROXY)=[^\" ]+' \
-                  | sort -u \
-                  | sed 's/^/    effective: /'
-                printf '%s\n' "$daemon_env" | grep -oE 'NIX_CONNECT_TIMEOUT=[^\" ]+' | sed 's/^/    effective: /'
-                printf '%s\n' "$daemon_env" | grep -oE 'NIX_CURL_FLAGS=[^\"]+' | sed 's/^/    effective: /'
-              else
-                echo -e "\033[1;30m[-] nix-daemon unit environment: direct\033[0m"
-              end
-              if test -f $conf
-                echo "    transient override: $conf"
-              else
-                echo "    transient override: absent"
-              end
-              echo "    usage: nix_proxy on | nix_proxy <port> | nix_proxy off | nix_proxy status"
-
-            case on '*'
-              set -l port
-              if test $action = on
-                set port ${toString proxy.port}
-                if set -q PROXY_PORT; and string match -qr '^[0-9]+$' -- $PROXY_PORT
-                  set port $PROXY_PORT
-                end
-              else
-                set port $argv[1]
-              end
-              if not string match -qr '^[0-9]+$' -- $port; or test $port -lt 1; or test $port -gt 65535
-                echo -e "\033[1;31mnix_proxy: invalid port: '$port'\033[0m" >&2
-                echo "    usage: nix_proxy on | nix_proxy <port> | nix_proxy off | nix_proxy status" >&2
-                return 2
-              end
-
-              if not command bash -c 'exec 3<>"/dev/tcp/$1/$2"' nix-proxy-check ${proxy.host} $port 2>/dev/null
-                echo "nix_proxy: no TCP listener at ${proxy.host}:$port" >&2
-                return 1
-              end
-
-              set -l url "socks5h://${proxy.host}:$port"
-              set -l bypass "127.0.0.1,localhost,::1"
-
-              sudo mkdir -p $dir
-              printf '%s\n' \
-                "[Service]" \
-                "Environment=\"http_proxy=$url\"" \
-                "Environment=\"https_proxy=$url\"" \
-                "Environment=\"all_proxy=$url\"" \
-                "Environment=\"HTTP_PROXY=$url\"" \
-                "Environment=\"HTTPS_PROXY=$url\"" \
-                "Environment=\"ALL_PROXY=$url\"" \
-                "Environment=\"no_proxy=$bypass\"" \
-                "Environment=\"NO_PROXY=$bypass\"" \
-                "Environment=\"NIX_CONNECT_TIMEOUT=30\"" \
-                "Environment=\"NIX_CURL_FLAGS=--connect-timeout 30 --retry 8 --retry-delay 2 --retry-max-time 300\"" \
-                | sudo tee $pending >/dev/null
-              and sudo mv $pending $conf
-              or begin
-                sudo rm -f $pending
-                echo "nix_proxy: failed to write the transient override" >&2
-                return 1
-              end
-
-              if not sudo systemctl daemon-reload
-                if sudo rm -f $conf $pending
-                  sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
-                  if sudo systemctl daemon-reload
-                    echo "nix_proxy: systemd reload failed; transient override was removed" >&2
-                  else
-                    echo "nix_proxy: systemd reload and rollback reload failed; check nix-daemon" >&2
-                  end
-                else
-                  echo "nix_proxy: systemd reload failed and the override could not be removed" >&2
-                end
-                return 1
-              end
-              if not sudo systemctl restart nix-daemon
-                if sudo rm -f $conf $pending
-                  sudo rmdir --ignore-fail-on-non-empty $dir 2>/dev/null
-                  if sudo systemctl daemon-reload; and sudo systemctl restart nix-daemon
-                    echo "nix_proxy: proxy activation failed; daemon restarted without the override" >&2
-                  else
-                    echo "nix_proxy: proxy activation and rollback failed; check nix-daemon" >&2
-                  end
-                else
-                  echo "nix_proxy: proxy activation failed and the override could not be removed" >&2
-                end
-                return 1
-              end
-              echo -e "\033[1;32m[+] nix-daemon proxied via $url\033[0m"
-              echo -e "\033[1;30m    until reboot, or: nix_proxy off\033[0m"
-          end
-        '';
+        description = "Manage the transient nix-daemon proxy safely";
+        body = "command nix-proxy $argv";
       };
 
       proxy_off = {
         description = "Disable proxy for the current shell session";
         body = ''
-          for name in ALL_PROXY HTTP_PROXY HTTPS_PROXY all_proxy http_proxy https_proxy NO_PROXY no_proxy
+          for name in ALL_PROXY HTTP_PROXY HTTPS_PROXY FTP_PROXY all_proxy http_proxy https_proxy ftp_proxy NO_PROXY no_proxy
             set -e $name
           end
           echo -e "\033[1;31m[-] Proxy Disabled\033[0m"
@@ -331,7 +223,7 @@
             return $status
           end
 
-          if not string match -qr '^[0-9]+$' -- $PROXY_PORT; or test $PROXY_PORT -lt 1; or test $PROXY_PORT -gt 65535
+          if not string match -qr '^[0-9]{1,5}$' -- $PROXY_PORT; or test $PROXY_PORT -lt 1; or test $PROXY_PORT -gt 65535
             echo "px: invalid PROXY_PORT: $PROXY_PORT" >&2
             return 2
           end

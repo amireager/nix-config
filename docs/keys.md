@@ -390,7 +390,7 @@ Aliasها: `c → build`، `data → python` و `default → nix`.
 | :--- | :--- |
 | `proxy_on [port]` / `proxy_off` | proxy shell جاری |
 | `px <command>` | اجرای یک command از مسیر proxychains |
-| `nix_proxy [port]` / `nix_proxy off` | proxy موقت nix-daemon |
+| `nix_proxy test [port]` / `nix_proxy on [port]` / `nix_proxy off` | بررسی و مدیریت proxy موقت nix-daemon |
 | `bld` | build بدون activation |
 | `tst` | activation موقت برای تست |
 | `sw` | build و switch؛ فقط پس از review/test |

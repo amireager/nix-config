@@ -311,7 +311,7 @@ application
 ├── proxy_on → shell environment
 ├── px → proxychains برای یک command
 ├── box --proxy → environment داخل sandbox
-└── nix_proxy → drop-in موقت nix-daemon
+└── nix_proxy / nix-proxy → drop-in موقت و تراکنشی nix-daemon
 
 DNS query
 └── /etc/resolv.conf → 127.0.0.1:53

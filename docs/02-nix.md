@@ -26,6 +26,24 @@ git -C /etc/nixos status --short
 
 ---
 
+# بررسی policy سرعت Nix
+
+بدون build می‌توان setting مؤثر daemon را دید:
+
+```bash
+nix config show |
+  rg '^(max-jobs|cores|http-connections|connect-timeout|download-attempts|fallback|auto-optimise-store|use-sqlite-wal|tarball-ttl) ='
+
+systemctl show nix-daemon --property=ActiveState,Environment
+systemctl list-timers nix-optimise.timer --no-pager
+```
+
+روی host فعلی، `max-jobs=3` و `cores=4` سقف دوازده thread را بین سه derivation تقسیم می‌کند. Transfer settingهای عمومی روی default نگه‌داری‌شده‌ی Nix می‌مانند؛ retry خاص شبکه فقط هنگام استفاده‌ی صریح از ابزار موقت اعمال می‌شود. `fallback=false` فقط source build پس از شکست substitute شناخته‌شده را متوقف می‌کند و مانع build عادی در cache miss نیست.
+
+`auto-optimise-store` خاموش است تا importهای روزمره برای hash/hardlink متوقف نشوند. `nix-optimise.timer` هفته‌ای یک‌بار، روی برق AC و با اولویت CPU/I/O برابر idle اجرا می‌شود.
+
+---
+
 # workflow امن تغییر سیستم
 
 ## ۱. Source را بخوان

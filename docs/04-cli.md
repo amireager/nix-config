@@ -61,7 +61,7 @@ proxy_on 8080        # port صریح، فقط 1..65535
 proxy_off
 ```
 
-این تابع نسخه‌های uppercase و lowercase متغیرهای HTTP/HTTPS/ALL proxy را تنظیم می‌کند. `NO_PROXY` آدرس‌های loopback را مستقیم نگه می‌دارد.
+این تابع نسخه‌های uppercase و lowercase متغیرهای HTTP/HTTPS/FTP/ALL proxy را تنظیم می‌کند. `NO_PROXY` آدرس‌های loopback را مستقیم نگه می‌دارد.
 
 بررسی:
 
@@ -86,14 +86,20 @@ PROXY_PORT=8080 px xh GET https://api.example.com/status
 
 ```bash
 nix_proxy status
+nix_proxy test        # listener و خروجی واقعی، بدون تغییر daemon
 nix_proxy on          # port پیش‌فرض یا PROXY_PORT
-nix_proxy 1819        # port صریح
+nix_proxy on 1819     # port صریح
+nix_proxy 1819        # فرم کوتاه
 nix_proxy off
 ```
 
-`nix-daemon` environment ترمینال را ارث نمی‌برد. این تابع یک drop-in موقت زیر `/run/systemd/system/nix-daemon.service.d` می‌نویسد، ابتدا listener را بررسی می‌کند و daemon را restart می‌کند. `status` وضعیت واقعی service و environment مؤثر را نشان می‌دهد. شکست activation باعث حذف override و تلاش برای بازگرداندن daemon مستقیم می‌شود؛ reboot نیز drop-in را پاک می‌کند.
+`nix-daemon` environment ترمینال را ارث نمی‌برد. ابزار یک drop-in موقت زیر `/run/systemd/system/nix-daemon.service.d` می‌نویسد و پس از restart، service و `ALL_PROXY` مؤثر را بررسی می‌کند. اگر همان proxy از قبل فعال باشد restart تکراری انجام نمی‌شود؛ `off` نیز daemon مستقیم را بی‌دلیل restart نمی‌کند.
 
-این تابع privileged و عمداً imperative است. کاربرد اصلی آن sourceهایی است که cache ندارند یا از شبکه‌ی مستقیم قابل دریافت نیستند.
+تغییر port، activation و deactivation تراکنشی‌اند: override قبلی پیش از تغییر نگه داشته می‌شود و شکست reload، restart یا verification باعث تلاش برای بازگرداندن همان وضعیت قبلی می‌شود. اگر override دیگری هنوز proxy تنظیم کند، `off` آن را حذف نمی‌کند و وضعیت را صریح گزارش می‌دهد. reboot همه‌ی stateهای زیر `/run` را پاک می‌کند.
+
+نام واقعی command برابر `nix-proxy` است و در Bash/Zsh نیز کار می‌کند؛ `nix_proxy` wrapper اصلی Fish است. `test` یک درخواست کوتاه به cache رسمی Nix می‌فرستد، اما config یا service را تغییر نمی‌دهد.
+
+این ابزار privileged و عمداً imperative است. کاربرد اصلی آن sourceهایی است که cache ندارند یا از شبکه‌ی مستقیم قابل دریافت نیستند؛ proxy همین shell همچنان مسئولیت `proxy_on` یا `px` است.
 
 ### `extract` — انتخاب extractor از روی پسوند
 
@@ -371,45 +377,85 @@ xh -A bearer -a "$TOKEN" GET https://api.example.com/private
 xh --headers --follow GET https://example.com
 ```
 
-## `curl` — automation مقاوم
+## `curl` — انتخاب اول برای دانلود مقاوم و SOCKS5H
+
+برای requestهای کوتاه automation، زمان کل را محدود کنید:
 
 ```bash
 curl --fail-with-body --location \
-  --retry 5 --retry-all-errors --retry-delay 2 \
+  --retry 5 --retry-delay 2 --retry-connrefused \
   --connect-timeout 10 --max-time 120 \
   --output artifact.tar.zst \
   https://example.com/artifact.tar.zst
 ```
 
-این optionها failure HTTP را error می‌کنند، redirect را دنبال می‌کنند، retry محدود دارند و command را بی‌نهایت معطل نمی‌کنند.
-
-دانلود resumable:
+برای فایل حجیم resumable، `--max-time` نگذارید تا یک دانلود سالم و طولانی بی‌دلیل قطع نشود:
 
 ```bash
-curl --fail-with-body --location --continue-at - \
-  --output large.iso https://example.com/large.iso
+install -d -m 700 ~/Downloads/nix-recovery
+curl --fail --show-error --location --continue-at - \
+  --retry 8 --retry-delay 2 --retry-connrefused \
+  --connect-timeout 30 \
+  --output ~/Downloads/nix-recovery/source.part \
+  'URL-FROM-THE-ACTUAL-ERROR'
 ```
+
+همان فایل از SOCKS5H محلی:
+
+```bash
+curl --proxy "socks5h://$PROXY_HOST:$PROXY_PORT" \
+  --fail --show-error --location --continue-at - \
+  --retry 8 --retry-delay 2 --retry-connrefused \
+  --connect-timeout 30 \
+  --output ~/Downloads/nix-recovery/source.part \
+  'URL-FROM-THE-ACTUAL-ERROR'
+```
+
+اجرای دوباره‌ی command با همان output از اندازه‌ی فعلی ادامه می‌دهد، به شرط آن‌که server از Range پشتیبانی کند. `--retry-all-errors` عمداً در recipe عمومی فایل قرار نگرفته است: خود curl آن را گزینه‌ای تهاجمی می‌داند و برای output قابل‌ادامه باید براساس failure واقعی اضافه شود.
 
 ## `wget`
 
-برای mirror محدود یا ساختار directory:
+`wget --continue` دانلود تک‌اتصالی ساده را ادامه می‌دهد:
+
+```bash
+wget --continue --tries=8 --timeout=30 \
+  --output-document=~/Downloads/nix-recovery/source.part \
+  'URL-FROM-THE-ACTUAL-ERROR'
+```
+
+GNU Wget پروکسی SOCKS را مستقیم پشتیبانی نمی‌کند؛ برای SOCKS5H، `curl --proxy` انتخاب روشن‌تری از `px wget` است. قابلیت mirror را فقط برای یک domain و پس از بررسی حجم و robots policy به‌کار ببرید:
 
 ```bash
 wget --mirror --convert-links --adjust-extension \
   --page-requisites --no-parent https://example.com/docs/
 ```
 
-قبل از mirror، robots policy، حجم و domain scope را بررسی کنید.
-
 ## `aria2c`
 
+برای فایل بزرگ مستقیم یا mirrorهای واقعاً یکسان، چهار اتصال شروع متعادلی است:
+
 ```bash
-aria2c -x 8 -s 8 -k 1M --continue=true \
-  --max-tries=5 --retry-wait=2 \
-  https://example.com/large.iso
+aria2c --continue=true --auto-file-renaming=false \
+  --allow-overwrite=true --max-tries=8 --retry-wait=2 \
+  -x 4 -s 4 -k 1M \
+  --dir ~/Downloads/nix-recovery --out source.part \
+  'URL-FROM-THE-ACTUAL-ERROR'
 ```
 
-`-x` connectionهای هر server و `-s` تعداد splitهاست. عدد بالاتر همیشه بهتر نیست؛ محدودیت server و fairness را رعایت کنید.
+`-x` connectionهای هر server و `-s` تعداد splitهاست. اتصال بیشتر تضمین سرعت بیشتر نیست و می‌تواند server یا proxy محلی را اشباع کند. مستندات رسمی aria2 برای proxyهای HTTP/HTTPS syntax نوع HTTP را تعریف می‌کند و SOCKS5H فعلی ما را تضمین نمی‌کند؛ بنابراین این repository، aria2 را برای direct/multi-source و curl را برای proxy محلی پیشنهاد می‌کند.
+
+## hash دانلود را جداگانه تأیید کنید
+
+Hash مورد انتظار باید از release page، manifest امضاشده یا خطای واقعی Nix بیاید؛ hash محاسبه‌شده از همان download به‌تنهایی اصالت را ثابت نمی‌کند:
+
+```bash
+cd ~/Downloads/nix-recovery
+expected_sha256='HEX-SHA256-FROM-TRUSTED-SOURCE'
+printf '%s  %s\n' "$expected_sha256" source.part |
+  sha256sum --check --strict -
+```
+
+تا پیش از `OK` فایل را rename، extract یا import نکنید. در fixed-outputهای Nix، برابری candidate و Store path مورد انتظار همان hash، mode و name را با هم کنترل می‌کند؛ راهنمای محدود آن در [قواعد شبکه و recovery](09-rules.md#بازیابی-دستی-یک-fixed-output-حجیم) است.
 
 ## `rsync` — همیشه اول dry-run
 
@@ -445,6 +491,32 @@ dev cli wormhole receive
 # DNS و تشخیص شبکه
 
 DNS سیستم همیشه به DNSCrypt محلی اشاره می‌کند؛ ابزارهای زیر برای پرسش و diagnosis هستند، نه تغییر مالک DNS.
+
+## health check بدون تغییر تنظیمات
+
+```bash
+systemctl is-active NetworkManager dnscrypt-proxy
+nmcli general status
+ip -brief link
+ip route
+cat /etc/resolv.conf
+ss -lntup '( sport = :53 )'
+
+# بار دوم باید معمولاً از cache محلی سریع‌تر باشد
+dig +stats @127.0.0.1 example.com A
+dig +stats @127.0.0.1 example.com A
+
+# زمان‌های DNS، TCP، TLS و کل request مستقیم
+curl --silent --show-error --output /dev/null \
+  --write-out 'dns=%{time_namelookup} connect=%{time_connect} tls=%{time_appconnect} total=%{time_total}\n' \
+  https://cache.nixos.org/nix-cache-info
+
+nix_proxy status
+# فقط وقتی proxy core محلی باید فعال باشد:
+nix_proxy test
+```
+
+`nix_proxy test` عمداً مسیر proxy را می‌سنجد و در حالت خاموش‌بودن proxy باید failure بدهد؛ curl قبل از آن مسیر مستقیم shell را اندازه می‌گیرد، مگر این‌که `proxy_on` فعال باشد. این خروجی‌ها را قبل و بعد از تغییر BBR، MTU، DNS یا IPv6 مقایسه کنید؛ صرف وجود یک tuning دلیل بهتر بودن آن نیست.
 
 ## queryهای دقیق
 
@@ -589,7 +661,8 @@ starship timings
 | چه processای port را گرفته؟ | `lsof -nP -i` | `procs` |
 | JSON/YAML چه ساختاری دارد؟ | `jq`, `yq` | `fx`, `jless`, `dasel` |
 | API چه برمی‌گرداند؟ | `xh` | `jq` |
-| دانلود ناپایدار است؟ | `curl --retry` | `aria2c` |
+| دانلود ناپایدار/پراکسی SOCKS است؟ | `curl --continue-at -` | `wget -c` برای direct |
+| فایل مستقیم چنداتصالی است؟ | `aria2c -x 4 -s 4` | `curl` تک‌اتصالی |
 | sync چه چیزی را حذف می‌کند؟ | `rsync -n --delete` | سپس اجرای بدون `-n` |
 | DNS کجا متفاوت است؟ | `dig`, `doggo` | `mtr`, `testssl` |
 | command واقعاً سریع‌تر شد؟ | `hyperfine` | warmup و چند run |

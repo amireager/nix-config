@@ -48,7 +48,8 @@ Lua setup با `pcall` محافظت شده و نبودن plugin startup کل edi
 سیستم پایه را build/activate کنید، سپس daemon proxy را روشن و packageها را برگردانید:
 
 ```bash
-nix_proxy 1819
+nix_proxy test 1819
+nix_proxy on 1819
 bld
 # پس از build موفق و تست مورد نظر
 nix_proxy off
@@ -73,23 +74,110 @@ Proxy daemon را روشن و فراموش نکنید؛ رفتار موقت و �
 
 # NVIDIA source
 
-Driver proprietary ممکن است هنگام cache miss از download.nvidia.com دریافت شود. URL دقیق به version package pinned در nixpkgs وابسته است؛ مثال placeholder را به‌عنوان URL واقعی اجرا نکنید.
+Driver proprietary ممکن است هنگام cache miss از download.nvidia.com دریافت شود. URL دقیق به version package pinned در nixpkgs وابسته است؛ مثال placeholder را به‌عنوان URL واقعی اجرا نکنید. ابتدا `nix_proxy test` را بررسی کنید و فقط در صورت نیاز daemon را موقتاً proxy کنید.
 
-روند diagnosis:
+Prefetch کردن فایل دیگری با version مشابه build را حل نمی‌کند. URL، hash، mode و Store name باید دقیقاً همان derivation باشند.
 
-1. error build و URL دقیق را بخوانید؛
-2. daemon proxy را در صورت نیاز فعال کنید؛
-3. یا همان URL دقیق را با shell proxy prefetch کنید؛
-4. hash و store result را با build مورد انتظار تطبیق دهید؛
-5. build را تکرار کنید.
+## بازیابی دستی یک fixed-output حجیم
+
+این مسیر برای failure نادر است و هیچ hook یا cache سراسری به Nix اضافه نمی‌کند. partial اولین تلاش Nix معمولاً قابل استفاده نیست؛ دانلود دستی یک بار از ابتدا شروع می‌شود، اما قطع‌های بعدی با همان فایل ادامه پیدا می‌کنند.
+
+### ۱. derivation را بدون build بررسی کنید
+
+مسیر `.drv` را فقط از error واقعی بردارید:
 
 ```bash
-proxy_on 1819
-nix-prefetch-url --type sha256 'URL-FROM-THE-ACTUAL-BUILD-ERROR'
-proxy_off
+drv='/nix/store/…-source.drv'
+nix derivation show "$drv" |
+  jq 'to_entries[0].value
+    | {
+        name,
+        outputs,
+        urls: (.structuredAttrs.urls // .env.urls // .env.url // null),
+        postFetch: (.structuredAttrs.postFetch // .env.postFetch // null)
+      }'
+
+nix-store --query --outputs "$drv"
 ```
 
-Prefetch کردن فایل دیگری با version مشابه build را حل نمی‌کند. URL و hash باید دقیقاً همان derivation باشند.
+فقط وقتی ادامه دهید که:
+
+- دقیقاً یک output وجود دارد؛
+- method در schema جدید `flat` است؛ در schema قدیمی `hashAlgo` با `r:` شروع نمی‌شود؛
+- hash و URL مستقیم HTTP(S) مشخص‌اند؛
+- `postFetch`، unpack یا transform وجود ندارد؛
+- output مورد انتظار یک فایل است، نه directory.
+
+`fetchzip`، Git، خروجی `nar`/recursive و derivation چندخروجی این recipe را ندارند.
+
+### ۲. همان URL را resumable دانلود کنید
+
+```bash
+work="$HOME/Downloads/nix-recovery"
+file="$work/source.part"
+url='URL-FROM-THE-ACTUAL-BUILD-ERROR'
+install -d -m 700 "$work"
+
+curl --fail --show-error --location --continue-at - \
+  --retry 8 --retry-delay 2 --retry-connrefused \
+  --connect-timeout 30 \
+  --output "$file" \
+  "$url"
+```
+
+برای proxy محلی فقط command دانلود را عوض کنید؛ فایل همان است:
+
+```bash
+curl --proxy "socks5h://$PROXY_HOST:$PROXY_PORT" \
+  --fail --show-error --location --continue-at - \
+  --retry 8 --retry-delay 2 --retry-connrefused \
+  --connect-timeout 30 \
+  --output "$file" \
+  "$url"
+```
+
+اگر server از HTTP Range پشتیبانی کند، اجرای دوباره از اندازه‌ی فعلی ادامه می‌دهد. تغییر mirror فقط وقتی مجاز است که دقیقاً همان bytes و hash را ارائه کند.
+
+### ۳. Store path را پیش از import تطبیق دهید
+
+الگوریتم را از hash derivation بردارید؛ برای مثال `sha256`. سپس نام Store را از output مورد انتظار بگیرید:
+
+```bash
+expected="$(nix-store --query --outputs "$drv")"
+base="${expected##*/}"
+name="${base#*-}"
+algo='sha256'  # دقیقاً مطابق derivation
+
+candidate="$(nix store add --dry-run \
+  --mode flat \
+  --hash-algo "$algo" \
+  --name "$name" \
+  "$file")"
+
+printf 'expected:  %s\ncandidate: %s\n' "$expected" "$candidate"
+test "$candidate" = "$expected"
+```
+
+`--dry-run` محتوا را hash می‌کند ولی چیزی وارد Store نمی‌کند. اگر دو path یکسان نیستند، فایل را import نکنید: URL، bytes، mode، الگوریتم یا name اشتباه است.
+
+### ۴. فقط با command رسمی Nix وارد Store کنید
+
+```bash
+added="$(nix store add \
+  --mode flat \
+  --hash-algo "$algo" \
+  --name "$name" \
+  "$file")"
+
+if test "$added" = "$expected" && nix path-info "$expected"; then
+  rm -f -- "$file" "$file.aria2"
+  rmdir --ignore-fail-on-non-empty "$work"
+else
+  printf 'imported path did not validate; keep the source file\n' >&2
+fi
+```
+
+هرگز با `sudo cp`، تغییر permission یا دست‌کاری database چیزی را مستقیم زیر `/nix/store` قرار ندهید. فقط وقتی branch موفق اجرا شد command اصلی Nix را دوباره اجرا کنید؛ output معتبر از قبل در Store است. path اشتباه importشده root ندارد و بعداً با GC عادی قابل پاک‌شدن است.
 
 ---
 

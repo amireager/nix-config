@@ -7,22 +7,27 @@
 
   nix = {
     settings = {
-      # Deduplicate identical files and reduce database lock contention.
-      auto-optimise-store = true;
+      # WAL is the upstream default and keeps concurrent Store operations from
+      # serialising on the SQLite journal.
       use-sqlite-wal = true;
 
-      # Use all available build capacity unless an individual build limits it.
-      max-jobs = "auto";
-      cores = 0;
+      # Ryzen 5 5500U exposes 12 threads. Keep the advertised build capacity
+      # bounded instead of combining max-jobs=auto with cores=0, which can
+      # oversubscribe every parallel builder with all available threads.
+      max-jobs = 3;
+      cores = 4;
 
-      # Preserve the existing fetch concurrency and retry behaviour.
-      http-connections = 50;
+      # Avoid stale tarball checks during normal locked-flake use. Transfer
+      # concurrency, timeouts and attempts stay at Nix's maintained defaults.
       tarball-ttl = 604800;
-      connect-timeout = 10;
-      download-attempts = 3;
-      fallback = true;
+
+      # A failed known substitute must not silently turn into a large source
+      # build. Ordinary cache misses can still build normally.
+      fallback = false;
     };
 
+    # Deduplicate away from interactive builds. The pinned NixOS service runs
+    # this with idle CPU/I/O priority and only while connected to AC power.
     optimise = {
       automatic = true;
       dates = ["weekly"];

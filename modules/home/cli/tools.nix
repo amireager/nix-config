@@ -41,6 +41,7 @@
     whois # Domain and IP ownership lookup
     librespeed-cli # Speed test via free LibreSpeed servers (Go, no Ookla)
     ipcalc # IP address and subnet calculations
+    sing-box # set proxy
 
     # ──────────────────────────────────────────────
     # 🛠️ Git, API & Development

@@ -208,6 +208,16 @@ Flake evaluation و build مرحله‌ی جدا و صریح deployment هستن
 
 ---
 
+# هزینه‌ی failure نادر سراسری نمی‌شود
+
+هدف performance این host بیشترین throughput واقعی است، نه بیشترین عدد در هر knob. روی Ryzen 5 5500U، build capacity به سه derivation و چهار thread برای هرکدام محدود می‌شود تا حاصل `max-jobs × cores` از دوازده thread ماشین عبور نکند.
+
+Concurrency، timeout و retry دانلود در default نگه‌داری‌شده‌ی Nix می‌مانند. `fallback=false` مانع source build ناخواسته پس از شکست substitute شناخته‌شده می‌شود، ولی cache miss عادی هنوز می‌تواند build شود. Store به‌جای hash/hardlink هم‌زمان با هر import، هفته‌ای یک‌بار با اولویت idle و فقط روی برق AC بهینه می‌شود.
+
+دانلود حجیم شکست‌خورده نیز hook دائمی ندارد: همان مورد خاص با curl/aria2 به‌صورت دستی resume، با Store path مورد انتظار تطبیق و سپس با command رسمی Nix import می‌شود.
+
+---
+
 # DNS مالک واحد دارد
 
 ## مسئله
@@ -233,7 +243,7 @@ Activation symlink صریح به‌خاطر regular file قدیمی باقی م�
 | `proxy_on` | همین shell و childها |
 | `px` | یک command از proxychains |
 | `box --proxy` | environment داخل sandbox |
-| `nix_proxy` | daemon تا off/reboot |
+| `nix_proxy` / `nix-proxy` | daemon تا off/reboot؛ `test` بدون تغییر service |
 
 یکی‌کردن این‌ها در toggle سراسری رد شد، چون هر scope failure و cleanup متفاوت دارد. Host/port پایه در `lib.proxy` مشترک و authoritative است؛ `px`، proxychains و Box endpoint دیگری را hard-code نمی‌کنند. Lifecycle مشترک نیست.
 
