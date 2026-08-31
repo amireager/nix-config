@@ -22,7 +22,7 @@ git -C /etc/nixos status --short
 | Build | `nh os build` | derivationها را می‌سازد؛ سیستم جاری را عوض نمی‌کند |
 | Activation | `nh os test/switch` | generation جدید را روی سیستم واقعی فعال می‌کند |
 
-این repository در CI فقط سطح اول را اجرا می‌کند. Evaluation، build و activation تصمیم صریح کاربر روی ماشین هدف‌اند.
+CI این repository تا سطح Evaluation را اجرا می‌کند (`nix flake check` کامل). Build و activation همچنان تصمیم صریح کاربر روی ماشین هدف‌اند.
 
 ---
 
@@ -75,9 +75,9 @@ nix-check
 ## ۳. فقط build
 
 ```bash
-bld
+nrb
 # معادل
-nh os build
+nh os build ~/nix-config --hostname laptop
 ```
 
 اگر تغییر بزرگ است:
@@ -91,9 +91,9 @@ nh os build --ask
 ## ۴. test موقت
 
 ```bash
-tst
+nrt
 # معادل
-nh os test
+nh os test ~/nix-config --hostname laptop
 ```
 
 `test` generation را فعال می‌کند ولی آن را default boot نمی‌کند. برای desktop، driver، network و service change مناسب‌تر از switch مستقیم است.
@@ -101,16 +101,15 @@ nh os test
 ## ۵. switch پایدار
 
 ```bash
-sw
+nrs
 # معادل
-nh os switch
+nh os switch ~/nix-config --hostname laptop
 ```
 
 راه recovery بدون `nh`:
 
 ```bash
-nrf
-# sudo nixos-rebuild switch --flake /etc/nixos#nixos
+sudo nixos-rebuild switch --flake /etc/nixos#laptop
 ```
 
 ---
@@ -159,7 +158,7 @@ nix flake update
 ```bash
 git diff --stat -- flake.lock
 git diff -- flake.lock
-bld
+nrb
 ```
 
 Update قفل و تغییر configuration را در یک commit مخلوط نکنید، مگر وابستگی مستقیم داشته باشند. یک lock update مستقل rollback و diagnosis را آسان‌تر می‌کند.
@@ -347,8 +346,8 @@ nh os switch --rollback
 ```bash
 git log --oneline -10
 git revert <bad-commit>
-bld
-tst
+nrb
+nrt
 ```
 
 Revert تاریخچه و دلیل تغییر را حفظ می‌کند. `git reset --hard` برای repository عمومی و patch series معمولاً انتخاب مناسبی نیست.

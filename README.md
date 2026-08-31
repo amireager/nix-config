@@ -24,8 +24,8 @@ This repository is not a generic NixOS starter. It is a real personal system wit
 ```text
 flake.nix
 ├── lib.mkHost
-│   └── nixosConfigurations.nixos
-│       ├── hosts/nixos
+│   └── nixosConfigurations.laptop
+│       ├── hosts/laptop
 │       │   ├── hardware.nix
 │       │   └── NixOS profiles
 │       ├── users/amir/default.nix
@@ -137,7 +137,7 @@ This lets scripts, `nh`, documentation, and recovery commands use one location e
 
 Review at least:
 
-1. `hosts/nixos/hardware.nix` and the NVIDIA bus IDs;
+1. `hosts/laptop/hardware.nix` and the NVIDIA bus IDs;
 2. hostname, username, home directory, timezone, and `stateVersion`;
 3. bootloader and disk/filesystem declarations;
 4. `/etc/nixos` symlink target;
@@ -166,7 +166,7 @@ The template directories under `hosts/_template`, `users/_template`, and `shells
 
 ## Validation policy
 
-The initial public CI is source-only. It checks formatting, static lint, secrets, Markdown/YAML, repository invariants, and shell syntax. It does not evaluate the Flake, build packages, activate a system, or start services.
+CI runs on every push: flake.lock hygiene (flake-checker), full Flake evaluation (`nix flake check`, covering Home Manager and every dev shell), formatting via the Flake's own `formatter` output, Statix, Deadnix, and `bash -n` over tracked shell scripts. It does not build packages, activate a system, or start services.
 
 Deployment and runtime validation remain explicit user actions because this repository targets real hardware.
 

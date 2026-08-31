@@ -18,8 +18,8 @@ flake.nix
 │   └── nix-index-database
 │
 ├── lib.mkHost
-│   └── nixosConfigurations.nixos
-│       ├── hosts/nixos
+│   └── nixosConfigurations.laptop
+│       ├── hosts/laptop
 │       │   ├── hardware.nix
 │       │   ├── bootloader
 │       │   └── modules/nixos/*
@@ -57,7 +57,7 @@ flake.nix
 ## Outputها
 
 ```text
-nixosConfigurations.nixos
+nixosConfigurations.laptop
 
 devShells.x86_64-linux.{agent,ai,audit,build,cli,go,media,net,nix,python,rust,web}
 formatter.x86_64-linux
@@ -82,8 +82,8 @@ Aliasهای devShell نیز از Registry ساخته می‌شوند. محیط�
 
 ```nix
 lib.mkHost {
-  hostname = "nixos";
-  hostModules = [ ./hosts/nixos ];
+  hostname = "laptop";
+  hostModules = [ ./hosts/laptop ];
   users.amir = ./users/amir;
 }
 ```
@@ -132,7 +132,7 @@ Host و port پروکسی محلی در `lib/default.nix` تعریف می‌شو
 # `hosts/` — چیزهایی که متعلق به یک ماشین‌اند
 
 ```text
-hosts/nixos/
+hosts/laptop/
 ├── default.nix
 └── hardware.nix
 ```

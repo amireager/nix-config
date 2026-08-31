@@ -156,12 +156,12 @@ readlink -f /etc/nixos
 cd /etc/nixos
 ```
 
-چرا symlink؟ مسیر واقعی project می‌تواند تغییر کند، ولی `nh`، `nrf`، Audit و recovery همیشه `/etc/nixos` را می‌شناسند.
+چرا symlink؟ مسیر واقعی project می‌تواند تغییر کند، ولی `nh`، Audit و recovery همیشه `/etc/nixos` را می‌شناسند.
 
 ## ۲. hardware config
 
 ```bash
-sudo nixos-generate-config --show-hardware-config > hosts/nixos/hardware.nix
+sudo nixos-generate-config --show-hardware-config > hosts/laptop/hardware.nix
 ```
 
 فقط replace کردن `hardware.nix` کافی نیست. این موارد را هم بررسی کنید:
@@ -215,9 +215,9 @@ nh os switch
 ```bash
 # سیستم
 git -C /etc/nixos status --short
-bld
-tst
-sw
+nrb
+nrt
+nrs
 
 # محیط پروژه
 dev -i

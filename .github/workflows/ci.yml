@@ -1,0 +1,53 @@
+# CI — the server-side twin of the local git-host-check hook (modules/home/cli/git.nix).
+# The local hook enforces on this host; this workflow enforces everywhere.
+# Defense layers:
+#   editor (conform) -> local pre-push hook (git-host-check) -> CI (this file) -> branch protection
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Skip superseded runs on rapid pushes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Upstream-compatible Nix for CI (flakes enabled out of the box).
+      # Version is maintained by dependabot (.github/dependabot.yml).
+      - uses: DeterminateSystems/nix-installer-action@v22
+
+      # flake.lock hygiene: no dirty lock, no stale inputs, resolvable refs.
+      # Soften with `continue-on-error: true` if a stale lock ever blocks a hotfix.
+      - uses: DeterminateSystems/flake-checker-action@v8
+
+      # The check a client-side hook can never do: evaluate the whole flake —
+      # nixosConfigurations.laptop (host + home-manager) and every devShell.
+      # Eval-only: no builds, no caches, no unfree downloads.
+      - name: nix flake check (full eval)
+        run: nix flake check
+
+      # Formatting pinned to THIS repo's flake.lock via its own formatter
+      # export (flake.nix -> formatter = alejandra) — never the runner's nixpkgs.
+      - name: format (alejandra)
+        run: nix fmt . -- --check .
+
+      # Mirrors of the local git-host-check lints.
+      - name: lint (statix)
+        run: nix run nixpkgs#statix -- check .
+      - name: dead code (deadnix)
+        run: nix run nixpkgs#deadnix -- --fail .
+      - name: shell syntax (bash -n)
+        run: |
+          while IFS= read -r f; do bash -n "$f"; done < <(git ls-files '*.sh')

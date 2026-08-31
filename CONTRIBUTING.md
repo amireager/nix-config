@@ -24,7 +24,7 @@ This is a personal workstation configuration deployed on real hardware. Contribu
 
 ## Source-only checks
 
-The repository CI is deliberately limited to source quality. Local equivalents include:
+CI gates full Flake evaluation plus formatting and lint. `dev nix nix-check` is the local mirror of the exact CI sequence; additional local checks include:
 
 ```bash
 git diff --check

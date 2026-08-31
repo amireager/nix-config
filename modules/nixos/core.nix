@@ -49,12 +49,6 @@
       SystemMaxFileSize=50M
       MaxRetentionSec=1month
     '';
-
-    # Keyboard layout — US + Persian, toggle with Alt+Shift.
-    xserver.xkb = {
-      layout = "us,ir";
-      options = "grp:alt_shift_toggle";
-    };
   };
 
   # === Locale & Timezone ===

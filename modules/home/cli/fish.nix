@@ -138,13 +138,15 @@ in {
 
       n = "nvim";
 
-      sw = "nh os switch";
-      tst = "nh os test";
-      bld = "nh os build";
+      # Rebuild trio — one tool (nh), explicit flake + hostname.
+      # nh without --hostname auto-detects from /etc/hostname, which lags
+      # behind a hostname rename until the first rebuild — explicit flags
+      # remove that whole class of "does not provide attribute" failures.
+      nr = "nh os switch";
+      nrs = "nh os switch ${flakePath} --hostname ${hostname}";
+      nrt = "nh os test ${flakePath} --hostname ${hostname}";
+      nrb = "nh os build ${flakePath} --hostname ${hostname}";
       nrf = "sudo nixos-rebuild switch --flake ${flakePath}#${hostname}";
-      nrs = "nh os switch";
-      nrt = "nh os test";
-      nrb = "nh os build";
 
       # === Proxy Management ===
       myip = "curl ip.me";
