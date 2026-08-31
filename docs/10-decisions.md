@@ -200,11 +200,11 @@ On-demand در `dev nix`:
 
 ---
 
-# Nix-check عمداً Flake را evaluate نمی‌کند
+# Nix-check آینه‌ی CI است
 
-یک health check اولیه باید سریع، deterministic و بدون network/build باشد. بنابراین `nix-check` فقط parser مستقل فایل‌ها، Statix، Deadnix و Alejandra را اجرا می‌کند.
+`nix-check` همان پنج گام CI را با همان ترتیب اجرا می‌کند: `nix flake check` (eval کامل)، alejandra از طریق formatter خود Flake، statix، deadnix و `bash -n`. منطق این است که «سبز محلی = سبز CI»؛ شکستن evaluation قبل از push دیده می‌شود، نه بعد از یک run قرمز.
 
-Flake evaluation و build مرحله‌ی جدا و صریح deployment هستند. Source CI نیز همین مرز را رعایت می‌کند.
+هر چک دقیقاً یک صاحب دارد: این پنج گام فقط در CI و آینه‌ی محلی‌اش تعریف می‌شوند. Build و activation همچنان مرز صریح کاربرند و در هیچ‌کدام اجرا نمی‌شوند.
 
 ---
 

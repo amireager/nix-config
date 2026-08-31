@@ -22,6 +22,7 @@ mkDevShell {
     # Linters, formatters & type checkers
     ruff # Sub-10ms Python linter & formatter
     pyright # Static type checker & LSP
+    python3Packages.debugpy # DAP debug adapter (what nvim dap.lua attaches)
 
     # Dev & JSON utilities
     jq
