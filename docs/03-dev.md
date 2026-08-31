@@ -194,14 +194,15 @@ Neovim دارای `direnv-vim` است. وقتی editor داخل project environm
 
 # ۱. `dev agent` — ابزار عملیاتی agentها
 
-این محیط خود agent خاصی را الزام نمی‌کند؛ runtime و ابزارهایی را فراهم می‌کند که Hermes، OpenCode یا scriptهای agent موجود در پروژه نیاز دارند.
+این محیط به یک harness خاص گره نمی‌خورد: `omp` پیش‌فرض است و `opencode` مرجع مقایسه می‌ماند. aliasهای مدل (deep/main/open) روی ~۸۰ مدل روتر می‌چرخند، پس این شل «زمین بازی» می‌سازد، نه بازیکن موردعلاقه.
 
 ## محتوا
 
-- Python، uv، Node.js 24 و Bun
-- `aichat` با gateway محلی 9router
+- Python، uv و Node.js 24 (بدون Bun — باینری omp خودکفاست و bun نکسی زیر کف omp است)
+- `omp` (باینری پین‌شده از release) و `opencode` (مرجع مقایسه) با gateway محلی 9router؛ `gh` برای PR و issue
 - `ast-grep`, `rg`, `fd`, `sd`, `difftastic`, `tokei`
-- Ruff، Biome، Pyright، ShellCheck، shfmt و Taplo
+- Ruff، Biome، Pyright، debugpy، ShellCheck، shfmt و Taplo
+- LSP داخل پروژه: nixd، marksman، yaml-language-server، bash-language-server (direnv-vim آن‌ها را attach می‌کند)
 - `htmlq`, `jq`, `yq`, `xh`, `curl`
 - Hyperfine و Git
 
@@ -209,6 +210,7 @@ Environment:
 
 ```text
 OPENAI_API_BASE=http://127.0.0.1:20128/v1
+OPENAI_BASE_URL=http://127.0.0.1:20128/v1
 OPENAI_API_KEY=local
 AI_GATEWAY=http://127.0.0.1:20128
 ```
@@ -232,11 +234,22 @@ dev agent biome check .
 dev agent sh -c "curl -fsSL https://example.com | htmlq article --text"
 
 # ساخت پیام commit از diff؛ قبل از ارسال، داده‌ی حساس را بررسی کنید
-git diff --cached | dev agent aichat 'Write a concise conventional commit message'
+git diff --cached | dev agent omp -p --model local/main 'Write a concise conventional commit message'
 
 # مقایسه‌ی benchmark دو command
 dev agent hyperfine --warmup 3 'rg pattern .' 'grep -R pattern .'
 ```
+
+سیاست هم‌پوشانی: ابزارهایی که در لایه‌ی گلوبال هم هستند (`rg`, `fd`, `jq`, `yq`, `xh`, `ruff`, `pyright` و…) عمداً در این شل تکرار می‌شوند — کیت باید خودکفا منتقل شود و nix در store همان مسیرها را لینک می‌کند؛ هزینه‌ای ندارد.
+
+```bash
+dev agent                          # ورود به شل
+omp models | grep local/           # مدل‌های روتر
+omp -p --model local/main "task"   # اجرای یک‌باره
+box omp                            # همان عامل، داخل سندباکس
+```
+
+کامپلیشن fish/bash/zsh از متادیتای زنده‌ی خود باینری omp ساخته (`omp completions`) و declarative نصب می‌شود.
 
 ورود shell اگر `.venv` موجود باشد آن را فعال می‌کند؛ چیزی ایجاد یا دانلود نمی‌کند.
 

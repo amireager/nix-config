@@ -30,35 +30,31 @@ mkDevShell {
     # Search & exploration
     nix-search-tv # Interactive fuzzy nixpkgs search (TUI)
 
-    # Fast and deterministic health check. Deliberately no flake evaluation,
-    # network access, builds or activation.
+    # Local mirror of .github/workflows/ci.yml — same five checks, same
+    # order, so green here predicts green there. Full flake eval on purpose:
+    # CI gates it, and this is the cheapest way to catch an eval break
+    # before pushing.
     (writeShellApplication {
       name = "nix-check";
-      runtimeInputs = [nix statix deadnix alejandra findutils];
+      runtimeInputs = [nix statix deadnix git];
       text = ''
         set -u
         status=0
-        parsed=0
 
-        echo -e "\033[1;36m[1/4] Nix parser (syntax)...\033[0m"
-        while IFS= read -r -d "" file; do
-          parsed=$((parsed + 1))
-          if ! nix-instantiate --parse "$file" >/dev/null; then
-            status=1
-          fi
-        done < <(find . \
-          \( -type d \( -name .git -o -name .direnv -o -name result \) -prune \) -o \
-          \( -type f -name "*.nix" -print0 \))
-        printf "  parsed %d file(s)\n" "$parsed"
+        echo -e "\033[1;36m[1/5] nix flake check (full eval)...\033[0m"
+        nix flake check || status=1
 
-        echo -e "\n\033[1;36m[2/4] Statix (anti-patterns)...\033[0m"
+        echo -e "\n\033[1;36m[2/5] Alejandra via the flake formatter...\033[0m"
+        nix fmt . -- --check . || status=1
+
+        echo -e "\n\033[1;36m[3/5] Statix (anti-patterns)...\033[0m"
         statix check . || status=1
 
-        echo -e "\n\033[1;36m[3/4] Deadnix (unused bindings)...\033[0m"
+        echo -e "\n\033[1;36m[4/5] Deadnix (unused bindings)...\033[0m"
         deadnix --fail . || status=1
 
-        echo -e "\n\033[1;36m[4/4] Alejandra (format, read-only)...\033[0m"
-        alejandra --check . || status=1
+        echo -e "\n\033[1;36m[5/5] bash -n over tracked *.sh...\033[0m"
+        while IFS= read -r f; do bash -n "$f" || status=1; done < <(git ls-files '*.sh')
 
         exit "$status"
       '';

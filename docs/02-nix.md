@@ -63,14 +63,15 @@ dev nix
 nix-check
 ```
 
-`nix-check` در این repository چهار بررسی انجام می‌دهد:
+`nix-check` آینه‌ی دقیق CI است — همان پنج گام با همان ترتیب:
 
-1. parse کردن مستقل تمام فایل‌های `.nix`؛
-2. `statix check`؛
-3. `deadnix --fail`؛
-4. `alejandra --check`.
+1. `nix flake check` — evaluation کامل، شامل home-manager و همه‌ی devShellها؛
+2. alejandra از طریق output `formatter` خود Flake؛
+3. `statix check`؛
+4. `deadnix --fail`؛
+5. `bash -n` روی `*.sh`های tracked.
 
-این command عمداً `nix flake check`، build، network fetch یا activation انجام نمی‌دهد.
+build، network fetch و activation همچنان جزو آن نیستند — مرز کاربر می‌مانند. سبز محلی = سبز CI.
 
 ## ۳. فقط build
 
@@ -398,7 +399,7 @@ dev nix
 | `nixpkgs-review` | بررسی PR nixpkgs |
 | `nix-fast-build` | build موازی outputها |
 | `nix-search-tv` | جست‌وجوی تعاملی package |
-| `nix-check` | parser + Statix + Deadnix + Alejandra، بدون Flake evaluation |
+| `nix-check` | آینه‌ی CI: `nix flake check` + Alejandra + Statix + Deadnix + `bash -n` |
 | `nix-size` | closure size و بزرگ‌ترین contributorها |
 
 Recipe ساخت package جدید:
