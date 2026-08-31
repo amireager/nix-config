@@ -1,114 +1,64 @@
 {pkgs, ...}: let
-  gitHostCheck = pkgs.writeShellApplication {
-    name = "git-host-check";
-    runtimeInputs = with pkgs; [coreutils findutils git nix];
+  # ============================================================
+  # GIT HOOKS — the thin local layer
+  # ============================================================
+  # Division of labor with .github/workflows/ci.yml:
+  #   hook (here): instant, dependency-free checks (git + bash only)
+  #   CI:          everything needing tools or full evaluation
+  # Bypass any hook once with the standard:  git commit/push --no-verify
+  # ============================================================
+  # pre-commit — whitespace on STAGED changes only (milliseconds)
+  gitPreCommit = pkgs.writeShellApplication {
+    name = "git-pre-commit";
+    runtimeInputs = with pkgs; [git];
     text = ''
-      mode="''${GIT_CHECK_MODE:-$(git config --get checks.mode 2>/dev/null || printf 'auto')}"
-      case "$mode" in
-        off) exit 0 ;;
-        auto | strict) ;;
-        *)
-          echo "git-host-check: checks.mode must be off, auto or strict" >&2
-          exit 2
-          ;;
-      esac
-
-      mapfile -d "" nix_files < <(git ls-files -co --exclude-standard -z -- '*.nix')
-      mapfile -d "" shell_files < <(git ls-files -co --exclude-standard -z -- '*.sh')
-
-      required=(git bash)
-      if [ "''${#nix_files[@]}" -gt 0 ]; then
-        required+=(nix-instantiate statix deadnix alejandra)
+      if ! git --no-pager diff --cached --check; then
+        printf 'pre-commit: whitespace errors in staged changes\n' >&2
+        printf 'pre-commit: fix them, or bypass once with: git commit --no-verify\n' >&2
+        exit 1
       fi
+    '';
+  };
 
-      missing=()
-      for tool in "''${required[@]}"; do
-        command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
-      done
-
-      if [ "''${#missing[@]}" -gt 0 ]; then
-        printf 'git-host-check: missing host tools:' >&2
-        printf ' %s' "''${missing[@]}" >&2
-        printf '\n' >&2
-        if [ "$mode" = strict ]; then
-          echo "git-host-check: strict mode blocks push; activate the host configuration or use checks.mode=off" >&2
-          exit 2
-        fi
-        echo "git-host-check: auto mode will run the available checks" >&2
-      fi
-
+  # pre-push — last gate before code leaves the machine
+  gitPrePush = pkgs.writeShellApplication {
+    name = "git-pre-push";
+    runtimeInputs = with pkgs; [git bash];
+    text = ''
       status=0
-      git --no-pager diff --check || status=1
-      git --no-pager diff --cached --check || status=1
+
+      # Shell syntax on every tracked (and untracked-but-not-ignored) *.sh
+      while IFS= read -r -d "" f; do
+        bash -n "$f" || {
+          printf 'pre-push: bash -n failed: %s\n' "$f" >&2
+          status=1
+        }
+      done < <(git ls-files -co --exclude-standard -z -- '*.sh')
+
+      # Trailing whitespace across tracked text files
       trailing="$(git grep -I -n -E '[[:blank:]]+$' -- . || true)"
       if [ -n "$trailing" ]; then
         printf '%s\n' "$trailing" >&2
         status=1
       fi
 
-      if [ "''${#nix_files[@]}" -gt 0 ]; then
-        if command -v nix-instantiate >/dev/null 2>&1; then
-          for file in "''${nix_files[@]}"; do
-            nix-instantiate --parse "$file" >/dev/null || status=1
-          done
-        fi
-
-        if command -v statix >/dev/null 2>&1; then
-          statix_output="$(mktemp)"
-          if ! statix check . >"$statix_output" 2>&1; then
-            cat "$statix_output" >&2
-            status=1
-          elif [ -s "$statix_output" ]; then
-            cat "$statix_output" >&2
-            status=1
-          fi
-          rm -f -- "$statix_output"
-        fi
-
-        if command -v deadnix >/dev/null 2>&1; then
-          deadnix --fail . || status=1
-        fi
-
-        if command -v alejandra >/dev/null 2>&1; then
-          alejandra --check . || status=1
-        fi
-      fi
-
-      for file in "''${shell_files[@]}"; do
-        bash -n "$file" || status=1
-      done
-
       if [ "$status" -ne 0 ]; then
-        if [ "$mode" = strict ]; then
-          echo "git-host-check: checks failed; push blocked by strict mode" >&2
-          exit "$status"
-        fi
-        echo "git-host-check: checks failed; auto mode allows the operation" >&2
-        exit 0
+        printf 'pre-push: local checks failed — bypass once with: git push --no-verify\n' >&2
+        exit "$status"
       fi
-      echo "git-host-check: available checks passed ($mode mode)"
-    '';
-  };
-
-  postUpdate = pkgs.writeShellApplication {
-    name = "git-post-update-check";
-    runtimeInputs = [gitHostCheck];
-    text = ''
-      if ! git-host-check; then
-        echo "git: update completed, but local checks failed; the next verified push will be blocked" >&2
-      fi
-      exit 0
     '';
   };
 
   gitHooks = pkgs.runCommand "host-git-hooks" {} ''
     mkdir -p "$out"
-    ln -s ${gitHostCheck}/bin/git-host-check "$out/pre-push"
-    ln -s ${postUpdate}/bin/git-post-update-check "$out/post-merge"
-    ln -s ${postUpdate}/bin/git-post-update-check "$out/post-rewrite"
+    ln -s ${gitPreCommit}/bin/git-pre-commit "$out/pre-commit"
+    ln -s ${gitPrePush}/bin/git-pre-push "$out/pre-push"
   '';
 in {
-  home.packages = [gitHostCheck];
+  home.packages = [
+    gitPreCommit
+    gitPrePush
+  ];
 
   programs = {
     git = {
@@ -140,9 +90,6 @@ in {
         core.quotePath = false; # Show UTF-8 filenames (e.g. Persian) literally instead of \NNN escapes
         core.hooksPath = "${gitHooks}";
 
-        # Strict on this host; any repository can override it locally.
-        checks.mode = "strict";
-
         # Workflow
         pull.rebase = true;
         rebase.autoStash = true;
@@ -172,10 +119,6 @@ in {
           # Status & Info
           st = "status -sb";
           br = "branch --sort=-committerdate";
-          check = "!git-host-check";
-          checks-off = "!git config --local checks.mode off";
-          checks-auto = "!git config --local checks.mode auto";
-          checks-strict = "!git config --local checks.mode strict";
 
           # Logging
           lg = "log --oneline --graph --decorate --all";

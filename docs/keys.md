@@ -391,9 +391,9 @@ Aliasها: `c → build`، `data → python` و `default → nix`.
 | `proxy_on [port]` / `proxy_off` | proxy shell جاری |
 | `px <command>` | اجرای یک command از مسیر proxychains |
 | `nix_proxy test [port]` / `nix_proxy on [port]` / `nix_proxy off` | بررسی و مدیریت proxy موقت nix-daemon |
-| `bld` | build بدون activation |
-| `tst` | activation موقت برای تست |
-| `sw` | build و switch؛ فقط پس از review/test |
+| `nrb` | build بدون activation |
+| `nrt` | activation موقت برای تست |
+| `nrs` | build و switch؛ فقط پس از review/test (فلگ `--hostname laptop` صریح است) |
 | `nh os switch --rollback` | بازگشت و switch به generation قبلی |
 | `nh clean all --keep 5` | حذف generationهای قدیمی؛ با آگاهی از GC rootها |
 
@@ -449,9 +449,9 @@ dev web box --net none -s "$PWD:/source" \
 git status --short
 git diff --check
 nix-check             داخل dev nix
-bld                   build بدون activation
-tst                   activation موقت
-sw                    فقط بعد از تست
+nrb                   build بدون activation
+nrt                   activation موقت
+nrs                   فقط بعد از تست
 ```
 
 ---

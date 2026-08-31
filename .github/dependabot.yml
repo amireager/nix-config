@@ -1,0 +1,8 @@
+# Keep CI action versions fresh — the same renovate-style hygiene the
+# community expects for flake.lock, applied to workflow actions.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

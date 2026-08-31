@@ -47,9 +47,9 @@
     };
   in {
     nixosConfigurations = {
-      nixos = lib.mkHost {
-        hostname = "nixos";
-        hostModules = [./hosts/nixos];
+      laptop = lib.mkHost {
+        hostname = "laptop";
+        hostModules = [./hosts/laptop];
         users.amir = ./users/amir;
       };
     };

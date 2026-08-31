@@ -18,13 +18,11 @@ Fish shell اصلی کاربر است. Bash و Zsh برای compatibility و com
 
 ### Abbreviation به‌جای alias پنهان
 
-Abbreviation قبل از اجرا روی خط فرمان باز می‌شود. بنابراین `sw` به شکل واقعی `nh os switch` دیده می‌شود و command تغییردهنده پنهان نمی‌ماند.
+Abbreviation قبل از اجرا روی خط فرمان باز می‌شود. بنابراین `nrs` به شکل واقعی `nh os switch ~/nix-config --hostname laptop` دیده می‌شود و command تغییردهنده پنهان نمی‌ماند.
 
 | مخفف | باز می‌شود به |
 | :--- | :--- |
-| `sw` / `tst` / `bld` | `nh os switch` / `test` / `build` |
-| `nrs` / `nrt` / `nrb` | نام دوم همان سه عملیات |
-| `nrf` | مسیر recovery با `nixos-rebuild --flake /etc/nixos#nixos` |
+| `nrs` / `nrt` / `nrb` | `nh os {switch,test,build} ~/nix-config --hostname laptop` — فلگ صریح؛ نام host از `/etc/hostname` حدس زده نمی‌شود |
 | `gs` / `ga` / `gc` | status، add و commit |
 | `gco` / `gcb` / `gsw` | checkout، ساخت branch و switch |
 | `gp` / `gpl` | push و pull با rebase |

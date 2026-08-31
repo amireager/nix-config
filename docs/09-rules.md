@@ -50,14 +50,14 @@ Lua setup با `pcall` محافظت شده و نبودن plugin startup کل edi
 ```bash
 nix_proxy test 1819
 nix_proxy on 1819
-bld
+nrb
 # پس از build موفق و تست مورد نظر
 nix_proxy off
 ```
 
 در build اولیه می‌توان از `nixos-rebuild` خام استفاده کرد. این docs هیچ activation خودکاری اجرا نمی‌کند.
 
-## چرا `HTTP_PROXY=... sw` کافی نیست؟
+## چرا `HTTP_PROXY=... nrs` کافی نیست؟
 
 `nixos-rebuild` درخواست build را به daemon می‌دهد. Daemon service environment مستقل دارد. `nix_proxy` drop-in موقت را زیر `/run` می‌سازد و service را restart می‌کند.
 
@@ -467,28 +467,27 @@ Public بودن repository با private بودن credentialها تناقض ند�
 
 ---
 
-# Source-only CI
+# CI — گیت eval و lint
 
-CI اولیه مجاز است:
+CI فعلی (GitHub Actions) هر push را با این گام‌ها می‌سنجد:
 
-- formatting؛
-- static lint؛
-- shell syntax؛
-- Markdown/YAML؛
-- secret scan؛
-- Registry/completion/docs invariant؛
-- action workflow lint.
+- نسل‌شناسی flake.lock (flake-checker)؛
+- Flake evaluation کامل: `nix flake check` شامل home-manager و همه‌ی devShellها؛
+- formatting از طریق output `formatter` خود Flake (alejandra)؛
+- static lint: statix و deadnix؛
+- shell syntax: `bash -n` روی `*.sh`های tracked؛
+- lint خود workflow و ارتقای نسخه‌ی actionها با dependabot.
 
-CI اولیه مجاز نیست:
+CI انجام نمی‌دهد:
 
-- Flake evaluation؛
 - Nix build؛
 - NixOS activation؛
 - service start؛
 - hardware/runtime test؛
-- model download.
+- model download؛
+- secret scan (ابزارش در شل `audit` است و اجرای دوره‌ای‌اش دست کاربر).
 
-سبز بودن CI فقط source quality را ثابت می‌کند.
+سبز بودن CI یعنی کل Flake eval می‌شود و source تمیز است؛ سلامت runtime را ثابت نمی‌کند.
 
 ---
 
