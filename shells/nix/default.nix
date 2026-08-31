@@ -45,7 +45,7 @@ mkDevShell {
         nix flake check || status=1
 
         echo -e "\n\033[1;36m[2/5] Alejandra via the flake formatter...\033[0m"
-        nix run .#formatter -- --check . || status=1
+        nix fmt . -- --check . || status=1
 
         echo -e "\n\033[1;36m[3/5] Statix (anti-patterns)...\033[0m"
         statix check . || status=1

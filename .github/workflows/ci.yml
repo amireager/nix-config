@@ -41,7 +41,7 @@ jobs:
       # Formatting pinned to THIS repo's flake.lock via its own formatter
       # export (flake.nix -> formatter = alejandra) — never the runner's nixpkgs.
       - name: format (alejandra)
-        run: nix run .#formatter -- --check .
+        run: nix fmt . -- --check .
 
       # Mirrors of the local git-host-check lints.
       - name: lint (statix)
