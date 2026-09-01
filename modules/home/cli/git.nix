@@ -87,14 +87,27 @@ in {
 
         # Core settings
         init.defaultBranch = "main";
-        core.quotePath = false; # Show UTF-8 filenames (e.g. Persian) literally instead of \NNN escapes
-        core.hooksPath = "${gitHooks}";
+        # Core keys are grouped under a single `core` attrset to keep them
+        # from conflicting as dotted keys (statix [20] checks repeated keys).
+        core = {
+          quotePath = false; # Show UTF-8 filenames (e.g. Persian) literally instead of \NNN escapes
+          hooksPath = "${gitHooks}";
+          # Keyboard-first editors. The sequence editor drives `rebase -i` (the
+          # fixup/autosquash flow below); the core editor writes commit/merge messages.
+          editor = "nvim";
+        };
+        sequence.editor = "nvim";
 
         # Workflow
         pull.rebase = true;
         rebase.autoStash = true;
+        # Autosquash pairs with `git commit --fixup` (see alias.fix): after a few
+        # fixup commits, `git rebase -i --autosquash` rewrites them into the target.
+        rebase.autosquash = true;
         rerere.enabled = true;
         fetch.prune = true;
+        # Stop nagging about the (intentional) detached HEAD we land on in Nix derivations.
+        advice.detachedHead = false;
         commit.verbose = true;
 
         # Diff & Merge

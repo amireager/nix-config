@@ -2,6 +2,14 @@
 # The local hook enforces on this host; this workflow enforces everywhere.
 # Defense layers:
 #   editor (conform) -> local pre-push hook (git-host-check) -> CI (this file) -> branch protection
+#
+# Policy: EVAL-ONLY. We deliberately do NOT build here (a full system build is
+# multi-hour and would blow through the GitHub Actions allowance). What we gate:
+#   * flake schema + every devShell eval   (nix flake check)
+#   * the host NixOS config eval           (nix eval .#nixosConfigurations.<host>...drvPath)
+#   * formatting, lint, dead code, shell syntax
+# A real build gate would also need a binary cache (magic-nix-cache / Cachix).
+# Add one only when a build gate is actually wanted.
 name: ci
 
 on:
@@ -21,8 +29,9 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Upstream-compatible Nix for CI (flakes enabled out of the box).
       # Version is maintained by dependabot (.github/dependabot.yml).
@@ -30,13 +39,21 @@ jobs:
 
       # flake.lock hygiene: no dirty lock, no stale inputs, resolvable refs.
       # Soften with `continue-on-error: true` if a stale lock ever blocks a hotfix.
-      - uses: DeterminateSystems/flake-checker-action@v8
+      - uses: DeterminateSystems/flake-checker-action@v13
 
       # The check a client-side hook can never do: evaluate the whole flake —
       # nixosConfigurations.laptop (host + home-manager) and every devShell.
       # Eval-only: no builds, no caches, no unfree downloads.
       - name: nix flake check (full eval)
         run: nix flake check
+
+      # Force a full *evaluation* of the NixOS configuration down to its top-level
+      # derivation, WITHOUT instantiating/building it. This catches errors that live
+      # inside the system config (module merges, options, format assertions) and that
+      # a bare `nix flake check` would not deep-evaluate. Referencing .drvPath never
+      # triggers a build, only source fetches.
+      - name: evaluate host configuration (no build)
+        run: nix eval .#nixosConfigurations.laptop.config.system.build.toplevel.drvPath
 
       # Formatting pinned to THIS repo's flake.lock via its own formatter
       # export (flake.nix -> formatter = alejandra) — never the runner's nixpkgs.
