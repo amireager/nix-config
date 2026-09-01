@@ -1,12 +1,17 @@
-# Copy this directory to users/<username>/ and customize.
-{pkgs, ...}: {
-  users.users.username = {
-    isNormalUser = true;
-    group = "username";
-    extraGroups = ["networkmanager" "wheel" "video" "audio"];
-    shell = pkgs.fish;
-  };
-
-  users.groups.username = {};
-  programs.fish.enable = true;
+# ==============================================================================
+# USER TEMPLATE — copy this directory to users/<username>/ and customize.
+# ==============================================================================
+# The NixOS-side user is created via `mkUser` (lib/mkUser.nix). To add a user:
+#
+#   cp -r users/_template users/<username>
+#   # then edit the `name` in the mkUser call below and the module imports in
+#   # ./home.nix (which stay under the user's control).
+#
+# Options for mkUser:
+#   isAdmin     -> adds the `wheel` group (sudo-rs execWheelOnly)
+#   extraGroups -> list of additional supplementary groups
+import ../../lib/mkUser.nix {
+  name = "username";
+  isAdmin = false;
+  # extraGroups = [ "podman" ];
 }
