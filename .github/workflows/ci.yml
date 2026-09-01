@@ -30,7 +30,7 @@ jobs:
 
       # flake.lock hygiene: no dirty lock, no stale inputs, resolvable refs.
       # Soften with `continue-on-error: true` if a stale lock ever blocks a hotfix.
-      - uses: DeterminateSystems/flake-checker-action@v8
+      - uses: DeterminateSystems/flake-checker-action@v13
 
       # The check a client-side hook can never do: evaluate the whole flake —
       # nixosConfigurations.laptop (host + home-manager) and every devShell.
