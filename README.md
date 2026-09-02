@@ -77,7 +77,7 @@ Available environments:
 
 | Environment | Focus |
 | --- | --- |
-| `agent` | Agent runtimes, AST search, web extraction, fast linters |
+| `agent` | Coding agents (pi + omp), AST search, web extraction, fast linters |
 | `ai` | Local text, speech, image, RAG, and GPU tooling |
 | `python` | Clean Python, uv, Ruff, Pyright, IPython |
 | `rust` | Rust toolchain, rust-analyzer, cargo helpers, LLDB |

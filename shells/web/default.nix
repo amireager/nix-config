@@ -27,6 +27,10 @@ mkDevShell {
     # Traditional Linters & formatters (compatibility)
     eslint # JavaScript/TypeScript pluggable linter
     prettier # Opinionated formatter for web stacks
+
+    # Browser testing & end-to-end debugging. The Node inspector (`node --inspect`)
+    # is built into nodejs_24; Playwright covers browser-driven e2e/DAP-style work.
+    playwright # Browser automation, e2e tests, and headless debugging
   ];
 
   tips = [

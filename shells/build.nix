@@ -32,6 +32,12 @@ mkDevShell {
     # the project.
     lldb # provides lldb-dap, the adapter nvim talks to
     gdb # fallback where lldb struggles
+
+    # Low-level introspection for native debugging/profiling.
+    # (Only for headless/native work; the day-to-day nvim flow uses lldb-dap.)
+    strace # Syscall tracing
+    valgrind # Memory/leak detection & profiling
+    gdbgui # Browser-based gdb UI (optional; gdb already present)
   ];
 
   tips = [

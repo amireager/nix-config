@@ -194,11 +194,12 @@ Neovim دارای `direnv-vim` است. وقتی editor داخل project environm
 
 # ۱. `dev agent` — ابزار عملیاتی agentها
 
-این محیط خود agent خاصی را الزام نمی‌کند؛ runtime و ابزارهایی را فراهم می‌کند که Hermes، OpenCode یا scriptهای agent موجود در پروژه نیاز دارند.
+این محیط دو agent را فراهم می‌کند: **pi** (harness minimal، از nixpkgs) و **omp** (فورک پرآب با LSP/DAP/hashline/subagents/role-routing، از flake input). هر دو به یک gateway مدل (9router از env شل) متصل می‌شوند؛ مدل‌ها/کلیدها در config کاربر تنظیم می‌شوند نه در OS config.
 
 ## محتوا
 
 - Python، uv، Node.js 24 و Bun
+- `pi-coding-agent` (minimal) + `omp` (batteries-included) از flake input
 - `aichat` با gateway محلی 9router
 - `ast-grep`, `rg`, `fd`, `sd`, `difftastic`, `tokei`
 - Ruff، Biome، Pyright، ShellCheck، shfmt و Taplo

@@ -6,8 +6,8 @@
 # ==============================================================================
 # AGENT — Unified Autonomous Agent & AI Runtime Environment
 # ==============================================================================
-# Provides the full operational toolchain for Hermes, OpenCode, and AI agents:
-#   • Multi-Language Runtimes (Python3, uv, Node.js 22, Bun)
+# Provides the full operational toolchain for AI coding agents (pi, omp) and their tooling:
+#   • Multi-Language Runtimes (Python3, uv, Node.js 24, Bun)
 #   • AST Code Navigation & Manipulation (ast-grep, ripgrep, fd, sd, difftastic)
 #   • Instant Self-Correction & QA (ruff, biome, shfmt, shellcheck, taplo)
 #   • Web Scraping & Data Extraction (htmlq, jq, yq-go, xh, curl)
@@ -16,14 +16,18 @@
 mkDevShell {
   name = "agent";
   icon = "🤖";
-  description = "Autonomous Agent Suite: Hermes, OpenCode, AST Tools & 9router Gateway";
+  description = "Autonomous Agent Suite: pi (minimal), omp (batteries) & 9router Gateway";
 
   packages = with pkgs; [
     # ── Core Multi-Language Runtimes ──
     python3
     uv # Fast Python venv & package runner
     nodejs_24 # Current LTS Node.js runtime
-    bun # Ultra-fast JS/TS runtime & package manager
+    # bun # Ultra-fast JS/TS runtime & package manager
+
+    # ── Coding Agents ──
+    # pi — radical-minimal harness (4 core tools). From nixpkgs.
+    pi-coding-agent
 
     # ── AI CLI & Gateway Tools ──
     aichat # CLI chat & terminal pipe model runner
@@ -66,10 +70,6 @@ mkDevShell {
   };
 
   tips = [
-    {
-      key = "Hermes / Agents";
-      cmd = "python main.py / uv run hermes";
-    }
     {
       key = "AST Search/Edit";
       cmd = "ast-grep --pattern 'fn \$NAME(\$\$\$)'";
