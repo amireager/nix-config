@@ -66,7 +66,7 @@ _: {
         top = 10,
         bottom = 10,
       }
-      config.window_background_opacity = 0.85
+      config.window_background_opacity = 0.95
       config.enable_tab_bar = false
       config.colors = {
         foreground = "#e0e0e0",

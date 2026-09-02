@@ -14,6 +14,7 @@ mkDevShell {
     golangci-lint
     air # Live reload for Go applications
     delve # Go debugger
+    gotestsum # Human-friendly `go test` output / CI-friendly test runner (JSON, fancy)
   ];
 
   tips = [

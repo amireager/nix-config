@@ -19,6 +19,7 @@ mkDevShell {
     # Productivity & Cargo enhancements
     cargo-watch # Automatically trigger rebuilds/tests on file save
     cargo-edit # `cargo add`, `cargo rm`, `cargo upgrade`
+    cargo-nextest # Fast, next-gen test runner — better partitioning & output than cargo test
 
     # Standard build dependencies for common crates
     pkg-config

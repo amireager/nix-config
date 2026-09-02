@@ -22,6 +22,14 @@ mkDevShell {
     # Linters, formatters & type checkers
     ruff # Sub-10ms Python linter & formatter
     pyright # Static type checker & LSP
+    mypy # Static type checker — complements pyright; catches stub/annotations gaps
+
+    # Debugging (drives nvim-dap / dap.lua's Python adapter)
+    python3Packages.debugpy # DAP server for Python (pairs with lldb/gdb flow)
+    python3Packages.ipdb # Enhanced, keyboard-first pdb (from the nvim side)
+
+    # Testing
+    python3Packages.pytest # Primary test runner; reads pytest.ini/pyproject
 
     # Dev & JSON utilities
     jq

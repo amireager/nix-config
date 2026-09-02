@@ -74,13 +74,13 @@ window-rule {
 
 window-rule {
     match app-id="kitty"
-    opacity 0.92
+    opacity 0.98
     draw-border-with-background false
 }
 
 window-rule {
     match app-id="wezterm"
-    opacity 0.92
+    opacity 0.98
     draw-border-with-background false
 }
 
