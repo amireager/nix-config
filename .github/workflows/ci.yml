@@ -35,7 +35,7 @@ jobs:
 
       # Upstream-compatible Nix for CI (flakes enabled out of the box).
       # Version is maintained by dependabot (.github/dependabot.yml).
-      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/nix-installer-action@v23
 
       # flake.lock hygiene: no dirty lock, no stale inputs, resolvable refs.
       # Soften with `continue-on-error: true` if a stale lock ever blocks a hotfix.
