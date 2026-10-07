@@ -30,6 +30,15 @@
         "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
         "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
       ];
+
+      # Fail fast on stalled caches instead of hanging every download.
+      # *.cachix.org (Cloudflare-fronted) can stall with 0 bytes from some
+      # networks; nix defaults would wait much longer (connect-timeout=0
+      # means no timeout, stalled-download-timeout=300s). Philosophy is
+      # unchanged: fallback stays false — route the daemon through the
+      # `nix-proxy` tool explicitly when a cache needs it. See docs/02-nix.md.
+      connect-timeout = 10;
+      stalled-download-timeout = 30;
     };
   };
 

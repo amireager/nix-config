@@ -275,7 +275,7 @@ box --net none command
 ```bash
 box --proxy command
 box --proxy 8080 command
-box --net proxy:1819 command
+box --net proxy:1881 command
 ```
 
 Box متغیرهای HTTP/HTTPS/ALL proxy را روی SOCKS5 محلی تنظیم می‌کند. این routing اجباری نیست؛ برنامه‌ای که proxy env را نادیده بگیرد و network host دارد می‌تواند مستقیم وصل شود.

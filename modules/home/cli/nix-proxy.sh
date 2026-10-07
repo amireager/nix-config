@@ -6,7 +6,10 @@ readonly DROPIN_DIR="/run/systemd/system/nix-daemon.service.d"
 readonly DROPIN="$DROPIN_DIR/zz-nix-proxy.conf"
 readonly PENDING="$DROPIN.tmp"
 readonly BACKUP="$DROPIN.previous"
-readonly TEST_URL="https://cache.nixos.org/nix-cache-info"
+readonly TEST_URLS=(
+  "https://cache.nixos.org/nix-cache-info"
+  "https://niri.cachix.org/nix-cache-info"
+)
 TEMP_FILE=""
 
 cleanup() {
@@ -18,18 +21,26 @@ usage() {
   cat <<'USAGE'
 Usage:
   nix-proxy status
-  nix-proxy test [PORT]
-  nix-proxy on [PORT]
-  nix-proxy PORT
+  nix-proxy test [PORT] [http|socks]
+  nix-proxy on [PORT] [http|socks]
+  nix-proxy PORT [http|socks]
   nix-proxy off
 
+PORT defaults to $PROXY_PORT, then to the configured default.
+SCHEME defaults to $PROXY_SCHEME, then to "socks" (socks5h://...);
+use "http" for HTTP-only listeners (e.g. `nix-proxy on 1080 http`).
 The override is stored under /run and disappears on reboot.
-`test` checks the local listener and an outbound request without changing nix-daemon.
+`test` checks the local listener and outbound requests to the official
+Nix cache and niri.cachix.org without changing nix-daemon.
 USAGE
 }
 
 valid_port() {
   [[ "$1" =~ ^[0-9]{1,5}$ ]] && ((1 <= 10#$1 && 10#$1 <= 65535))
+}
+
+valid_scheme() {
+  [[ "${1,,}" == http || "${1,,}" == socks ]]
 }
 
 daemon_env() {
@@ -50,9 +61,7 @@ has_expected_env() {
   done
 
   grep -Fq 'no_proxy=127.0.0.1,localhost,::1' <<<"$env" &&
-    grep -Fq 'NO_PROXY=127.0.0.1,localhost,::1' <<<"$env" &&
-    grep -Fq 'NIX_CONNECT_TIMEOUT=30' <<<"$env" &&
-    grep -Fq 'NIX_CURL_FLAGS=--connect-timeout 30 --retry 8 --retry-delay 2 --retry-max-time 300' <<<"$env"
+    grep -Fq 'NO_PROXY=127.0.0.1,localhost,::1' <<<"$env"
 }
 
 has_proxy_url() {
@@ -75,8 +84,6 @@ show_status() {
     grep -oE '(all_proxy|ALL_PROXY|http_proxy|HTTP_PROXY|https_proxy|HTTPS_PROXY|ftp_proxy|FTP_PROXY)=[^" ]+' <<<"$env" |
       sort -u |
       sed 's/^/    effective: /' || true
-    grep -oE 'NIX_CONNECT_TIMEOUT=[^" ]+' <<<"$env" | sed 's/^/    effective: /' || true
-    grep -oE 'NIX_CURL_FLAGS=[^"]+' <<<"$env" | sed 's/^/    effective: /' || true
   else
     printf '\033[1;30m[-] nix-daemon unit environment: direct\033[0m\n'
   fi
@@ -99,23 +106,45 @@ resolve_port() {
   fi
 }
 
+resolve_scheme() {
+  local explicit="${1:-}"
+  if [[ -n "$explicit" ]]; then
+    printf '%s\n' "${explicit,,}"
+  elif [[ -n "${PROXY_SCHEME:-}" ]]; then
+    printf '%s\n' "${PROXY_SCHEME,,}"
+  else
+    printf 'socks\n'
+  fi
+}
+
+scheme_url() {
+  if [[ "$1" == http ]]; then
+    printf 'http://%s:%s\n' "$PROXY_HOST" "$2"
+  else
+    printf 'socks5h://%s:%s\n' "$PROXY_HOST" "$2"
+  fi
+}
+
 test_proxy() {
-  local port="$1" url="socks5h://$PROXY_HOST:$1"
+  local port="$1" scheme="$2" url test_url
+  url="$(scheme_url "$scheme" "$port")"
   if ! listener_ready "$port"; then
     printf 'nix-proxy: no TCP listener at %s:%s\n' "$PROXY_HOST" "$port" >&2
     return 1
   fi
   printf 'nix-proxy: listener is reachable at %s:%s\n' "$PROXY_HOST" "$port"
 
-  if ! curl --fail --silent --show-error --location \
-    --proxy "$url" \
-    --connect-timeout 10 --max-time 20 \
-    --output /dev/null \
-    "$TEST_URL"; then
-    printf 'nix-proxy: listener is up, but the outbound proxy test failed\n' >&2
-    return 1
-  fi
-  printf 'nix-proxy: outbound Nix cache request succeeded via %s\n' "$url"
+  for test_url in "${TEST_URLS[@]}"; do
+    if ! curl --fail --silent --show-error --location \
+      --proxy "$url" \
+      --connect-timeout 10 --max-time 20 \
+      --output /dev/null \
+      "$test_url"; then
+      printf 'nix-proxy: %s is unreachable via %s\n' "$test_url" "$url" >&2
+      return 1
+    fi
+    printf 'nix-proxy: %s OK via %s\n' "$test_url" "$url"
+  done
 }
 
 rollback_activation() {
@@ -144,7 +173,7 @@ rollback_activation() {
 }
 
 activate_proxy() {
-  local port="$1" url bypass desired env
+  local port="$1" scheme="$2" url bypass desired env
   local had_dropin=0 changed=1
 
   if ! listener_ready "$port"; then
@@ -152,7 +181,7 @@ activate_proxy() {
     return 1
   fi
 
-  url="socks5h://$PROXY_HOST:$port"
+  url="$(scheme_url "$scheme" "$port")"
   bypass="127.0.0.1,localhost,::1"
   desired="$(mktemp)" || return 1
   TEMP_FILE="$desired"
@@ -169,8 +198,6 @@ Environment="FTP_PROXY=$url"
 Environment="ALL_PROXY=$url"
 Environment="no_proxy=$bypass"
 Environment="NO_PROXY=$bypass"
-Environment="NIX_CONNECT_TIMEOUT=30"
-Environment="NIX_CURL_FLAGS=--connect-timeout 30 --retry 8 --retry-delay 2 --retry-max-time 300"
 EOF_DROPIN
 
   if ! sudo install -d -m 0755 "$DROPIN_DIR"; then
@@ -274,7 +301,7 @@ deactivate_proxy() {
 }
 
 main() {
-  local action="${1:-status}" port
+  local action="${1:-status}" port scheme
 
   case "$action" in
   status)
@@ -285,7 +312,7 @@ main() {
     show_status
     ;;
   test)
-    (($# <= 2)) || {
+    (($# <= 3)) || {
       usage >&2
       return 2
     }
@@ -294,10 +321,15 @@ main() {
       printf 'nix-proxy: invalid port: %s\n' "$port" >&2
       return 2
     }
-    test_proxy "$port"
+    scheme="$(resolve_scheme "${3:-}")"
+    valid_scheme "$scheme" || {
+      printf 'nix-proxy: invalid scheme: %s (expected http or socks)\n' "$scheme" >&2
+      return 2
+    }
+    test_proxy "$port" "$scheme"
     ;;
   on)
-    (($# <= 2)) || {
+    (($# <= 3)) || {
       usage >&2
       return 2
     }
@@ -306,7 +338,12 @@ main() {
       printf 'nix-proxy: invalid port: %s\n' "$port" >&2
       return 2
     }
-    activate_proxy "$port"
+    scheme="$(resolve_scheme "${3:-}")"
+    valid_scheme "$scheme" || {
+      printf 'nix-proxy: invalid scheme: %s (expected http or socks)\n' "$scheme" >&2
+      return 2
+    }
+    activate_proxy "$port" "$scheme"
     ;;
   off)
     (($# == 1)) || {
@@ -320,7 +357,14 @@ main() {
     ;;
   *)
     if (($# == 1)) && valid_port "$action"; then
-      activate_proxy "$action"
+      scheme="$(resolve_scheme "")"
+      if ! valid_scheme "$scheme"; then
+        printf 'nix-proxy: invalid PROXY_SCHEME: %s (expected http or socks)\n' "$scheme" >&2
+        return 2
+      fi
+      activate_proxy "$action" "$scheme"
+    elif (($# == 2)) && valid_port "$1" && valid_scheme "$2"; then
+      activate_proxy "$1" "${2,,}"
     else
       printf 'nix-proxy: unknown action or invalid port: %s\n' "$action" >&2
       usage >&2

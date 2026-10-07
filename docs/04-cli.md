@@ -84,10 +84,12 @@ PROXY_PORT=8080 px xh GET https://api.example.com/status
 
 ```bash
 nix_proxy status
-nix_proxy test        # listener و خروجی واقعی، بدون تغییر daemon
-nix_proxy on          # port پیش‌فرض یا PROXY_PORT
-nix_proxy on 1819     # port صریح
-nix_proxy 1819        # فرم کوتاه
+nix_proxy test              # listener و خروجی واقعی، بدون تغییر daemon
+nix_proxy test 1080 http    # تست یه listener دیگه از نوع HTTP
+nix_proxy on                # port پیش‌فرض (1881) با socks
+nix_proxy on 1080           # port صریح غیرپیش‌فرض
+nix_proxy on 1080 http      # port و scheme صریح
+nix_proxy 1881              # فرم کوتاه (معادل on با دیفالت)
 nix_proxy off
 ```
 
@@ -95,7 +97,9 @@ nix_proxy off
 
 تغییر port، activation و deactivation تراکنشی‌اند: override قبلی پیش از تغییر نگه داشته می‌شود و شکست reload، restart یا verification باعث تلاش برای بازگرداندن همان وضعیت قبلی می‌شود. اگر override دیگری هنوز proxy تنظیم کند، `off` آن را حذف نمی‌کند و وضعیت را صریح گزارش می‌دهد. reboot همه‌ی stateهای زیر `/run` را پاک می‌کند.
 
-نام واقعی command برابر `nix-proxy` است و در Bash/Zsh نیز کار می‌کند؛ `nix_proxy` wrapper اصلی Fish است. `test` یک درخواست کوتاه به cache رسمی Nix می‌فرستد، اما config یا service را تغییر نمی‌دهد.
+نام واقعی command برابر `nix-proxy` است و در Bash/Zsh نیز کار می‌کند؛ `nix_proxy` wrapper اصلی Fish است. `test` درخواست کوتاه به cache رسمی Nix و `niri.cachix.org` می‌فرستد، اما config یا service را تغییر نمی‌دهد.
+
+scheme پیش‌فرض `socks` است (`socks5h://…`) و port پیش‌فرض `1881` (mixed روی sing-box — قرارداد لایه پروکسی در `lib/default.nix`). برای listenerای که فقط HTTP می‌دن از `http` استفاده کن (مثلاً `nix_proxy on 1080 http`) یا `PROXY_SCHEME=http` را export کن. اگر `test` برای cache رسمی موفق ولی برای cachix ناموفق بود، یعنی proxy زنده است ولی مسیر cachix هنوز از آن رد نمی‌شود.
 
 این ابزار privileged و عمداً imperative است. کاربرد اصلی آن sourceهایی است که cache ندارند یا از شبکه‌ی مستقیم قابل دریافت نیستند؛ proxy همین shell همچنان مسئولیت `proxy_on` یا `px` است.
 

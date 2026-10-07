@@ -48,8 +48,8 @@ Lua setup با `pcall` محافظت شده و نبودن plugin startup کل edi
 سیستم پایه را build/activate کنید، سپس daemon proxy را روشن و packageها را برگردانید:
 
 ```bash
-nix_proxy test 1819
-nix_proxy on 1819
+nix_proxy test
+nix_proxy on
 nrb
 # پس از build موفق و تست مورد نظر
 nix_proxy off
@@ -74,7 +74,9 @@ Proxy daemon را روشن و فراموش نکنید؛ رفتار موقت و �
 
 # NVIDIA source
 
-Driver proprietary ممکن است هنگام cache miss از download.nvidia.com دریافت شود. URL دقیق به version package pinned در nixpkgs وابسته است؛ مثال placeholder را به‌عنوان URL واقعی اجرا نکنید. ابتدا `nix_proxy test` را بررسی کنید و فقط در صورت نیاز daemon را موقتاً proxy کنید.
+Driver proprietary هنگام cache miss به‌صورت source از download.nvidia.com دریافت می‌شود. URL دقیق به version package pinned در nixpkgs وابسته است؛ مثال placeholder را به‌عنوان URL واقعی اجرا نکنید.
+
+توجه: این fetch داخل sandbox با environment تمیز انجام می‌شود و `nix_proxy` به آن نمی‌رسد — پروکسی daemon فقط substituterها و fetchهای daemon/client را پوشش می‌دهد. پس برای درایور: روی branchای بمان که در cache هست (حالت پیش‌فرض)، یا فایل دقیق را دستی در store پیش‌بارگذاری (pre-seed) کن، یا در آینده از TUN شفاف استفاده کن.
 
 Prefetch کردن فایل دیگری با version مشابه build را حل نمی‌کند. URL، hash، mode و Store name باید دقیقاً همان derivation باشند.
 

@@ -165,8 +165,9 @@ in {
       mkcd = "mkdir -p $argv[1] && cd $argv[1]";
 
       # === On-Demand Dynamic Proxy (Per Terminal Tab) ===
+      # Usage: proxy_on [PORT] [http|socks] — PROXY_PORT/PROXY_SCHEME override defaults.
       proxy_on = {
-        description = "Enable proxy for the current shell session";
+        description = "Enable proxy for the current shell session ([PORT] [http|socks])";
         body = ''
           set -l port ${toString proxy.port}
           if test (count $argv) -gt 0
@@ -179,7 +180,21 @@ in {
             return 2
           end
 
+          set -l scheme socks
+          if test (count $argv) -gt 1
+            set scheme (string lower -- $argv[2])
+          else if set -q PROXY_SCHEME
+            set scheme (string lower -- $PROXY_SCHEME)
+          end
+          if test "$scheme" != http -a "$scheme" != socks
+            echo "proxy_on: invalid scheme: $scheme (expected http or socks)" >&2
+            return 2
+          end
+
           set -l url "socks5h://${proxy.host}:$port"
+          if test "$scheme" = http
+            set url "http://${proxy.host}:$port"
+          end
           set -l bypass "127.0.0.1,localhost,::1"
           set -gx ALL_PROXY $url
           set -gx HTTP_PROXY $url
@@ -191,7 +206,7 @@ in {
           set -gx ftp_proxy $url
           set -gx NO_PROXY $bypass
           set -gx no_proxy $bypass
-          echo -e "\033[1;32m[+] Proxy Enabled in this terminal (${proxy.host}:$port)\033[0m"
+          echo -e "\033[1;32m[+] Proxy Enabled in this terminal ($url)\033[0m"
         '';
       };
 

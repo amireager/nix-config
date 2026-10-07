@@ -154,7 +154,7 @@ in {
       # DAP (Debug Adapter Protocol)
       # nvim-dap and nvim-dap-python are fetched from codeberg.org, which is
       # unreachable from here. Build them once behind the proxy:
-      #   nix_proxy 1819 && nh os switch && nix_proxy off
+      #   nix_proxy on && nh os switch && nix_proxy off
       # After that they are in the store and rebuild without it.
       nvim-dap # core debugger
       nvim-dap-ui # panels: scopes, stacks, breakpoints, repl

@@ -38,7 +38,7 @@ systemctl show nix-daemon --property=ActiveState,Environment
 systemctl list-timers nix-optimise.timer --no-pager
 ```
 
-روی host فعلی، `max-jobs=3` و `cores=4` سقف دوازده thread را بین سه derivation تقسیم می‌کند. Transfer settingهای عمومی روی default نگه‌داری‌شده‌ی Nix می‌مانند؛ retry خاص شبکه فقط هنگام استفاده‌ی صریح از ابزار موقت اعمال می‌شود. `fallback=false` فقط source build پس از شکست substitute شناخته‌شده را متوقف می‌کند و مانع build عادی در cache miss نیست.
+روی host فعلی، `max-jobs=3` و `cores=4` سقف دوازده thread را بین سه derivation تقسیم می‌کند. Transfer settingها fail-fast تنظیم شده‌اند (`connect-timeout=10` و `stalled-download-timeout=30`) تا cacheای که stall می‌کند — مثل `*.cachix.org` از بعضی شبکه‌ها که handshake را کامل می‌کند ولی صفر بایت برمی‌گرداند — هر دانلود را دقیقه‌ها قفل نکند و سریع به ارور برسد؛ retry خاص شبکه فقط هنگام استفاده‌ی صریح از ابزار موقت اعمال می‌شود. `fallback=false` فقط source build پس از شکست substitute شناخته‌شده را متوقف می‌کند و مانع build عادی در cache miss نیست.
 
 `auto-optimise-store` خاموش است تا importهای روزمره برای hash/hardlink متوقف نشوند. `nix-optimise.timer` هفته‌ای یک‌بار، روی برق AC و با اولویت CPU/I/O برابر idle اجرا می‌شود.
 
