@@ -473,6 +473,32 @@ startup و اندازه‌ی closure Neovim ثابت می‌ماند. یک هش�
 
 ---
 
+# پکیج اختیاری در devShell نباید evaluation را بشکند
+
+## مسئله
+
+nixpkgs گاهی یک dependency را `broken` علامت می‌زند. در ۲۰۲۶-۱۰-۲۳ این برای `oterm` (از راه `fastmcp-slim`) و `open-webui` (از راه `chromadb` ← `posthog`) پیش آمد. یک package خراب کل `dev ai` را از evaluation می‌اندازد و `nix flake check` (یعنی CI) را قرمز می‌کند، در حالی که بقیه‌ی shell سالم است.
+
+## گزینه‌ها
+
+- حذف دائمی دو package: وقتی upstream درست شد برنمی‌گردند.
+- `problems.handlers` در nixpkgs برای نادیده‌گرفتن «broken»: package ممکن است build شود و آنجا بشکند.
+- `builtins.tryEval`: هر package تا وقتی evaluate می‌شود می‌ماند.
+
+## تصمیم
+
+گزینه‌ی سوم، فقط برای این دو UI اختیاری. اگر evaluate نشد، به‌جایش یک پوشه‌ی خالی می‌آید و banner شل می‌گوید چه چیزی نیست.
+
+## پیامد
+
+Update با یک package خراب upstream متوقف نمی‌شود. بهایش غیبت بی‌صدای ابزار است؛ banner و `ai-doctor` آن را نشان می‌دهند. این الگو را برای ابزار اصلی به کار نبرید.
+
+## شرط بازنگری
+
+اگر nixpkgs هر دو package را درست کرد و چند هفته پایدار ماند، `tryEval` برداشته می‌شود.
+
+---
+
 # قالب تصمیم جدید
 
 برای افزودن ADR:

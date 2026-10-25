@@ -41,7 +41,7 @@ in {
         margin_edge = 8;
         margin_ends = 12;
       };
-      notifications.enable_daemon = true;
+      notification.enable_daemon = true; # singular; 5.3 warns "notifications: unknown section"
       dock = {
         enabled = true;
         position = "bottom";

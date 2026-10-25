@@ -60,10 +60,9 @@
   # itself remains host-owned under hosts/<name>/default.nix.
   boot = {
     kernelPackages = pkgs.linuxPackages_zen;
-    initrd = {
-      verbose = false;
-      systemd.enable = true;
-    };
+    # boot.initrd.systemd.enable and boot.initrd.verbose are not set on purpose:
+    # the systemd initrd is already the default here, and newer nixpkgs removed the
+    # scripted stage 1 those two belong to, so setting them now fails the build.
     consoleLogLevel = 4;
     kernelParams = [
       "quiet"

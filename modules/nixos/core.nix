@@ -1,8 +1,19 @@
 {
+  lib,
+  options,
   pkgs,
   flakePath,
   ...
-}: {
+}: let
+  # Newer nixpkgs removed services.journald.extraConfig (setting it now fails the
+  # build) in favour of settings.Journal, which the pinned one does not have yet.
+  # Pick whichever exists so this file works before and after a nixpkgs update.
+  journalLimits = {
+    SystemMaxUse = "250M";
+    SystemMaxFileSize = "50M";
+    MaxRetentionSec = "1month";
+  };
+in {
   # ============================================================
   # CORE SYSTEM — NixOS Foundation
   # ============================================================
@@ -18,11 +29,14 @@
       # Allow admin users to use trusted Nix features and binary caches.
       trusted-users = ["root" "@wheel"];
 
-      # Binary caches — only signed caches.
+      # Binary caches — official mirror + official upstream.
+      # mirror.nju.edu.cn mirrors cache.nixos.org and is directly reachable
+      # from Iran with high bandwidth. Cachix substituters are omitted by default
+      # because `follows = "nixpkgs"` in flake.nix creates unique derivation hashes
+      # (guaranteed 404 upstream), and Cloudflare DPI blackholes stall for 30s.
       substituters = [
+        "https://mirror.nju.edu.cn/nix-channels/store"
         "https://cache.nixos.org"
-        "https://niri.cachix.org"
-        "https://noctalia.cachix.org"
       ];
 
       trusted-public-keys = [
@@ -53,11 +67,10 @@
 
   # === Services ===
   services = {
-    journald.extraConfig = ''
-      SystemMaxUse=250M
-      SystemMaxFileSize=50M
-      MaxRetentionSec=1month
-    '';
+    journald =
+      if options.services.journald ? settings
+      then {settings.Journal = journalLimits;}
+      else {extraConfig = lib.generators.toKeyValue {} journalLimits;};
   };
 
   # === Locale & Timezone ===

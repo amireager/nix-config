@@ -3,6 +3,22 @@
   pkgs,
   ...
 }: let
+  inherit (pkgs) lib;
+
+  # oterm and open-webui are optional. nixpkgs now and then marks one of their
+  # dependencies broken (2026-10-23: oterm -> fastmcp-slim, open-webui -> chromadb
+  # -> posthog), and a single broken package makes the whole shell, and `nix flake
+  # check` with it, fail to evaluate. Each one stays whenever it evaluates and is
+  # replaced by an empty directory (with a banner note) while it does not. The
+  # names below shadow the `with pkgs;` ones in `packages`.
+  usable = pkg: (builtins.tryEval pkg.drvPath).success;
+  orEmpty = pkg:
+    if usable pkg
+    then pkg
+    else pkgs.emptyDirectory;
+  oterm = orEmpty pkgs.oterm;
+  open-webui = orEmpty pkgs.open-webui;
+
   aiDoctor = pkgs.writeShellApplication {
     name = "ai-doctor";
     runtimeInputs = with pkgs; [coreutils curl gnugrep gnused pciutils vulkan-tools];
@@ -160,10 +176,13 @@ in
       }
     ];
 
-    notes = [
-      "Designed for GTX 1650 4 GiB: prefer 1B–4B GGUF Q4 models and 2K–4K context"
-      "7B/8B models need partial CPU/RAM offload; 14B+ is not recommended"
-      "No service starts and no model downloads when entering this shell"
-      "Use box -g with explicit -s/-S shares when running these tools in the sandbox"
-    ];
+    notes =
+      [
+        "Designed for GTX 1650 4 GiB: prefer 1B–4B GGUF Q4 models and 2K–4K context"
+        "7B/8B models need partial CPU/RAM offload; 14B+ is not recommended"
+        "No service starts and no model downloads when entering this shell"
+        "Use box -g with explicit -s/-S shares when running these tools in the sandbox"
+      ]
+      ++ lib.optional (!usable pkgs.oterm) "oterm is not in this shell: nixpkgs marks one of its dependencies broken"
+      ++ lib.optional (!usable pkgs.open-webui) "open-webui is not in this shell: nixpkgs marks one of its dependencies broken";
   }

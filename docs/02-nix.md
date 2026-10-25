@@ -163,6 +163,40 @@ nrb
 
 Update قفل و تغییر configuration را در یک commit مخلوط نکنید، مگر وابستگی مستقیم داشته باشند. یک lock update مستقل rollback و diagnosis را آسان‌تر می‌کند.
 
+## preflight قبل از update
+
+Update را اول روی یک کپی موقت امتحان کنید؛ repo اصلی و `flake.lock` دست نمی‌خورند:
+
+```bash
+git worktree add --detach /tmp/preflight HEAD
+cd /tmp/preflight
+nix flake update
+
+# ۱. evaluation: option حذف‌شده یا package خراب همین‌جا خطا می‌دهد
+nix flake check --no-build
+nix eval .#nixosConfigurations.laptop.config.system.build.toplevel.drvPath
+
+# ۲. چه چیزی build و چه چیزی download می‌شود
+nix build --dry-run --no-link \
+  --option extra-substituters 'https://niri.cachix.org https://noctalia.cachix.org' \
+  .#nixosConfigurations.laptop.config.system.build.toplevel 2>&1 | tee /tmp/preflight.txt | grep 'will be'
+```
+
+خواندن خروجی:
+
+- «derivations will be built» شامل صدها derivation کوچک است (فایل config، unit، wrapper)؛ عدد کل مهم نیست. اسم‌های سنگین را بخوانید: `niri-*` (Rust، با بیش از صد crate)، `nvidia-kernel-modules-*` (با هر kernel جدید دوباره کامپایل می‌شود) و هر چیزی که تا دیروز از cache می‌آمد و حالا نمی‌آید. بعضی اسم‌ها فقط wrapper‌اند (مثل `zellij-*` که `zellij-unwrapped` را از cache می‌گیرد)؛ برای تشخیص، `nix build --dry-run nixpkgs#<name>` را جدا بزنید.
+- «paths will be fetched» حجم download از cache است.
+- بعضی منبع‌ها از هیچ cache نمی‌آیند و مستقیم از upstream دانلود می‌شوند (runfile NVIDIA، tarball Zen، فایل index برای nix-index، tarball پلاگین‌های Neovim از GitHub). میزبان‌هایشان را ببینید تا بدانید `nix-proxy` لازم است یا نه:
+
+```bash
+grep -E '\.drv$' /tmp/preflight.txt | xargs nix derivation show |
+  jq -r '.derivations[] | select(.outputs.out.hash != null) |
+         (.structuredAttrs.urls[0]? // ((.env.urls // .env.url // "") | split(" ")[0]) // .name)' |
+  sed -E 's#^(https?://[^/]+)/.*#\1#' | sort | uniq -c
+```
+
+اگر خطا یا تعداد build غیرعادی دیدید همان‌جا بایستید؛ `flake.lock` اصلی تغییری نکرده است. configuration را در commit جدا درست کنید، preflight را دوباره بزنید و فقط بعد `nix flake update` را در repo اصلی اجرا کنید. `dev ai` تنها shellی است که compile واقعی دارد (ollama با CUDA، qdrant)؛ بعد از update همان لحظه بازش نکنید.
+
 ## چرا `follows` مهم است؟
 
 Home Manager، Niri، Noctalia، Zen Browser و nix-index-database به nixpkgs اصلی follow می‌کنند. بدون آن ممکن است چند nixpkgs متفاوت وارد graph شوند و package ABI، evaluation و closure را پیچیده کنند.
@@ -420,6 +454,7 @@ statix check package.nix
 ```text
 قبل:
 [ ] working tree را می‌شناسم
+[ ] df -h /nix /boot: جای build و kernel/initrd تازه هست (هر generation آن‌ها را روی /boot نگه می‌دارد)
 [ ] generation سالم برای rollback دارم
 [ ] rootهای dev مهم ثبت‌اند
 [ ] تغییر hardware/network را مستقیم switch نمی‌کنم

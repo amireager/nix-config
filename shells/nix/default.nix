@@ -51,11 +51,11 @@ mkDevShell {
         C_YELLOW=$(printf "\033[1;33m")
         C_CYAN=$(printf "\033[1;36m")
 
-        # Which cache each pinned input needs. An input without a cache is
-        # always built from source.
+        # Which cache each pinned input needs. Inputs with `follows = "nixpkgs"`
+        # diverge from upstream CI hashes and are built from source locally.
         declare -A INPUT_CACHE=(
-          [niri]="https://niri.cachix.org"
-          [noctalia]="https://noctalia.cachix.org"
+          [niri]=""
+          [noctalia]=""
           [zen-browser]=""
         )
 
@@ -75,7 +75,8 @@ mkDevShell {
           fi
           host="$(printf '%s\n' "$url" | sed -e 's|^[a-z][a-z0-9+.-]*://||' -e 's|/.*$||' -e 's|:.*$||')"
           priority="$(printf '%s\n' "$info" | sed -n 's/^Priority: //p' | head -1)"
-          if printf '%s\n' "$TRUSTED" | grep -q "^$host-1:"; then
+          if printf '%s\n' "$TRUSTED" | grep -q "^$host-1:" || \
+             { [[ "$url" =~ nix-channels/store ]] && printf '%s\n' "$TRUSTED" | grep -q "^cache\.nixos\.org-1:"; }; then
             printf 'ok %s %s' "$host" "''${priority:-?}"
           else
             printf 'untrusted %s %s' "$host" "''${priority:-?}"

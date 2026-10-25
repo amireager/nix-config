@@ -80,9 +80,19 @@ Driver proprietary هنگام cache miss به‌صورت source از download.nv
 
 Prefetch کردن فایل دیگری با version مشابه build را حل نمی‌کند. URL، hash، mode و Store name باید دقیقاً همان derivation باشند.
 
-## بازیابی دستی یک fixed-output حجیم
+## پیش‌بارگذاری سریع یک‌خطی با nix-prefetch-url
 
-این مسیر برای failure نادر است و هیچ hook یا cache سراسری به Nix اضافه نمی‌کند. partial اولین تلاش Nix معمولاً قابل استفاده نیست؛ دانلود دستی یک بار از ابتدا شروع می‌شود، اما قطع‌های بعدی با همان فایل ادامه پیدا می‌کنند.
+ساده‌ترین روش برای عبور از تحریم ۴۰۳ انویدیا (یا هر FOD تحریمی دیگر)، پیش‌بارگذاری مستقیم با ابزار رسمی خودِ Nix از طریق پروکسی است. این دستور فایل را دانلود، هش sha256 را محاسبه و مستقیماً وارد Store محلی می‌کند تا Nix دیگر سراغ سرور انویدیا نرود:
+
+```bash
+all_proxy=http://127.0.0.1:2080 nix-prefetch-url \
+  --name "NVIDIA-Linux-x86_64-<VERSION>.run" \
+  "https://us.download.nvidia.com/XFree86/Linux-x86_64/<VERSION>/NVIDIA-Linux-x86_64-<VERSION>.run"
+```
+
+نکته: `<VERSION>` باید دقیقاً همان نسخه‌ای باشد که در خروجی خطای بیلد (`.drv`) آمده است.
+
+## بازیابی دستی یک fixed-output حجیم (در صورت قطع مکرر و نیاز به Resume)
 
 ### ۱. derivation را بدون build بررسی کنید
 
