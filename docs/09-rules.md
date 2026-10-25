@@ -115,7 +115,7 @@ nix-store --query --outputs "$drv"
 ### ۲. همان URL را resumable دانلود کنید
 
 ```bash
-work="$HOME/Downloads/nix-recovery"
+work="$HOME/dl/nix-recovery"
 file="$work/source.part"
 url='URL-FROM-THE-ACTUAL-BUILD-ERROR'
 install -d -m 700 "$work"

@@ -23,6 +23,11 @@ output "eDP-1" {
     scale 1.0
 }
 
+// Screenshots (Mod+P, Mod+Shift+P, Mod+Alt+P). niri's own default is the literal
+// ~/Pictures/Screenshots/..., which ignores user-dirs.dirs. default.nix replaces
+// the placeholder with xdg.userDirs.extraConfig.SCREENSHOTS (modules/home/gui/xdg.nix).
+screenshot-path "@screenshotPath@"
+
 layout {
     gaps 12
     center-focused-column "never"

@@ -1,4 +1,13 @@
-{lib, ...}: {
+{
+  config,
+  lib,
+  ...
+}: let
+  dirs = config.xdg.userDirs;
+  # Starship matches substitutions against the path after the home directory
+  # became "~", so write the XDG folders that way.
+  tilde = lib.replaceStrings [config.home.homeDirectory] ["~"];
+in {
   # ============================================================
   # STARSHIP PROMPT — High-Performance, Minimal & Informative
   # ============================================================
@@ -40,9 +49,9 @@
         read_only_style = "bold #f38ba8";
         format = "[$path]($style)[$read_only]($read_only_style) ";
         substitutions = {
-          "~/projects" = "󰲋 ";
-          "~/Documents" = "󰈙 ";
-          "~/Downloads" = "󰇚 ";
+          "${tilde dirs.projects}" = "󰲋 ";
+          "${tilde dirs.documents}" = "󰈙 ";
+          "${tilde dirs.download}" = "󰇚 ";
         };
       };
 

@@ -71,7 +71,7 @@ ${C_BOLD}EXAMPLES:${C_RESET}
   box
 
   ${C_DIM}# 2. Run with read-only Neovim config and read-write downloads${C_RESET}
-  box -s ~/.config/nvim -S ~/Downloads
+  box -s ~/.config/nvim -S ~/dl
 
   ${C_DIM}# 3. Work on custom directory mapped to /work${C_RESET}
   box -w my-project/

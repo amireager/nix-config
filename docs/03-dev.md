@@ -627,7 +627,7 @@ set -gx NIX_CONFIG_FLAKE /path/to/nix-config
 dev
 ```
 
-مسیر استاندارد نصب `/etc/nixos` است. fallbackهای `~/nix-config` و `~/projects/nix-config` برای recovery وجود دارند.
+مسیر استاندارد نصب `/etc/nixos` است. fallbackهای `~/nix-config` و `~/dev/nix-config` (پوشه‌ی `XDG_PROJECTS_DIR`) برای recovery وجود دارند؛ `~/projects` دیگر جست‌وجو نمی‌شود.
 
 ## shell ثبت نشده
 

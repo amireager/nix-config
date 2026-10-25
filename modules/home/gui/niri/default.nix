@@ -1,4 +1,12 @@
-{pkgs, ...}: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
+  # strftime(3) pattern; niri creates the last folder, xdg.nix creates its parent.
+  screenshotPath = "${config.xdg.userDirs.extraConfig.SCREENSHOTS}/Screenshot from %Y-%m-%d %H-%M-%S.png";
+in {
   home.packages = with pkgs; [
     networkmanagerapplet
     swayidle
@@ -6,7 +14,8 @@
     xwayland-satellite
   ];
 
-  xdg.configFile."niri/config.kdl".source = ./config.kdl;
+  xdg.configFile."niri/config.kdl".text =
+    lib.replaceStrings ["@screenshotPath@"] [screenshotPath] (builtins.readFile ./config.kdl);
 
   home.sessionVariables = {
     NIXOS_OZONE_WL = "1";

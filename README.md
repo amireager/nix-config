@@ -99,7 +99,7 @@ Aliases: `dev c` → `build`, `dev data` → `python`, and `dev default` → `ni
 ```bash
 box --dry-run --secure python suspicious.py
 box --secure --net none command
-box -s ~/.config/nvim -S ~/Downloads command
+box -s ~/.config/nvim -S ~/dl command
 box -w ./explicit-project command
 box --status
 ```

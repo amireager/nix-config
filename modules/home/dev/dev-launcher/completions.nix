@@ -2,9 +2,13 @@
 {
   pkgs,
   flakePath,
+  flakeFallbacks,
   registry,
 }: let
   inherit (pkgs) lib;
+
+  fallbackWords = lib.concatStringsSep " " flakeFallbacks; # fish: unquoted, $HOME expands
+  fallbackQuoted = lib.concatMapStringsSep " " (p: ''"${p}"'') flakeFallbacks;
 
   shellWords = lib.concatMapStringsSep " " lib.escapeShellArg registry.shellDirs;
   bashAliasRows = lib.concatStringsSep "\n" (
@@ -40,7 +44,7 @@
   devFish = ''
     function __dev_flake
         test -n "$NIX_CONFIG_FLAKE"; and echo $NIX_CONFIG_FLAKE; and return
-        for c in ${flakePath} $HOME/nix-config $HOME/projects/nix-config /etc/nixos
+        for c in ${flakePath} ${fallbackWords}
             test -f $c/flake.nix; and echo $c; and return
         end
     end
@@ -92,7 +96,7 @@
       cur="''${COMP_WORDS[COMP_CWORD]}"
       prev="''${COMP_WORDS[COMP_CWORD-1]:-}"
       root="''${NIX_CONFIG_FLAKE:-${flakePath}}"
-      [ -f "$root/flake.nix" ] || for c in "$HOME/nix-config" "$HOME/projects/nix-config" /etc/nixos; do
+      [ -f "$root/flake.nix" ] || for c in ${fallbackQuoted}; do
         [ -f "$c/flake.nix" ] && { root="$c"; break; }
       done
       words="$(__dev_scan "$root" | cut -f1 | tr '\n' ' ')"
@@ -129,7 +133,7 @@
     #compdef dev
     _dev_shells() {
       local root="''${NIX_CONFIG_FLAKE:-${flakePath}}"
-      [[ -f "$root/flake.nix" ]] || for c in "$HOME/nix-config" "$HOME/projects/nix-config" /etc/nixos; do
+      [[ -f "$root/flake.nix" ]] || for c in ${fallbackQuoted}; do
         [[ -f "$c/flake.nix" ]] && { root="$c"; break; }
       done
       local -a shells

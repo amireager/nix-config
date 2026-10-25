@@ -174,7 +174,7 @@ box --secure --ephemeral --net none command
 ## read-only پیش‌فرض امن‌تر
 
 ```bash
-box -s ~/Documents/reference.pdf command
+box -s ~/doc/reference.pdf command
 box --share ~/src/project:/source command
 ```
 

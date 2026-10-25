@@ -161,9 +161,12 @@ wl-paste --list-types
 
 | کار | کلید | رفتار |
 | :--- | :--- | :--- |
+| Region / screen / window screenshot | `Mod+P` / `Mod+Shift+P` / `Mod+Alt+P` | niri: فایل در `XDG_SCREENSHOTS_DIR` و clipboard |
 | Region screenshot → clipboard | `Mod+Ctrl+P` | Slurp → Grim → wl-copy |
 | Record toggle/GUI | `Mod+Alt+R` | GPU Screen Recorder GTK |
 | Keycaster | `Mod+Alt+K` | wshowkeys |
+
+فایل screenshotهای niri در `screenshot-path` ذخیره می‌شود. `config.kdl` آن را از `xdg.userDirs.extraConfig.SCREENSHOTS` پر می‌کند (پیش‌فرض ما `~/media/img/screenshots`). niri خودش `~/Pictures/Screenshots` را فرض می‌کند و `user-dirs.dirs` را نمی‌خواند؛ بدون این خط، با عوض‌شدن `pictures` هم screenshot به پوشه‌ی قدیمی می‌رفت. `Mod+Ctrl+P` فایل نمی‌سازد و فقط در clipboard می‌گذارد.
 
 ## screenshot pipeline
 
@@ -214,6 +217,61 @@ findmnt --real
 ```
 
 USBGuard و automount دو لایه‌ی جدا هستند: ابتدا device policy اجازه می‌دهد، سپس storage mount می‌شود.
+
+---
+
+# پوشه‌های home
+
+چیدمان `~` فقط در `modules/home/gui/xdg.nix` (`xdg.userDirs`) تعیین می‌شود:
+
+| پوشه | کلید در `user-dirs.dirs` | کاربرد |
+| :--- | :--- | :--- |
+| `~/dev` | `XDG_PROJECTS_DIR` | پروژه‌ها؛ `<leader>fp` در Neovim اینجا را می‌گردد |
+| `~/dl` | `XDG_DOWNLOAD_DIR` | دانلود |
+| `~/doc` | `XDG_DOCUMENTS_DIR` | اسناد (`~/doc/templates` = `XDG_TEMPLATES_DIR`) |
+| `~/dsk` | `XDG_DESKTOP_DIR` | Desktop |
+| `~/media/img` | `XDG_PICTURES_DIR` | تصویر |
+| `~/media/img/screenshots` | `XDG_SCREENSHOTS_DIR` | screenshotهای niri و Noctalia |
+| `~/media/img/wallpapers` | `XDG_WALLPAPERS_DIR` | wallpaperهای Noctalia |
+| `~/media/audio` | `XDG_MUSIC_DIR` | موسیقی |
+| `~/media/vid` | `XDG_VIDEOS_DIR` | ویدیو و ضبط‌های gpu-screen-recorder |
+| `~/pub` | `XDG_PUBLICSHARE_DIR` | اشتراک عمومی |
+
+بعد از هر switch دقیقاً همین پوشه‌ها ساخته می‌شوند (`createDirectories`) و `~/Projects`، `~/Pictures` و مانند آن‌ها دیگر ساخته نمی‌شوند. مسیر را در shell با `xdg-user-dir SCREENSHOTS` (یا `DOWNLOAD`، `PROJECTS`، …) می‌گیرید و در Nix با `config.xdg.userDirs`.
+
+## قاعده‌ها
+
+1. برنامه یا scriptی که چیزی داخل `~` می‌نویسد، مسیرش را از `config.xdg.userDirs` بگیرد؛ `~/Pictures`، `~/Downloads` یا `~/projects` را hard-code نکنید. بیشتر برنامه‌های GTK/Qt و مرورگرها `user-dirs.dirs` را خودشان می‌خوانند و کار اضافه نمی‌خواهند.
+2. `xdg.userDirs.projects` را همیشه صریح بنویسید. Home Manager برایش پیش‌فرض `~/Projects` می‌گذارد و `createDirectories` آن را در هر switch دوباره می‌سازد، حتی وقتی ما `~/dev` را داریم.
+3. با `home.stateVersion >= 26.05` کلید `extraConfig` همان نام ساده است (`SCREENSHOTS`)، نه `XDG_SCREENSHOTS_DIR`؛ با پیشوند و پسوند به `XDG_XDG_..._DIR_DIR` تبدیل می‌شود.
+4. Home Manager فقط می‌سازد و هیچ‌وقت پاک نمی‌کند: بعد از عوض‌کردن چیدمان، پوشه‌ی قدیمی می‌ماند.
+
+## برنامه‌هایی که XDG را نمی‌خوانند
+
+| برنامه | پیش‌فرض خودش | وضعیت |
+| :--- | :--- | :--- |
+| niri | `~/Pictures/Screenshots` | `screenshot-path` در `config.kdl` از `SCREENSHOTS` پر می‌شود |
+| Noctalia | نسخه‌ی 5.0: wallpaper در `~/Pictures/Wallpapers` و screenshot در `~/Pictures`؛ از 5.3 هر دو از `XDG_PICTURES_DIR` | `wallpaper.directory` و `shell.screenshot.directory` پر می‌شوند تا زیرپوشه‌ها روی هر دو نسخه یکی باشد |
+| mpv | screenshot در پوشه‌ی اجرای mpv، و از لانچر در `XDG_DESKTOP_DIR` | عمداً دست‌نخورده |
+| guvcview | عکس و ویدیو مستقیم داخل `~` | یک بار در تنظیمات خود برنامه عوض کنید |
+| Go | `GOPATH=~/go`، پوشه‌ی دیده‌شونده در `~` | دست‌نخورده؛ برای جابه‌جایی `GOPATH` را در `shells/go` به `$XDG_DATA_HOME/go` ببرید |
+| gpu-screen-recorder | مسیر ذخیره را از `XDG_VIDEOS_DIR` می‌خواند | درست است؛ مسیری که قبلاً در خود برنامه ذخیره شده بماند |
+
+## انتقال از چیدمان قدیمی
+
+```bash
+# چه چیزی از چیدمان قدیمی مانده؟
+ls -d ~/Desktop ~/Documents ~/Downloads ~/Music ~/Pictures ~/Public ~/Templates ~/Videos ~/Projects ~/projects 2>/dev/null
+
+# محتوا را ببرید؛ mv -n هیچ فایلی را overwrite نمی‌کند
+mv -n ~/Pictures/Screenshots/* ~/media/img/screenshots/
+mv -n ~/Downloads/* ~/dl/
+
+# rmdir فقط پوشه‌ی خالی را پاک می‌کند، پس امن است
+rmdir ~/Pictures/Screenshots ~/Pictures ~/Downloads
+```
+
+`*` فایل‌های مخفی را نمی‌گیرد؛ پیش از `rmdir` با `ls -A` بررسی کنید. تنظیمی که خود برنامه ذخیره کرده (مسیر دانلود مرورگر، مسیر ضبط gpu-screen-recorder، bookmark در Thunar) را هم یک بار باید از داخل همان برنامه عوض کنید.
 
 ---
 

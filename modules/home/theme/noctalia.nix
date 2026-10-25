@@ -1,4 +1,14 @@
-{inputs, ...}: {
+{
+  config,
+  inputs,
+  ...
+}: let
+  # Noctalia 5.0 (the pinned one) defaults to ~/Pictures/Wallpapers and, for its
+  # own screenshot service, ~/Pictures, ignoring user-dirs.dirs. 5.3 reads
+  # XDG_PICTURES_DIR itself; naming the sub-folders here gives the same layout
+  # on both.
+  inherit (config.xdg.userDirs) extraConfig;
+in {
   imports = [inputs.noctalia.homeModules.default];
 
   programs.noctalia = {
@@ -14,13 +24,18 @@
         # Niri enables Polkit itself; Noctalia supplies the graphical agent that
         # presents authentication prompts inside the desktop session.
         polkit_agent = true;
+
+        screenshot.directory = extraConfig.SCREENSHOTS;
       };
       theme = {
         mode = "dark";
         source = "builtin";
         builtin = "Catppuccin";
       };
-      wallpaper.enabled = true;
+      wallpaper = {
+        enabled = true;
+        directory = extraConfig.WALLPAPERS;
+      };
       bar.default = {
         position = "top";
         margin_edge = 8;

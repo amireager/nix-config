@@ -182,7 +182,7 @@ rg --json -g '*.nix' 'proxy' |
 
 ```bash
 rga -n --hidden --glob '!node_modules' \
-  'invoice|رسید|شماره پیگیری' ~/Documents
+  'invoice|رسید|شماره پیگیری' ~/doc
 ```
 
 `ripgrep-all` converter مناسب PDF، Office document، SQLite، archive و metadata رسانه را انتخاب می‌کند. وقتی فقط source text داریم، `rg` سریع‌تر و ساده‌تر است.
@@ -191,7 +191,7 @@ rga -n --hidden --glob '!node_modules' \
 
 ```bash
 fd -H -t f -e nix .
-fd -t f -e jpg -e png . ~/Pictures
+fd -t f -e jpg -e png . ~/media/img
 fd -t d '^node_modules$' .
 ```
 
@@ -284,7 +284,7 @@ nix-du -s /nix/store
 ## فایل باز و port listener
 
 ```bash
-lsof ~/Downloads/archive.iso
+lsof ~/dl/archive.iso
 lsof -nP -iTCP -sTCP:LISTEN
 ```
 
@@ -394,11 +394,11 @@ curl --fail-with-body --location \
 برای فایل حجیم resumable، `--max-time` نگذارید تا یک دانلود سالم و طولانی بی‌دلیل قطع نشود:
 
 ```bash
-install -d -m 700 ~/Downloads/nix-recovery
+install -d -m 700 ~/dl/nix-recovery
 curl --fail --show-error --location --continue-at - \
   --retry 8 --retry-delay 2 --retry-connrefused \
   --connect-timeout 30 \
-  --output ~/Downloads/nix-recovery/source.part \
+  --output ~/dl/nix-recovery/source.part \
   'URL-FROM-THE-ACTUAL-ERROR'
 ```
 
@@ -409,7 +409,7 @@ curl --proxy "socks5h://$PROXY_HOST:$PROXY_PORT" \
   --fail --show-error --location --continue-at - \
   --retry 8 --retry-delay 2 --retry-connrefused \
   --connect-timeout 30 \
-  --output ~/Downloads/nix-recovery/source.part \
+  --output ~/dl/nix-recovery/source.part \
   'URL-FROM-THE-ACTUAL-ERROR'
 ```
 
@@ -421,7 +421,7 @@ curl --proxy "socks5h://$PROXY_HOST:$PROXY_PORT" \
 
 ```bash
 wget --continue --tries=8 --timeout=30 \
-  --output-document=~/Downloads/nix-recovery/source.part \
+  --output-document=~/dl/nix-recovery/source.part \
   'URL-FROM-THE-ACTUAL-ERROR'
 ```
 
@@ -440,7 +440,7 @@ wget --mirror --convert-links --adjust-extension \
 aria2c --continue=true --auto-file-renaming=false \
   --allow-overwrite=true --max-tries=8 --retry-wait=2 \
   -x 4 -s 4 -k 1M \
-  --dir ~/Downloads/nix-recovery --out source.part \
+  --dir ~/dl/nix-recovery --out source.part \
   'URL-FROM-THE-ACTUAL-ERROR'
 ```
 
@@ -451,7 +451,7 @@ aria2c --continue=true --auto-file-renaming=false \
 Hash مورد انتظار باید از release page، manifest امضاشده یا خطای واقعی Nix بیاید؛ hash محاسبه‌شده از همان download به‌تنهایی اصالت را ثابت نمی‌کند:
 
 ```bash
-cd ~/Downloads/nix-recovery
+cd ~/dl/nix-recovery
 expected_sha256='HEX-SHA256-FROM-TRUSTED-SOURCE'
 printf '%s  %s\n' "$expected_sha256" source.part |
   sha256sum --check --strict -

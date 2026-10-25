@@ -2,10 +2,14 @@
 {
   pkgs,
   flakePath,
+  flakeFallbacks,
   registry,
   roots,
 }: let
   inherit (pkgs) lib;
+
+  fallbackWords = lib.concatMapStringsSep " " (p: ''"${p}"'') flakeFallbacks;
+  fallbackNames = lib.concatStringsSep ", " (map (lib.replaceStrings ["$HOME"] ["~"]) flakeFallbacks);
 
   shellWords = lib.concatMapStringsSep " " lib.escapeShellArg registry.shellDirs;
   aliasCases = lib.concatStringsSep "\n" (
@@ -30,7 +34,7 @@
   findFlake = ''
     FLAKE_PATH="''${NIX_CONFIG_FLAKE:-${flakePath}}"
     if [ ! -f "$FLAKE_PATH/flake.nix" ]; then
-      for candidate in "$HOME/nix-config" "$HOME/projects/nix-config" "/etc/nixos"; do
+      for candidate in ${fallbackWords}; do
         if [ -f "$candidate/flake.nix" ]; then
           FLAKE_PATH="$candidate"
           break
@@ -64,7 +68,7 @@ in
 
       _require_flake() {
         if [ ! -f "$FLAKE_PATH/flake.nix" ]; then
-          echo "dev: no flake.nix found (tried $FLAKE_PATH, ~/nix-config, ~/projects/nix-config, /etc/nixos)" >&2
+          echo "dev: no flake.nix found (tried $FLAKE_PATH, ${fallbackNames})" >&2
           echo "dev: set NIX_CONFIG_FLAKE=/path/to/nix-config to override" >&2
           exit 1
         fi

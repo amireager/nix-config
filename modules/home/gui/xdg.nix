@@ -4,6 +4,10 @@
   # ============================================================
 
   xdg = {
+    # The single place that decides where things live in ~. Anything that writes
+    # files into the home directory must read config.xdg.userDirs from here
+    # instead of hard-coding ~/Pictures, ~/Downloads, ~/projects, ...
+    # niri, Noctalia, starship and the `dev` launcher read it from here.
     userDirs = {
       enable = true;
       createDirectories = true;
@@ -19,8 +23,18 @@
       templates = "${config.home.homeDirectory}/doc/templates";
       publicShare = "${config.home.homeDirectory}/pub";
 
+      # Home Manager has its own XDG_PROJECTS_DIR entry. Left alone it defaults
+      # to ~/Projects, and createDirectories then makes that folder again on
+      # every switch, next to the ~/dev we actually use.
+      projects = "${config.home.homeDirectory}/dev";
+
+      # Extra entries are written as XDG_<NAME>_DIR (since stateVersion 26.05
+      # the key is the bare NAME: the old `XDG_DEV_DIR = ...` ended up as the
+      # meaningless XDG_XDG_DEV_DIR_DIR) and createDirectories makes them too.
+      # `xdg-user-dir SCREENSHOTS` prints the path in a shell.
       extraConfig = {
-        XDG_DEV_DIR = "${config.home.homeDirectory}/dev"; # Developer workspace
+        SCREENSHOTS = "${config.xdg.userDirs.pictures}/screenshots";
+        WALLPAPERS = "${config.xdg.userDirs.pictures}/wallpapers";
       };
     };
 

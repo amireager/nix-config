@@ -447,6 +447,32 @@ startup و اندازه‌ی closure Neovim ثابت می‌ماند. یک هش�
 
 ---
 
+# چیدمان پوشه‌های home از یک جا می‌آید
+
+## مسئله
+
+بعد از کوتاه‌کردن نام پوشه‌ها (`~/dl`، `~/doc`، `~/media/img`، `~/dev`) دو چیز هنوز به چیدمان قدیمی می‌رفت: screenshotهای niri در `~/Pictures/Screenshots` ذخیره می‌شدند و `~/Projects` در هر switch دوباره ساخته می‌شد. ریشه‌ها: niri و Noctalia (نسخه‌ی 5.0) مسیر پیش‌فرض خودشان را hard-code دارند و `user-dirs.dirs` را نمی‌خوانند؛ Home Manager یک گزینه‌ی `xdg.userDirs.projects` با پیش‌فرض `~/Projects` دارد که `createDirectories` می‌سازد؛ و `extraConfig.XDG_DEV_DIR` با stateVersion جدید به `XDG_XDG_DEV_DIR_DIR` تبدیل می‌شد.
+
+## گزینه‌ها
+
+- فقط `~/Pictures` را برگردانیم: چیدمان کوتاه را کنار می‌گذارد.
+- هر config مسیر خودش را بنویسد: همین اتفاق دوباره می‌افتد.
+- `xdg.userDirs` تنها منبع باشد و بقیه از آن بخوانند.
+
+## تصمیم
+
+گزینه‌ی سوم. `xdg.nix` همه‌ی پوشه‌ها را تعریف می‌کند (از جمله `projects`، `SCREENSHOTS` و `WALLPAPERS`) و niri، Noctalia، starship و `dev` از `config.xdg.userDirs` می‌خوانند.
+
+## پیامد
+
+پوشه‌ی تازه فقط یک‌جا اضافه یا جابه‌جا می‌شود. پوشه‌های قدیمی خودشان پاک نمی‌شوند؛ انتقال دستی است و در `docs/05-desktop.md` آمده. `~/go` و مسیر عکس guvcview عمداً دست‌نخورده ماندند.
+
+## شرط بازنگری
+
+اگر niri خودش `user-dirs.dirs` را خواند، placeholder در `config.kdl` حذف می‌شود. Noctalia از 5.3 خودش `XDG_PICTURES_DIR` را می‌خواند؛ دو کلیدش را برای زیرپوشه‌های `screenshots` و `wallpapers` نگه داشته‌ایم.
+
+---
+
 # قالب تصمیم جدید
 
 برای افزودن ADR:
