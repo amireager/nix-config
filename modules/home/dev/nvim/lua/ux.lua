@@ -6,15 +6,8 @@ if ok_todo then
 	todo.setup({
 		signs = true,
 		sign_priority = 8,
-		keywords = {
-			FIX = { icon = " ", color = "error", alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
-			TODO = { icon = " ", color = "info" },
-			HACK = { icon = " ", color = "warning" },
-			WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
-			PERF = { icon = " ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-			NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
-			TEST = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
-		},
+		-- keywords/icons: the plugin defaults are used. This file used to repeat them
+		-- with the Nerd Font glyphs missing, so every sign was blank.
 	})
 
 	-- Under <leader>x (Trouble), not <leader>f (Snacks pickers). Both files
@@ -47,7 +40,12 @@ if ok_trouble then
 
 	-- Keymaps
 	vim.keymap.set("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", { desc = "Diagnostics (Trouble)" })
-	vim.keymap.set("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", { desc = "Buffer diagnostics (Trouble)" })
+	vim.keymap.set(
+		"n",
+		"<leader>xX",
+		"<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
+		{ desc = "Buffer diagnostics (Trouble)" }
+	)
 	vim.keymap.set("n", "<leader>xs", "<cmd>Trouble symbols toggle<cr>", { desc = "Symbols (Trouble)" })
 	vim.keymap.set("n", "<leader>xl", "<cmd>Trouble lsp toggle<cr>", { desc = "LSP references (Trouble)" })
 	vim.keymap.set("n", "<leader>xL", "<cmd>Trouble loclist toggle<cr>", { desc = "Location list (Trouble)" })

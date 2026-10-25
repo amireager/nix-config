@@ -24,9 +24,8 @@ mkDevShell {
     pyright # Static type checker & LSP
     mypy # Static type checker — complements pyright; catches stub/annotations gaps
 
-    # Debugging (drives nvim-dap / dap.lua's Python adapter)
-    python3Packages.debugpy # DAP server for Python (pairs with lldb/gdb flow)
-    python3Packages.ipdb # Enhanced, keyboard-first pdb (from the nvim side)
+    # Debugging. debugpy for nvim-dap is NOT listed here: see NVIM_DEBUGPY_PYTHON below.
+    python3Packages.ipdb # `ipdb3 script.py`: enhanced, keyboard-first pdb
 
     # Testing
     python3Packages.pytest # Primary test runner; reads pytest.ini/pyproject
@@ -38,6 +37,12 @@ mkDevShell {
   env = {
     PYTHONUNBUFFERED = "1";
     PIP_DISABLE_PIP_VERSION_CHECK = "1";
+    # Interpreter that carries debugpy, for nvim-dap (dap.lua). extraHook below
+    # unsets PYTHONPATH so Nix libraries never leak into project virtualenvs; that
+    # also hid `python3Packages.debugpy` from this shell's own python3 ("No module
+    # named 'debugpy'"), so the adapter is reached by absolute path instead. It is
+    # never used to run project code.
+    NVIM_DEBUGPY_PYTHON = "${pkgs.python3.withPackages (ps: [ps.debugpy])}/bin/python";
   };
 
   tips = [

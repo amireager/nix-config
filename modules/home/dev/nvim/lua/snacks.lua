@@ -53,7 +53,13 @@ snacks.setup({
 			},
 			{
 				section = "terminal",
-				cmd = "git -c color.status=always status -sb 2>/dev/null || echo 'Not inside a git repository'",
+				-- Only inside a repository (no shell is spawned elsewhere), and
+				-- uncached: the default ttl of one hour showed an hour-old status.
+				enabled = function()
+					return Snacks.git.get_root() ~= nil
+				end,
+				ttl = 0,
+				cmd = "git -c color.status=always status -sb",
 				pane = 2,
 				height = 5,
 				padding = 1,
@@ -68,6 +74,10 @@ snacks.setup({
 	notifier = { enabled = true, timeout = 2500 },
 	picker = {
 		enabled = true,
+		-- Snacks loads libsqlite3 through the dynamic loader *by name*, which cannot
+		-- find it on NixOS. default.nix passes the store path; without SQLite the
+		-- picker's frecency and history fall back to a flat file.
+		db = { sqlite3_path = vim.g.nix_sqlite3_path },
 		sources = {
 			files = { hidden = true, ignored = false },
 			grep = { hidden = true, ignored = false },
@@ -122,6 +132,21 @@ snacks.setup({
 	scroll = { enabled = true, animate = { duration = { step = 12, total = 120 } } },
 	statuscolumn = { enabled = true },
 	words = { enabled = true },
+})
+
+-- Neovim 0.12 overlays "[Process exited N]" on every finished terminal, which
+-- landed in the middle of the dashboard's git-status pane. Remove it there only;
+-- ordinary :terminal buffers keep it.
+vim.api.nvim_create_autocmd("TermClose", {
+	desc = "No exit-status overlay inside the dashboard",
+	callback = function(args)
+		vim.schedule(function()
+			if vim.api.nvim_buf_is_valid(args.buf) and vim.bo[args.buf].filetype == "snacks_dashboard" then
+				local ns = vim.api.nvim_create_namespace("nvim.terminal.exitmsg")
+				vim.api.nvim_buf_clear_namespace(args.buf, ns, 0, -1)
+			end
+		end)
+	end,
 })
 
 local map = vim.keymap.set
@@ -193,8 +218,14 @@ map("n", "<leader>ef", function()
 	snacks.explorer({ cwd = vim.fn.expand("%:p:h") })
 end, { desc = "Explorer at current file (Snacks)" })
 map("n", "<leader>ey", function()
-	vim.fn.system("tmux split-window -h -l 35% 'yazi " .. vim.fn.shellescape(vim.fn.getcwd()) .. "'")
-end, { desc = "Open yazi in tmux (Yazi)" })
+	local cwd = vim.fn.getcwd()
+	if vim.env.TMUX and vim.env.TMUX ~= "" then
+		vim.fn.system({ "tmux", "split-window", "-h", "-l", "35%", "yazi " .. vim.fn.shellescape(cwd) })
+	else
+		-- Outside tmux the old mapping did nothing at all.
+		snacks.terminal({ "yazi", cwd }, { cwd = cwd, win = { position = "float" } })
+	end
+end, { desc = "Open yazi (tmux split, or float outside tmux)" })
 
 -- ══════════════════════════════════════════
 -- FIND (Snacks Picker)
@@ -279,9 +310,12 @@ map("n", "<leader>fD", function()
 end, { desc = "Workspace diagnostics (Snacks)" })
 
 -- LSP pickers via Snacks
+-- nowait: Neovim 0.11+ also defines grr/gra/grn/gri/grt, which makes `gr` a
+-- prefix, and without it every `gr` waited out 'timeoutlen' (350 ms). The
+-- built-in gr* mappings are covered by <leader>l* here.
 map("n", "gr", function()
 	snacks.picker.lsp_references()
-end, { desc = "LSP references (Snacks)" })
+end, { nowait = true, desc = "LSP references (Snacks)" })
 map("n", "gd", function()
 	snacks.picker.lsp_definitions()
 end, { desc = "LSP definitions (Snacks)" })
@@ -318,6 +352,32 @@ map("n", "<leader>cR", function()
 end, { desc = "Rename file (Snacks)" })
 
 -- ══════════════════════════════════════════
+-- SCRATCH, REFERENCES, INLAY HINTS (Snacks)
+-- ══════════════════════════════════════════
+
+-- A persistent scratch buffer per project (notes, a throwaway query, a pasted log).
+map("n", "<leader>.", function()
+	snacks.scratch()
+end, { desc = "Scratch buffer (Snacks)" })
+
+-- ]r / [r jump between the references of the word under the cursor (an LSP that
+-- supports documentHighlight must be attached; Snacks.words asks it on
+-- CursorMoved). ]] and [[ are not used: the Go, Python, Rust, Lua, Markdown and
+-- C ftplugins map them buffer-locally for function/section motions.
+for key, direction in pairs({ ["]r"] = 1, ["[r"] = -1 }) do
+	map("n", key, function()
+		if snacks.words.is_enabled() then
+			snacks.words.jump(direction * vim.v.count1, true)
+		else
+			vim.notify("No LSP references in this buffer", vim.log.levels.INFO, { title = "References" })
+		end
+	end, { desc = direction == 1 and "Next reference (Snacks)" or "Previous reference (Snacks)" })
+end
+
+-- Inline type/parameter hints from rust-analyzer, gopls, ts_ls, lua_ls. Off by default.
+snacks.toggle.inlay_hints():map("<leader>uh")
+
+-- ══════════════════════════════════════════
 -- UI TOGGLES (Snacks)
 -- ══════════════════════════════════════════
 
@@ -340,5 +400,5 @@ map("n", "<leader>ud", function()
 	snacks.toggle.diagnostics():toggle()
 end, { desc = "Toggle diagnostics (Snacks)" })
 map("n", "<leader>uc", function()
-	snacks.toggle("conceallevel", { off = 0, on = 2 }):toggle()
+	snacks.toggle.option("conceallevel", { off = 0, on = 2 }):toggle()
 end, { desc = "Toggle conceal (Snacks)" })

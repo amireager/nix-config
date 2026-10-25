@@ -4,14 +4,15 @@
 
 ```text
 Nix/Home Manager
-├── Neovim binary و providerها
-├── pluginها
-├── ابزارهای روزمره: Python/Nix/Lua/Shell/Web LSP و formatter
+├── Neovim binary (بدون providerهای Python/Node)
+├── pluginها و parserهای Treesitter
+├── ابزارهای روزمره: Nix/Lua/Shell/TOML/YAML/Markdown LSP و formatter
 └── Lua config
 
-Project environment
-├── rust-analyzer + LLDB
-├── gopls + Delve
+Project environment (devShell + direnv)
+├── dev python: Pyright، Ruff، debugpy
+├── dev web: TypeScript/HTML/CSS/JSON/Tailwind/Emmet LSP، Prettier
+├── dev rust / dev go / dev build: rust-analyzer، gopls، LLDB، Delve
 ├── compiler/runtime
 └── dependencyهای همان پروژه
 ```
@@ -35,6 +36,7 @@ modules/home/dev/nvim/
     ├── git.lua
     ├── productivity.lua
     ├── navigation.lua
+    ├── treesitter.lua
     ├── run.lua
     ├── markdown.lua
     ├── dap.lua
@@ -42,7 +44,9 @@ modules/home/dev/nvim/
     └── ux.lua
 ```
 
-`default.nix` plugin و binaryها را از Nix می‌آورد و فایل‌های Lua را به ترتیب startup وارد `init.lua` می‌کند. تقریباً تمام plugin setupها با `pcall(require, ...)` محافظت شده‌اند؛ نبودن یک plugin باید همان feature را غیرفعال کند، نه startup کامل editor را.
+`default.nix` plugin و binaryها را از Nix می‌آورد و فایل‌های Lua را به ترتیب startup وارد `init.lua` می‌کند. هر فایل داخل تابع و `pcall` مستقل اجرا می‌شود: خطا یا `return` در یک فایل فقط همان بخش را متوقف می‌کند و پیام `config: <file>.lua failed` نشان می‌دهد، نه کل editor را. تقریباً تمام plugin setupها هم با `pcall(require, ...)` محافظت شده‌اند؛ نبودن یک plugin باید همان feature را غیرفعال کند.
+
+`vim.loader.enable()` اول `init.lua` اجرا می‌شود و byte-code همه‌ی ماژول‌های Lua را cache می‌کند. اولین اجرا بعد از هر rebuild cache را می‌سازد، اجراهای بعدی سریع‌اند (در benchmark همین config: median حدود ۱۹۷ms → ۱۰۱ms).
 
 کانفیگ portable غیر-Nix و Lazy backend یک refactor مستقل آینده است؛ وضعیت فعلی Nix-first و declarative است.
 
@@ -125,6 +129,20 @@ Buffer با tab یک چیز نیست:
 
 ---
 
+# Fold، reference و scratch
+
+```text
+zc / zo / za   بستن / باز کردن / toggle fold (ساختار syntax، نه indent)
+zR / zM        باز کردن / بستن همه
+]r / [r        reference بعدی/قبلی کلمه‌ی زیر cursor (LSP)
+<leader>.      scratch buffer برای همین project
+<leader>uu     Undo tree بومی Neovim
+```
+
+Foldها با Treesitter محاسبه می‌شوند ولی در شروع چیزی بسته نیست (`foldlevelstart = 99`). `]r`/`[r` بین referenceهای کلمه‌ی زیر cursor می‌پرند و LSP لازم دارند؛ `]]`/`[[` عمداً دست‌نخورده ماندند، چون ftpluginهای Go، Python، Rust، Lua، Markdown و C آن‌ها را برای پرش بین function/section تعریف می‌کنند و map سراسری هیچ‌وقت به آن filetypeها نمی‌رسید. بافرهایی که بیرون از Neovim عوض می‌شوند (agent، Git، formatter) روی `FocusGained`، `BufEnter` (جابه‌جایی بین پنجره‌ها)، `TermClose` و `TermLeave` خودکار reload می‌شوند؛ Neovim به‌تنهایی فقط روی `FocusGained` این کار را می‌کند.
+
+---
+
 # Flash و حرکت ساختاری
 
 ## Flash
@@ -146,6 +164,8 @@ c s <label>   تغییر تا target انتخابی
 `f/t` نیز multi-line شده‌اند و `;`/`,` repeat را حفظ می‌کنند.
 
 ## Treesitter text objects
+
+`lua/treesitter.lua` فعال‌سازی را انجام می‌دهد: `nvim-treesitter` روی شاخه `main` است، parserها از Nix می‌آیند و Neovim خودش highlight می‌کند. برای filetypeای که parser ندارد (مثلاً Java) syntax معمولی Vim باقی می‌ماند. text objectها با API جدید `nvim-treesitter-textobjects` بسته شده‌اند.
 
 ```text
 daf  delete around function
@@ -218,7 +238,7 @@ gy            type definition
 <leader>ey  Yazi در tmux split
 ```
 
-Yazi command به tmux نیاز دارد؛ بیرون از tmux split ساخته نمی‌شود.
+داخل tmux، Yazi در split جدید باز می‌شود؛ بیرون از tmux در یک terminal شناور Snacks.
 
 ---
 
@@ -228,42 +248,46 @@ Yazi command به tmux نیاز دارد؛ بیرون از tmux split ساخته
 
 | زبان/format | server/tool |
 | :--- | :--- |
-| Python | Pyright، Ruff |
 | Nix | nixd، Alejandra، Statix، Deadnix |
 | Lua | lua-language-server، StyLua |
 | Shell | bash-language-server، ShellCheck، shfmt |
 | TOML | Taplo |
 | YAML | yaml-language-server |
 | Markdown | Marksman |
-| JS/TS | typescript-language-server |
-| HTML/CSS/JSON | vscode-langservers-extracted |
-| Tailwind/Emmet | serverهای مربوط |
+| JSON/Markdown/YAML/JS format | Prettier |
 
 ## Project-only
 
 | زبان | devShell | server/debugger |
 | :--- | :--- | :--- |
+| Python | `dev python` | Pyright، Ruff، debugpy |
+| JS/TS/HTML/CSS/JSON | `dev web` | typescript-language-server، vscode-langservers، Tailwind، Emmet، Biome و ESLint (فقط در پروژه‌ای که config آن‌ها را دارد) |
 | Rust | `dev rust` | rust-analyzer، lldb-dap |
 | Go | `dev go` | gopls، dlv |
-| C/C++ | `dev build` | lldb-dap، gdb |
+| C/C++ | `dev build` | clangd، clang-format، lldb-dap، gdb |
 
-Lua config serverهای project-only را می‌شناسد؛ نبودن executable تا وقتی filetype مربوط باز نشده failure startup نیست.
+`lua/lsp.lua` هر server را با executable و devShell مربوطه توصیف می‌کند و فقط وقتی `vim.lsp.enable` می‌زند که executable روی PATH باشد. دلیلش این است که lspconfig برای `ts_ls`, `html`, `cssls`, `jsonls`, `tailwindcss` و `yamlls` مقدار `cmd` را function می‌گذارد و Neovim نمی‌تواند وجودش را پیش از اجرا بسنجد؛ enable کورکورانه هر بار باز کردن یک `.json` بیرون از `dev web` را با warning «Spawning language server … failed» همراه می‌کرد. وقتی direnv محیط پروژه را export کرد (`User DirenvLoaded`)، serverهای تازه‌در‌دسترس enable می‌شوند و به bufferهای باز attach می‌شوند.
+
+Biome با `biome.json(c)` و ESLint با `eslint.config.*` یا `.eslintrc*` attach می‌شوند و بیرون از چنین پروژه‌ای هیچ‌کدام راه نمی‌افتند (با Biome 2.4.16 و vscode-langservers-extracted 1.121 آزمایش شد). ESLint کتابخانه‌ی `eslint` را از `node_modules` پروژه می‌خواند؛ پیش از نصب وابستگی‌های پروژه پیام `Unable to find ESLint library` طبیعی است.
 
 ## diagnosis
 
 داخل Neovim:
 
 ```vim
-:LspInfo
+:DevDoctor
 :checkhealth vim.lsp
+:lsp restart
 ```
+
+`:DevDoctor` برای filetype بافر جاری LSP و formatterها را با ✔/✖ نشان می‌دهد و می‌گوید کدام devShell ابزار گم‌شده را دارد. `:LspInfo` و `:LspRestart` دیگر وجود ندارند (lspconfig آن‌ها را وقتی حذف کرد که Neovim خودش `:checkhealth vim.lsp` و `:lsp` را گرفت).
 
 در shell:
 
 ```bash
 command -v rust-analyzer
 command -v gopls
-command -v pyright
+command -v pyright-langserver
 ```
 
 اگر binary نیست، Neovim را داخل shell مناسب باز کنید یا direnv را فعال کنید.
@@ -276,8 +300,9 @@ command -v pyright
 | `<leader>lk` | signature help |
 | `<leader>lr` | rename symbol |
 | `<leader>la` | code action |
-| `<leader>li` | LSP info |
-| `[d` / `]d` | diagnostic قبلی/بعدی |
+| `<leader>li` | `:checkhealth vim.lsp` |
+| `<leader>lR` | `:lsp restart` |
+| `[d` / `]d` | diagnostic قبلی/بعدی (mapping پیش‌فرض Neovim) |
 | `<leader>ld` | diagnostic خط |
 | `<leader>lq` | diagnosticها به quickfix |
 
@@ -311,7 +336,7 @@ Conform formatter را بر اساس filetype انتخاب می‌کند:
 
 | filetype | formatter |
 | :--- | :--- |
-| Python | Ruff format + organize imports |
+| Python | Ruff organize imports، بعد Ruff format |
 | JS/TS/HTML/CSS/JSON/Markdown/YAML | Prettier |
 | Rust | rustfmt |
 | Lua | StyLua |
@@ -325,7 +350,7 @@ Conform formatter را بر اساس filetype انتخاب می‌کند:
 <leader>uF  toggle autoformat global session
 ```
 
-Autoformat timeout برابر 1200ms و LSP fallback است. اگر formatter external نیست، ابتدا PATH/project environment را بررسی کنید؛ config را با formatter دوم پنهان نکنید.
+Autoformat timeout برابر 1200ms و LSP fallback است. C/C++ فقط وقتی روی save format می‌شود که پروژه `.clang-format` داشته باشد (وگرنه clang-format و clangd سبک LLVM را روی هر فایل تحمیل می‌کردند)؛ `<leader>cf` همیشه دستی کار می‌کند. در Go، gopls قبل از save importها را مرتب می‌کند. clangd برای پیدا کردن headerها به `compile_commands.json` نیاز دارد (tip داخل `dev build`). اگر formatter external نیست، ابتدا PATH/project environment را بررسی کنید؛ config را با formatter دوم پنهان نکنید.
 
 بعد از format تغییر را بخوانید:
 
@@ -378,6 +403,18 @@ Workflow پیشنهادی:
 
 ---
 
+# اجرا و تست
+
+| کلید | عمل |
+| :--- | :--- |
+| `<leader>rr` | اجرای فایل جاری |
+| `<leader>rt` | تست پروژه |
+| `<leader>rR` | تکرار آخرین run/test |
+
+`lua/tasks.lua` برای هر filetype ریشه‌ی پروژه را با markerهایش (`Cargo.toml`، `go.mod`، `pyproject.toml`، `package.json`، …) پیدا می‌کند و دستور را در terminal پایین Snacks اجرا می‌کند؛ فوکوس در editor می‌ماند (`<C-w>j` برای رفتن به خروجی و `i` برای ورودی process، `q` برای پنهان‌کردن) و خروجی بعد از پایان process می‌ماند. در JS/TS ابزار از lockfile انتخاب می‌شود (`bun.lock`، `pnpm-lock.yaml`، `yarn.lock`، وگرنه npm). دستور از PATH همین Neovim می‌آید، پس داخل devShell همان `pytest`/`cargo`/`go` پروژه است؛ اگر ابزار نبود، به‌جای خطای terminal یک پیام می‌گیرید. نکته‌ی Snacks: اگر فوکوس داخل یک terminal Snacks (Lazygit، خروجی run) باشد، اولین `:qa` فقط همان terminal را می‌بندد و باید دوباره زده شود، چون handler مربوط به `ExitPre` پنجره‌ای را که Neovim از آن خارج می‌شد می‌بندد؛ از پنجره‌ی editor اشکالی ندارد.
+
+---
+
 # Python REPL و cell workflow
 
 مارکرهای پشتیبانی‌شده:
@@ -389,7 +426,7 @@ Workflow پیشنهادی:
 
 | کلید | عمل |
 | :--- | :--- |
-| `<leader>rp` | IPython در tmux pane |
+| `<leader>rp` | IPython در tmux pane (PATH و `VIRTUAL_ENV` همین Neovim به pane داده می‌شود) |
 | `<leader>rc` | cell جاری |
 | `<leader>rl` | خط جاری |
 | `<leader>rs` | selection |
@@ -420,13 +457,17 @@ Counter(path.parts[0] for path in files)
 
 | زبان | adapter | منبع |
 | :--- | :--- | :--- |
-| Python | debugpy | global Neovim closure |
-| Lua/Neovim | one-small-step-for-vimkind | global plugin |
+| Python | debugpy | `dev python` (`NVIM_DEBUGPY_PYTHON`) |
+| Lua/Neovim | one-small-step-for-vimkind | global plugin (فقط با `:DapLuaServer` load می‌شود) |
 | Rust/C/C++/Zig | lldb-dap | `dev rust` / `dev build` |
 | C/C++ fallback | GDB DAP | `dev build` |
 | Go | Delve | `dev go` |
 
 اگر adapter project-only روی PATH نباشد، config command shell مناسب را در notification نشان می‌دهد.
+
+### چرا debugpy مفسر جدا دارد
+
+`dev python` عمداً `PYTHONPATH` را unset می‌کند تا کتابخانه‌های Nix وارد virtualenv پروژه نشوند. همین باعث می‌شد `python3` خود shell دیگر debugpy را نبیند (`No module named 'debugpy'`) و adapter بالا نیاید. حالا shell متغیر `NVIM_DEBUGPY_PYTHON` را به مفسری که debugpy دارد export می‌کند؛ `dap.lua` آن را هنگام شروع session می‌خواند (نه هنگام startup، چون direnv بعد از Neovim export می‌کند). این مفسر هرگز کد پروژه را اجرا نمی‌کند. کد پروژه با `.venv` خودش اجرا می‌شود.
 
 ## breakpoint و execution
 
@@ -468,6 +509,10 @@ Breakpointها هنگام خروج در مسیر زیر ذخیره می‌شون
 ```
 
 فقط fileهای موجود restore می‌شوند.
+
+## Rust
+
+پیکربندی اول «Launch (cargo build, lldb)» است: `cargo build` را بدون قفل‌کردن editor اجرا می‌کند، executable را از خروجی JSON خود cargo پیدا می‌کند (چند binary → picker) و بدون تایپ مسیر debug را شروع می‌کند. پیکربندی دوم مسیر executable را دستی می‌پرسد.
 
 ## Python test
 
@@ -554,6 +599,8 @@ Diagnosis:
 | `<leader>uw` | word highlight |
 | `<leader>ud` | diagnostic display |
 | `<leader>uc` | conceal |
+| `<leader>uu` | undo tree (بومی Neovim 0.12؛ با اولین استفاده load می‌شود) |
+| `<leader>uh` | inlay hintهای LSP (پیش‌فرض خاموش) |
 | `<leader>uN` | notification popup |
 | `<leader>un` | dismiss notification |
 | `<leader>um` | Markdown render |
@@ -583,6 +630,22 @@ Themeهای Nightfox، Catppuccin و Tokyonight نصب‌اند و picker رنگ
 | mini.trailspace | نمایش/trim whitespace | `<leader>cw` |
 
 Mini.jump2d عمداً فعال نیست؛ Flash جای آن را گرفته است.
+
+---
+
+# `:checkhealth` — کدام هشدارها طبیعی‌اند
+
+بعد از هر تغییر config، `:checkhealth` را بخوانید؛ این موارد عمداً باقی می‌مانند:
+
+| پیام | چرا | اقدام |
+| :--- | :--- | :--- |
+| `nvim-treesitter`: `tree-sitter-cli not found` و `Install directory … is not writable` | parserها pre-built از Nix می‌آیند و پوشه‌ی نصب فقط‌خواندنی است؛ هر دو فقط برای `:TSInstall` مهم‌اند (CLI حدود 57 MiB است) | هیچ (ADR: «Treesitter را خود Neovim اجرا می‌کند») |
+| `conform`: `ruff`/`rustfmt`/`clang_format`/`fish_indent` unavailable | formatter پروژه‌ای است و فقط داخل devShell هست | `dev python` / `dev rust` / `dev build` |
+| `Snacks.image`: `gs`، `tectonic`/`pdflatex`، `mmdc` | رندر PDF، فرمول LaTeX و Mermaid اختیاری است و سنگین (Mermaid یک Chromium می‌خواهد) | فقط اگر واقعاً لازم شد، در یک devShell |
+| `diffview`: `hg_cmd` is not executable | Mercurial نصب نیست و Git کافی است | هیچ |
+| `vim.health`: `Nvim 0.12.x is available` | `flake.lock` عمداً pin شده است | وقتی آماده‌ی آپدیت بودید: `nix flake update nixpkgs` |
+
+هر ERROR یا WARNING دیگری را جدی بگیرید. اگر cache بایت‌کد خراب به نظر رسید: `:lua vim.loader.reset()`.
 
 ---
 

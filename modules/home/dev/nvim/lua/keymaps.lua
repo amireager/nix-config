@@ -38,20 +38,20 @@ map("n", "<leader>bb", "<cmd>buffer #<CR>", { desc = "Alternate buffer" })
 map("n", "<leader>bn", "<cmd>bnext<CR>", { desc = "Next buffer" })
 map("n", "<leader>bp", "<cmd>bprevious<CR>", { desc = "Previous buffer" })
 map("n", "<leader>bd", function()
-  local ok, bufremove = pcall(require, "mini.bufremove")
-  if ok then
-    bufremove.delete(0, false)
-  else
-    vim.cmd.bdelete()
-  end
+	local ok, bufremove = pcall(require, "mini.bufremove")
+	if ok then
+		bufremove.delete(0, false)
+	else
+		vim.cmd.bdelete()
+	end
 end, { desc = "Delete buffer" })
 map("n", "<leader>bD", function()
-  local ok, bufremove = pcall(require, "mini.bufremove")
-  if ok then
-    bufremove.delete(0, true)
-  else
-    vim.cmd.bdelete({ bang = true })
-  end
+	local ok, bufremove = pcall(require, "mini.bufremove")
+	if ok then
+		bufremove.delete(0, true)
+	else
+		vim.cmd.bdelete({ bang = true })
+	end
 end, { desc = "Force delete buffer" })
 map("n", "<leader>bo", "<cmd>%bdelete|edit #|bdelete #<CR>", { desc = "Delete other buffers" })
 

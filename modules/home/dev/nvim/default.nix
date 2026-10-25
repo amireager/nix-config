@@ -6,17 +6,23 @@
       cpp
       css
       dockerfile
+      fish
       git_config
       git_rebase
       gitattributes
       gitcommit
       gitignore
+      go
+      gomod
+      gosum
+      gowork
       html
       javascript
       jsdoc
       json
       lua
       luadoc
+      make
       markdown
       markdown_inline
       nix
@@ -30,6 +36,27 @@
       vimdoc
       yaml
     ]);
+  # Startup order matters: later files override mappings of earlier ones.
+  luaFiles = [
+    "options"
+    "keymaps"
+    "autocmds"
+    "ui"
+    "snacks"
+    "completion"
+    "lsp"
+    "format-lint"
+    "git"
+    "productivity"
+    "navigation"
+    "treesitter"
+    "run"
+    "tasks"
+    "markdown"
+    "dap"
+    "ai"
+    "ux"
+  ];
 in {
   home.sessionVariables = {
     EDITOR = "nvim";
@@ -43,8 +70,12 @@ in {
     vimAlias = true;
     vimdiffAlias = true;
 
-    withNodeJs = true;
-    withPython3 = true;
+    # Remote-plugin hosts are separate from language servers and DAP adapters.
+    # The current plugin set has no Node/Python remote plugins, so don't build
+    # extra provider environments or run their online package checks. Node LSPs,
+    # Pyright/Ruff, and debugpy arrive from the matching dev shells instead.
+    withNodeJs = false;
+    withPython3 = false;
     withRuby = false;
 
     extraPackages = with pkgs; [
@@ -56,11 +87,8 @@ in {
       fzf
       tmux
       yazi
-
-      # === Python ===
-      pyright # Python LSP
-      ruff # Python linter & formatter (fast)
-      python3Packages.ipython # enhanced Python REPL
+      file # MIME/type detection used by image previews
+      sqlite # sqlite3 CLI: only satisfies CodeCompanion's optional health probe (Snacks uses the library, see initLua)
 
       # === Nix ===
       nixd # Nix LSP
@@ -77,37 +105,20 @@ in {
       shellcheck # Bash linter
       shfmt # Shell formatter
 
-      # === Debug adapters ===
-      # Only Python is global. It is the everyday language here, and debugpy
-      # is 21 MiB.
+      # === Debug adapters & language tools ===
+      # Python, web, Rust, and Go tools are provided by their matching dev
+      # shells. direnv-vim exposes each shell's PATH to LSP/DAP when entering a
+      # project, keeping the global Neovim closure independent of those stacks.
       #
-      # The others are deliberately absent, because they are project tools and
-      # they are not cheap:
-      #   lldb   pulls libclang -> +849 MiB   -> dev build, dev rust
-      #   gdb                       +49 MiB   -> dev build
-      #   delve                     +30 MiB   -> dev go (already there)
-      #
-      # direnv-vim attaches them to Neovim on entering the project, the same
-      # way rust-analyzer and gopls already work. Nothing breaks without them:
-      # dap.lua names the adapter binaries, so a missing one only errors when
-      # you start a session for that language.
-      python3Packages.debugpy # Python
+      # Debug adapters are likewise on-demand: lldb/gdb via `dev build` or
+      # `dev rust`, delve/debugpy via `dev go`/`dev python`. Missing adapters
+      # only matter when launching a debug session for that language.
 
-      # === Markup & config ===
+      # === General markup & config (no dedicated shell) ===
       taplo # TOML LSP & formatter
       yaml-language-server # YAML LSP
       marksman # Markdown LSP
-      prettier # web formatter (JS/TS/HTML/CSS/JSON/MD)
-
-      # === JS/TS ===
-      typescript-language-server # TypeScript/JavaScript LSP
-
-      # === HTML/CSS/JSON ===
-      vscode-langservers-extracted # HTML/CSS/JSON LSP
-
-      # === Tailwind ===
-      tailwindcss-language-server # Tailwind CSS LSP
-      emmet-language-server # Emmet LSP (HTML expansion)
+      prettier # cross-language formatter, also used for Markdown/JSON/YAML
 
       # NOTE: Heavy LSP servers (`rust-analyzer` and `gopls`) are decoupled from
       # the global Neovim binary and moved to `shells/rust` (`dev rust`) and `shells/go` (`dev go`).
@@ -176,22 +187,34 @@ in {
     ];
 
     initLua = ''
-      ${builtins.readFile ./lua/options.lua}
-      ${builtins.readFile ./lua/keymaps.lua}
-      ${builtins.readFile ./lua/autocmds.lua}
-      ${builtins.readFile ./lua/ui.lua}
-      ${builtins.readFile ./lua/snacks.lua}
-      ${builtins.readFile ./lua/completion.lua}
-      ${builtins.readFile ./lua/lsp.lua}
-      ${builtins.readFile ./lua/format-lint.lua}
-      ${builtins.readFile ./lua/git.lua}
-      ${builtins.readFile ./lua/productivity.lua}
-      ${builtins.readFile ./lua/navigation.lua}
-      ${builtins.readFile ./lua/run.lua}
-      ${builtins.readFile ./lua/markdown.lua}
-      ${builtins.readFile ./lua/dap.lua}
-      ${builtins.readFile ./lua/ai.lua}
-      ${builtins.readFile ./lua/ux.lua}
+      -- Byte-code cache for every Lua module Neovim loads, plugins included. It cut
+      -- startup roughly in half here; the first launch after a rebuild fills it.
+      vim.loader.enable()
+
+      -- Store paths that Lua cannot know. Read by snacks.lua; unset outside Nix.
+      vim.g.nix_sqlite3_path = "${pkgs.lib.getLib pkgs.sqlite}/lib/libsqlite3.so"
+
+      -- Each file below runs as its own function. Without that, the files form one
+      -- big chunk: the `if not ok then return end` guards at the top of snacks.lua,
+      -- completion.lua, markdown.lua, dap.lua and ai.lua would end the *whole*
+      -- config when a single plugin failed to load (no LSP, no formatting, no git),
+      -- one error would skip everything after it, and the chunk-wide limit of 200
+      -- locals (116 used) would be a ceiling for every future addition.
+      local function section(name, fn)
+        local ok, err = pcall(fn)
+        if not ok then
+          vim.schedule(function()
+            vim.notify(("config: %s.lua failed\n%s"):format(name, err), vim.log.levels.ERROR)
+          end)
+        end
+      end
+
+      ${builtins.concatStringsSep "\n" (map (name: ''
+          section("${name}", function()
+          ${builtins.readFile (./lua + "/${name}.lua")}
+          end)
+        '')
+        luaFiles)}
     '';
   };
 }

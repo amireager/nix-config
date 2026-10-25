@@ -23,6 +23,8 @@ mkDevShell {
     typescript-language-server # LSP for Neovim TypeScript autocompletion
     vtsls # High-performance alternative TypeScript LSP
     tailwindcss-language-server # Autocomplete & linting for Tailwind classes
+    vscode-langservers-extracted # HTML/CSS/JSON LSP servers
+    emmet-language-server # Emmet expansion for HTML/CSS
 
     # Traditional Linters & formatters (compatibility)
     eslint # JavaScript/TypeScript pluggable linter

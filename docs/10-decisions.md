@@ -341,6 +341,112 @@ CI اولیه source-only است تا کیفیت source را بالا ببرد �
 
 ---
 
+# Treesitter را خود Neovim اجرا می‌کند و Nix فقط parser می‌دهد
+
+## مسئله
+
+`nvim-treesitter` در nixpkgs روی شاخه `main` است و ماژول `nvim-treesitter.configs` را ندارد. فراخوانی قدیمی داخل `pcall` بود، پس بی‌صدا شکست می‌خورد: فقط Lua، Markdown و فایل اولِ خط فرمان با Treesitter رنگ می‌شدند (`:checkhealth` و تست روی Neovim 0.12.3 تأیید کرد) و text objectهای مستند‌شده (`daf`, `]f`, swap) اصلاً وجود نداشتند.
+
+## گزینه‌ها
+
+1. بازگشت به شاخه قدیمی `master`؛
+2. `:TSInstall` همراه `tree-sitter-cli` و compiler؛
+3. شروع Treesitter از `FileType` با parserهای pre-built Nix.
+
+## تصمیم
+
+گزینه ۳. `lua/treesitter.lua` برای هر filetypeای که parser دارد `vim.treesitter.start()` و indent را فعال می‌کند و text objectها را با API جدید می‌بندد. هیچ parser در runtime دانلود یا compile نمی‌شود. Grammarهای Go، Fish و Make هم اضافه شدند، چون gopls/delve و `fish_indent` از قبل config شده بودند ولی Go رنگ نمی‌شد.
+
+## پیامد
+
+`tree-sitter-cli` نصب نمی‌شود (۵۷ MiB)، پس `:checkhealth nvim-treesitter` همچنان `tree-sitter-cli not found` را ERROR نشان می‌دهد؛ این فقط برای نصب parser لازم است و false positive است. `:TSInstall` نباید استفاده شود (parserهای نصب‌شده در `~/.local/share/nvim/site` جای parserهای Nix را می‌گیرند و ممکن است با query ناسازگار باشند). زبان تازه یعنی افزودن grammar به `default.nix`.
+
+## شرط بازنگری
+
+اگر parser بیرون از Nix لازم شد (مثلاً grammar در حال توسعه)، CLI و compiler را فقط در shell همان کار فراهم کنید.
+
+---
+
+# LSP فقط وقتی enable می‌شود که executable دارد
+
+## مسئله
+
+بعد از انتقال serverهای Web/Python به devShell، `vim.lsp.enable` همه‌ی serverها را کورکورانه فعال می‌کرد. lspconfig برای `ts_ls`, `html`, `cssls`, `jsonls`, `tailwindcss` و `yamlls` مقدار `cmd` را function می‌گذارد؛ Neovim نمی‌تواند چنین `cmd`ای را پیش از اجرا بسنجد، پس باز کردن هر `.json`/`.css`/`.html`/`.ts` بیرون از `dev web` یک warning «Spawning language server … failed» می‌داد.
+
+## تصمیم
+
+`lua/lsp.lua` هر server را با `bin` و `shell` توصیف می‌کند و فقط وقتی `executable(bin)` درست است enable می‌کند. بعد از `User DirenvLoaded` (که direnv.vim بعد از export محیط می‌فرستد) دوباره بررسی می‌کند و Neovim serverهای تازه را به bufferهای باز attach می‌کند. `:DevDoctor` می‌گوید برای filetype جاری چه ابزاری هست و کدام devShell آن را دارد.
+
+## پیامد
+
+بیرون از devShell بی‌صدا LSP ندارید (statusline «No LSP» را نشان می‌دهد) و `:checkhealth vim.lsp` دیگر ده‌ها «not executable» ندارد. serverای که فقط در `node_modules/.bin` همان پروژه نصب شده باشد و روی PATH نباشد enable نمی‌شود؛ اگر روزی لازم شد، شرط `executable` باید `node_modules/.bin` را هم ببیند.
+
+---
+
+# debugpy مفسر جدا دارد
+
+## مسئله
+
+hook مربوط به `dev python` عمداً `PYTHONPATH` را unset می‌کند. همین باعث شده بود `python3 -m debugpy.adapter` در همان shell با `No module named 'debugpy'` شکست بخورد؛ یعنی debugger پایتون با config قبلی کار نمی‌کرد.
+
+## گزینه‌ها
+
+1. حذف `unset PYTHONPATH` (آلودگی virtualenvها برمی‌گردد)؛
+2. `nvim-dap-python` با `setup("uv")` (بار اول debugpy را از PyPI می‌گیرد، و PyPI پشت proxy همیشه در دسترس نیست)؛
+3. مفسر جدا با debugpy، از مسیر مطلق.
+
+## تصمیم
+
+گزینه ۳: `NVIM_DEBUGPY_PYTHON = python3.withPackages [debugpy]` از `dev python` export می‌شود و `dap.lua` آن را هنگام شروع session می‌خواند. کد پروژه همچنان با `.venv` اجرا می‌شود.
+
+## شرط بازنگری
+
+اگر پروژه‌ای debugpy را در `.venv` خودش بخواهد (مثلاً remote attach)، همان config `attach` از پیش پشتیبانی می‌شود.
+
+---
+
+# init.lua از بخش‌های ایزوله ساخته می‌شود
+
+## مسئله
+
+فایل‌های Lua با `builtins.readFile` به یک chunk واحد چسبانده می‌شدند. `if not ok then return end` بالای `snacks.lua`, `completion.lua`, `markdown.lua`, `dap.lua` و `ai.lua` در عمل کل config را پایان می‌داد: اگر فقط یک plugin load نمی‌شد، LSP و formatter و Git هم نمی‌آمدند. هر خطای runtime هم بقیه‌ی فایل‌ها را رد می‌کرد، و سقف ۲۰۰ local در یک chunk (۱۱۶ مصرف‌شده) مانع رشد بود.
+
+## تصمیم
+
+`default.nix` هر فایل را در `section(name, function() … end)` اجرا می‌کند؛ خطا گزارش می‌شود (`config: <file>.lua failed`) و بقیه ادامه می‌دهند. `vim.loader.enable()` هم اول config اجرا می‌شود.
+
+## پیامد
+
+خطاها محلی می‌مانند و startup روی همین سخت‌افزار تست از median حدود ۱۴۱ms به ۸۱ms رسید (زمان `NVIM STARTED` در `--startuptime`، ۱۵ اجرا، headless، پس از warm-up؛ عدد روی لپ‌تاپ شما متفاوت است ولی جهتش یکی است). شماره خط در پیام خطا نسبت به chunk تولیدشده است، نه فایل منبع.
+
+---
+
+# ارتقای Neovim: چیزهایی که عمداً اضافه نشد
+
+## مسئله
+
+بعد از رفع باگ‌ها سه ایده‌ی رایج برای «سریع‌تر و کامل‌تر» روی میز بود: lazy-load بیشتر، نصب `tree-sitter-cli` و map کردن `]]`/`[[` برای referenceها.
+
+## گزینه‌ها
+
+- Lazy-load پلاگین‌های سنگین: حدود ۲۰ms از startup کم می‌کند.
+- `tree-sitter-cli`: ۵۷ MiB؛ دو هشدار `:checkhealth` را برمی‌دارد.
+- `]]`/`[[` برای reference بعدی/قبلی.
+
+## تصمیم
+
+هیچ‌کدام. هر trigger lazy یک جای تازه برای فراموش‌کردن یک plugin است و ۲۰ms در برابر startup حدود ۸۰ms ارزش این ریسک را ندارد. parserها pre-built از Nix می‌آیند و پوشه‌ی نصب فقط‌خواندنی است، پس `:TSInstall` اصلاً راهی نیست که استفاده شود و CLI فقط یک هشدار را ساکت می‌کند (در جدول health ثبت شده). ftpluginهای Go، Python، Rust، Lua، Markdown و C خودشان `]]`/`[[` را برای function/section می‌گیرند و map سراسری هیچ‌وقت به آن‌ها نمی‌رسد (با gopls آزمایش شد)؛ به‌جایش `]r`/`[r` دارید. `clang-tools` (حدود ۲۰۰ MiB) فقط در `dev build` است، نه در Neovim.
+
+## پیامد
+
+startup و اندازه‌ی closure Neovim ثابت می‌ماند. یک هشدار دائمی `tree-sitter-cli not found` در health می‌ماند.
+
+## شرط بازنگری
+
+اگر startup از ۱۵۰ms (`NVIM STARTED`) گذشت، یا خواستید parser دلخواهی را خودتان با `:TSInstall` بسازید.
+
+---
+
 # قالب تصمیم جدید
 
 برای افزودن ADR:

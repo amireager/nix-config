@@ -5,8 +5,9 @@ if ok_gitsigns then
 		signs = {
 			add = { text = "▎" },
 			change = { text = "▎" },
-			delete = { text = "" },
-			topdelete = { text = "" },
+			-- delete/topdelete used to have empty text, so removed lines were never marked.
+			delete = { text = "▁" },
+			topdelete = { text = "▔" },
 			changedelete = { text = "▎" },
 			untracked = { text = "▎" },
 		},

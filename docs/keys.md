@@ -104,6 +104,9 @@
 | Normal | `<C-d>` / `<C-u>` | نیم‌صفحه پایین/بالا و وسط‌چین cursor |
 | Normal | `n/N` | نتیجه‌ی بعدی/قبلی search و وسط‌چین cursor |
 | Normal | `<leader>s` | ذخیره |
+| Normal | `<leader>.` | scratch buffer پایدار برای همین project |
+| Normal | `]r` / `[r` | reference بعدی/قبلی کلمه‌ی زیر cursor (نیاز به LSP) |
+| Normal | `zc` / `zo` / `za`، `zR` / `zM` | fold مبتنی بر Treesitter؛ هیچ fold‌ی در شروع بسته نیست |
 | Normal | `<leader>q` | خروج از window |
 | Normal | `<leader>Q` | خروج از همه‌ی windowها |
 | پنجره‌های موقت | `q` | بستن help/quickfix و bufferهای موقت تعریف‌شده |
@@ -147,7 +150,7 @@
 | `<leader>n` | notification history |
 | `<leader>ee` | Snacks Explorer |
 | `<leader>ef` | Explorer در directory فایل جاری |
-| `<leader>ey` | Yazi در pane سمت راست tmux |
+| `<leader>ey` | Yazi: داخل tmux در pane سمت راست، بیرون از tmux در terminal شناور |
 | `Alt-i` در Picker | toggle فایل‌های gitignored |
 | `Alt-h` در Picker | toggle فایل‌های hidden |
 
@@ -173,7 +176,7 @@
 | کلید | عملکرد |
 | :--- | :--- |
 | `gd` | definitionها |
-| `gr` | referenceها |
+| `gr` | referenceها (بدون تأخیر؛ جای `grr` پیش‌فرض Neovim را گرفته و `gra/grn/gri/grt` را کنار `<leader>l*` بی‌استفاده می‌کند) |
 | `gI` | implementationها |
 | `gy` | type definitionها |
 | `K` | Hover documentation |
@@ -181,8 +184,9 @@
 | `<leader>lr` | Rename symbol |
 | `<leader>la` | Code action؛ در Visual روی selection |
 | `<leader>lf` | format مستقیم با LSP |
-| `<leader>li` | `:LspInfo` |
-| `[d` / `]d` | diagnostic قبلی/بعدی |
+| `<leader>li` | `:checkhealth vim.lsp` |
+| `<leader>lR` | `:lsp restart` |
+| `[d` / `]d` | diagnostic قبلی/بعدی (پیش‌فرض Neovim؛ `]D` / `[D` آخرین/اولین) |
 | `<leader>ld` | diagnostic خط در float |
 | `<leader>lq` | انتقال diagnosticها به quickfix |
 | `<leader>cR` | تغییر نام فایل جاری و اطلاع‌دادن به clientهای LSP |
@@ -292,6 +296,16 @@
 
 داخل diff مربوط به inline edit، bindingهای plugin مانند `g2` برای قبول change، `g3` برای رد change و `g1` برای قبول همه استفاده می‌شوند؛ diff را پیش از پذیرش بخوانید.
 
+## اجرا و تست
+
+| Mode | کلید | عملکرد |
+| :--- | :--- | :--- |
+| Normal | `<leader>rr` | اجرای فایل جاری (Python، Rust، Go، JS/TS، Lua، shell) در terminal پایین |
+| Normal | `<leader>rt` | تست پروژه (`pytest`، `cargo nextest`/`cargo test`، `gotestsum`/`go test`، `bun`/`pnpm`/`yarn`/`npm test`) |
+| Normal | `<leader>rR` | تکرار آخرین run/test |
+
+فوکوس در editor می‌ماند؛ `<C-w>j` به خروجی می‌رود، خروجی بعد از پایان process می‌ماند و `q` آن را پنهان می‌کند. دستورها از PATH همین Neovim می‌آیند، پس داخل devShell همان ابزار پروژه‌اند.
+
 ## Python REPL
 
 | Mode | کلید | عملکرد |
@@ -328,6 +342,8 @@
 | `<leader>uw` | highlight کلمه |
 | `<leader>ud` | diagnostic display |
 | `<leader>uc` | conceal |
+| `<leader>uu` | Undo tree بومی Neovim |
+| `<leader>uh` | inlay hintهای LSP |
 | `<leader>uf` / `<leader>uF` | autoformat برای buffer / global |
 | `<leader>ul` | relative line number |
 | `<leader>uW` | word wrap |

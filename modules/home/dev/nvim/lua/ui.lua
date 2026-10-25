@@ -25,10 +25,12 @@ if ok_nf then
 	})
 end
 
--- Catppuccin setup
-local ok_cat, catppuccin = pcall(require, "catppuccin")
-if ok_cat then
-	catppuccin.setup({
+-- Catppuccin and Tokyonight are only installed to be picked with <leader>fC.
+-- Their setup() runs just before one of them is applied (ColorSchemePre fires
+-- before the colorscheme file is sourced, which is when setup() has to have
+-- happened) instead of on every startup.
+local lazy_themes = {
+	catppuccin = {
 		flavour = "mocha",
 		transparent_background = false,
 		term_colors = true,
@@ -39,18 +41,28 @@ if ok_cat then
 			native_lsp = { enabled = true },
 			snacks = true,
 		},
-	})
-end
-
--- Tokyonight setup
-local ok_tn, tokyonight = pcall(require, "tokyonight")
-if ok_tn then
-	tokyonight.setup({
+	},
+	tokyonight = {
 		style = "storm",
 		transparent = false,
 		terminal_colors = true,
-	})
-end
+	},
+}
+
+vim.api.nvim_create_autocmd("ColorSchemePre", {
+	callback = function(event)
+		local theme = event.match:match("^[^-]+") -- "catppuccin-mocha" -> "catppuccin"
+		local opts = lazy_themes[theme]
+		if not opts then
+			return
+		end
+		lazy_themes[theme] = nil
+		local ok, module = pcall(require, theme)
+		if ok then
+			module.setup(opts)
+		end
+	end,
+})
 
 -- Set default active colorscheme (Nightfox custom #0d131a by default, switch live with <leader>fC)
 vim.cmd.colorscheme("nightfox")
@@ -94,21 +106,25 @@ local ok_lualine, lualine = pcall(require, "lualine")
 if ok_lualine then
 	lualine.setup({
 		options = {
-			theme = "catppuccin",
+			theme = "auto", -- follows the colorscheme; "catppuccin" does not exist in the nixpkgs build and warned on every start
 			globalstatus = true,
 			component_separators = "",
 			section_separators = { left = "", right = "" },
-			disabled_filetypes = { statusline = { "dashboard" } },
+			disabled_filetypes = { statusline = { "snacks_dashboard" } },
 		},
 		sections = {
 			lualine_a = { "mode" },
 			lualine_b = { "branch", "diff" },
 			lualine_c = {
-				{ "filename", path = 1, symbols = { modified = " ●", readonly = " ", unnamed = "[No Name]" } },
+				{
+					"filename",
+					path = 1,
+					symbols = { modified = " ●", readonly = " \u{f023}", unnamed = "[No Name]" },
+				},
 			},
 			lualine_x = {
 				"diagnostics",
-				{ lsp_clients, icon = " " },
+				{ lsp_clients, icon = "\u{f085}" },
 				"encoding",
 				"filetype",
 			},
@@ -165,6 +181,12 @@ if ok_which then
 end
 
 -- UI toggles — consistent <leader>u palette
+-- Neovim 0.12 ships an undo tree; it is an opt-in package, so load it on first use.
+vim.keymap.set("n", "<leader>uu", function()
+	vim.cmd.packadd("nvim.undotree")
+	vim.cmd("Undotree")
+end, { desc = "Undo tree (built-in)" })
+
 vim.keymap.set("n", "<leader>ul", function()
 	vim.opt.relativenumber = not vim.opt.relativenumber:get()
 end, { desc = "Toggle relative line numbers" })

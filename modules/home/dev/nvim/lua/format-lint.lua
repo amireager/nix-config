@@ -4,7 +4,9 @@ local ok_conform, conform = pcall(require, "conform")
 if ok_conform then
 	conform.setup({
 		formatters_by_ft = {
-			python = { "ruff_format", "ruff_organize_imports" },
+			-- Imports first, then format: Ruff documents this order, and the reverse can leave
+			-- the sorted import block unformatted.
+			python = { "ruff_organize_imports", "ruff_format" },
 			javascript = { "prettier" },
 			javascriptreact = { "prettier" },
 			typescript = { "prettier" },
@@ -24,10 +26,25 @@ if ok_conform then
 			markdown = { "prettier" },
 			yaml = { "prettier" },
 			toml = { "taplo" },
+			c = { "clang_format" },
+			cpp = { "clang_format" },
+		},
+		formatters = {
+			-- clang-format and clangd both fall back to the LLVM style, which would be
+			-- imposed on every C/C++ file of a project that has no .clang-format.
+			clang_format = {
+				condition = function(_, ctx)
+					return vim.fs.root(ctx.dirname, { ".clang-format", "_clang-format" }) ~= nil
+				end,
+			},
 		},
 		format_on_save = function(bufnr)
 			if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
 				return nil
+			end
+			local ft = vim.bo[bufnr].filetype
+			if (ft == "c" or ft == "cpp") and not vim.fs.root(bufnr, { ".clang-format", "_clang-format" }) then
+				return nil -- format C/C++ on save only where the project defines its style
 			end
 			return { timeout_ms = 1200, lsp_format = "fallback" }
 		end,

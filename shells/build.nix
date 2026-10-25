@@ -12,6 +12,7 @@ mkDevShell {
     # C/C++ compilers & build tools
     gcc
     clang
+    clang-tools # clangd (Neovim LSP), clang-format, clang-tidy; adds ~200 MiB to this shell only
     cmake
     gnumake
     ninja
@@ -48,6 +49,10 @@ mkDevShell {
     {
       key = "Make / Cargo";
       cmd = "make / cargo build --release";
+    }
+    {
+      key = "clangd index";
+      cmd = "cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && ln -sf build/compile_commands.json .";
     }
   ];
 }

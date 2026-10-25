@@ -30,11 +30,34 @@ end
 
 -- ── Adapters ────────────────────────────────────────────────────────────────
 
--- Python. nvim-dap-python locates debugpy on PATH, which Nix provides.
+-- Python. `dev python` unsets PYTHONPATH so Nix libraries never leak into
+-- project virtualenvs, and that also hides `python3Packages.debugpy` from the
+-- shell's own `python3`: `python3 -m debugpy.adapter` died with "No module named
+-- debugpy". The shell therefore exports NVIM_DEBUGPY_PYTHON, an interpreter that
+-- carries debugpy and is reached by absolute path, never touching the project's
+-- environment. direnv exports it *after* Neovim has started, so it is read when
+-- a session starts, not here. (This does not need Neovim's Python provider.)
 local ok_py, dap_python = pcall(require, "dap-python")
 if ok_py then
-	dap_python.setup("python3")
+	dap_python.setup("python3") -- also registers the launch configurations
 	dap_python.test_runner = "pytest"
+
+	local adapter_for, inner
+	local function python_adapter(callback, config)
+		local py = vim.env.NVIM_DEBUGPY_PYTHON
+		if not py or py == "" then
+			py = "python3"
+		end
+		if py ~= adapter_for then
+			-- setup() installs a fresh adapter under the same key (and would repeat
+			-- the configurations); keep that adapter and put this resolver back.
+			dap_python.setup(py, { include_configs = false })
+			inner, adapter_for = dap.adapters.python, py
+			dap.adapters.python, dap.adapters.debugpy = python_adapter, python_adapter
+		end
+		return inner(callback, config)
+	end
+	dap.adapters.python, dap.adapters.debugpy = python_adapter, python_adapter
 end
 
 -- Adapters for compiled languages are NOT installed alongside Neovim: lldb
@@ -121,19 +144,91 @@ dap.configurations.c = { lldb_launch }
 dap.configurations.cpp = { lldb_launch }
 dap.configurations.zig = { lldb_launch }
 
--- Rust needs the compiler's pretty-printers loaded, otherwise Vec and String
--- display as raw pointers rather than their contents.
+-- Rust: build with cargo, then find the executable in cargo's own JSON output
+-- instead of asking you to type target/debug/<name>. A package with several
+-- binary targets gets a picker. nvim-dap resumes a returned coroutine with the
+-- value, so the build does not freeze the editor.
+local function cargo_program()
+	return coroutine.create(function(dap_run_co)
+		local function finish(value)
+			vim.schedule(function()
+				coroutine.resume(dap_run_co, value)
+			end)
+		end
+
+		if vim.fn.executable("cargo") ~= 1 then
+			vim.notify("cargo is not on PATH.\nStart Neovim inside: dev rust", vim.log.levels.WARN, { title = "DAP" })
+			return finish(dap.ABORT)
+		end
+		local root = vim.fs.root(0, "Cargo.toml") or vim.fn.getcwd()
+		vim.notify("cargo build …", vim.log.levels.INFO, { title = "DAP" })
+		vim.system({ "cargo", "build", "--message-format=json-render-diagnostics" }, {
+			cwd = root,
+			text = true,
+		}, function(result)
+			if result.code ~= 0 then
+				vim.schedule(function()
+					local tail = vim.list_slice(vim.split(result.stderr or "", "\n", { trimempty = true }), -12)
+					vim.notify(
+						"cargo build failed\n" .. table.concat(tail, "\n"),
+						vim.log.levels.ERROR,
+						{ title = "DAP" }
+					)
+				end)
+				return finish(dap.ABORT)
+			end
+			local binaries = {}
+			for line in (result.stdout or ""):gmatch("[^\n]+") do
+				local decoded, message = pcall(vim.json.decode, line)
+				if
+					decoded
+					and type(message) == "table"
+					and message.reason == "compiler-artifact"
+					and message.executable
+					and vim.list_contains(message.target.kind, "bin")
+				then
+					binaries[#binaries + 1] = message.executable
+				end
+			end
+			if #binaries == 0 then
+				vim.schedule(function()
+					vim.notify("cargo built no binary target", vim.log.levels.WARN, { title = "DAP" })
+				end)
+				return finish(dap.ABORT)
+			end
+			if #binaries == 1 then
+				return finish(binaries[1])
+			end
+			table.sort(binaries) -- cargo reports artifacts in completion order
+			vim.schedule(function()
+				vim.ui.select(binaries, { prompt = "Debug binary:", format_item = vim.fs.basename }, function(choice)
+					finish(choice or dap.ABORT)
+				end)
+			end)
+		end)
+	end)
+end
+
+-- Rust also needs the compiler's pretty-printers loaded, otherwise Vec and
+-- String display as raw pointers rather than their contents.
+local function rust_pretty_printers()
+	local sysroot = vim.fn.trim(vim.fn.system("rustc --print sysroot"))
+	local etc = sysroot .. "/lib/rustlib/etc"
+	return {
+		'command script import "' .. etc .. '/lldb_lookup.py"',
+		'command source -s 0 "' .. etc .. '/lldb_commands"',
+	}
+end
+
 dap.configurations.rust = {
 	vim.tbl_extend("force", lldb_launch, {
-		name = "Launch (lldb, rust)",
-		initCommands = function()
-			local sysroot = vim.fn.trim(vim.fn.system("rustc --print sysroot"))
-			local etc = sysroot .. "/lib/rustlib/etc"
-			return {
-				'command script import "' .. etc .. '/lldb_lookup.py"',
-				'command source -s 0 "' .. etc .. '/lldb_commands"',
-			}
-		end,
+		name = "Launch (cargo build, lldb)",
+		program = cargo_program,
+		initCommands = rust_pretty_printers,
+	}),
+	vim.tbl_extend("force", lldb_launch, {
+		name = "Launch executable (lldb, rust)",
+		initCommands = rust_pretty_printers,
 	}),
 }
 
@@ -144,19 +239,22 @@ dap.configurations.go = {
 }
 
 -- Debugging this configuration. Run :DapLuaServer in the instance you want to
--- inspect, then attach from a second Neovim.
-local ok_osv, osv = pcall(require, "osv")
-if ok_osv then
-	dap.adapters.nlua = function(callback, config)
-		callback({ type = "server", host = config.host or "127.0.0.1", port = config.port or 8086 })
-	end
-	dap.configurations.lua = {
-		{ type = "nlua", request = "attach", name = "Attach to running Neovim" },
-	}
-	vim.api.nvim_create_user_command("DapLuaServer", function()
-		osv.launch({ port = 8086 })
-	end, { desc = "Start the Lua debug server in this instance" })
+-- inspect, then attach from a second Neovim. one-small-step-for-vimkind is only
+-- required when that command runs, so it is not loaded at startup.
+dap.adapters.nlua = function(callback, config)
+	callback({ type = "server", host = config.host or "127.0.0.1", port = config.port or 8086 })
 end
+dap.configurations.lua = {
+	{ type = "nlua", request = "attach", name = "Attach to running Neovim" },
+}
+vim.api.nvim_create_user_command("DapLuaServer", function()
+	local ok, osv = pcall(require, "osv")
+	if not ok then
+		vim.notify("one-small-step-for-vimkind is not installed", vim.log.levels.WARN, { title = "DAP" })
+		return
+	end
+	osv.launch({ port = 8086 })
+end, { desc = "Start the Lua debug server in this instance" })
 
 -- ── UI ──────────────────────────────────────────────────────────────────────
 local ok_ui, dapui = pcall(require, "dapui")
