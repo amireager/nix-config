@@ -585,7 +585,7 @@ mount_share() {
 
   # Ensure destination parent directory exists in sandbox storage if inside HOME
   if [ "$OPT_EPHEMERAL" -eq 0 ] && [[ "$dst" == "$REAL_HOST_HOME"* ]]; then
-    local rel_path="${dst#$REAL_HOST_HOME/}"
+    local rel_path="${dst#"$REAL_HOST_HOME"/}"
     local parent_dir
     parent_dir="$(dirname "$rel_path")"
     if [ "$parent_dir" != "." ] && [ "$parent_dir" != "/" ]; then

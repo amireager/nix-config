@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 set -uo pipefail
 
 readonly PROXY_HOST="@PROXY_HOST@"

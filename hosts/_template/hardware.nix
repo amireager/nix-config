@@ -1,20 +1,16 @@
 # Replace this with the output of `nixos-generate-config --show-hardware-config`.
-{
-  lib,
-  modulesPath,
-  ...
-}: {
+{modulesPath, ...}: {
   imports = [
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
+  # `boot.initrd.kernelModules` and `boot.extraModulePackages` concatenate in
+  # nixpkgs, so an empty list never clears them — only add the entries this
+  # machine actually needs.
   boot = {
     initrd = {
       availableKernelModules = [];
-      kernelModules = [];
     };
-    kernelModules = [];
-    extraModulePackages = [];
   };
 
   fileSystems."/" = {
@@ -30,5 +26,7 @@
 
   swapDevices = [];
 
-  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+  # The platform is NOT set here. `lib/mkHost.nix` owns
+  # `nixpkgs.hostPlatform` and takes it from the `system` argument that
+  # flake.nix passes per host.
 }

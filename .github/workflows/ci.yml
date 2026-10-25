@@ -61,10 +61,24 @@ jobs:
         run: nix fmt . -- --check .
 
       # Mirrors of the local git-host-check lints.
+      # The linters come from THIS flake's lock file (packages.*), not from the
+      # registry's nixpkgs — otherwise CI would lint the code with a different
+      # nixpkgs than the one the code is written against.
       - name: lint (statix)
-        run: nix run nixpkgs#statix -- check .
+        run: nix run .#statix -- check .
       - name: dead code (deadnix)
-        run: nix run nixpkgs#deadnix -- --fail .
+        run: nix run .#deadnix -- --fail .
       - name: shell syntax (bash -n)
         run: |
           while IFS= read -r f; do bash -n "$f"; done < <(git ls-files '*.sh')
+      # box.sh and nix-proxy.sh carry the sandbox and the daemon-proxy logic.
+      # `bash -n` only proves they parse; shellcheck proves they are correct.
+      # The default severity (style and up) is used: the tracked scripts are
+      # clean at that level. Relax it to --severity=error if style findings
+      # ever become too noisy to fix.
+      - name: shell lint (shellcheck)
+        run: |
+          mapfile -t scripts < <(git ls-files '*.sh')
+          if [ ${#scripts[@]} -gt 0 ]; then
+            nix run .#shellcheck -- --external-sources "${scripts[@]}"
+          fi

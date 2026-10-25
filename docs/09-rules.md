@@ -207,6 +207,43 @@ journalctl -u dnscrypt-proxy -b --no-pager
 
 ---
 
+# binary cache و معنی واقعی `fallback`
+
+`nix.settings.fallback = false` در `modules/nixos/performance.nix` عمدی است، ولی معنای دقیقش با آنچه معمولاً تصور می‌شود فرق دارد. اندازه‌گیری‌شده روی Nix 2.35:
+
+| وضعیت cache | `fallback = false` | `fallback = true` |
+| :--- | :--- | :--- |
+| cache miss (404 تمیز) | از سورس build می‌شود | از سورس build می‌شود |
+| cache کاملاً در دسترس نیست | فقط warning، cache بعدی امتحان می‌شود | فقط warning، cache بعدی امتحان می‌شود |
+| cache خطا می‌دهد (502، timeout) | build **fail** می‌شود | cache ۶۰ ثانیه disable می‌شود، بعد source build |
+
+نکته‌ی مهم: خطای cache فقط وقتی کشنده است که مسیر موردنظر در **هیچ cache دیگری** نباشد. یعنی blast radius محدود است به همان بسته‌هایی که فقط در یک cache زندگی می‌کنند — دقیقاً همان‌هایی که source-buildشان گران است (`niri`، `noctalia`، `zen-browser`).
+
+اولویت: `cache.nixos.org` برابر ۴۰ است و Cachixها ۴۱. یعنی Cachixها **اول** امتحان می‌شوند، پس cache خرابِ Cachix اولین چیزی است که خرابی‌اش دیده می‌شود.
+
+## تشخیص
+
+```bash
+dev nix
+nix-cache-doctor
+```
+
+خروجی: وضعیت هر cache (reachable / unreachable / کلید امضا اعتمادنشده)، priority هرکدام، اینکه کدام input به کدام cache نیاز دارد، و `fallback` مؤثر. اگر cache خراب بود:
+
+```bash
+nix_proxy test          # آیا listener محلی سالم است
+nix_proxy on            # daemon را از proxy رد کن
+nix_proxy off           # برگرداندن حالت مستقیم
+```
+
+برای یک command تکی، بدون دست‌زدن به daemon:
+
+```bash
+nix --option substituters "https://cache.nixos.org https://noctalia.cachix.org" build <target>
+```
+
+---
+
 # تغییر network را از diagnosis جدا کن
 
 ابزارهای `dev net` service نیستند. اجرای `nmap` یا `testssl` setting سیستم را عوض نمی‌کند؛ اجرای proxy core با config مشخص process runtime است؛ تغییر `modules/nixos/network.nix` policy نسل سیستم است.
@@ -478,7 +515,10 @@ CI فعلی (GitHub Actions) هر push را با این گام‌ها می‌س�
 - formatting از طریق output `formatter` خود Flake (alejandra)؛
 - static lint: statix و deadnix؛
 - shell syntax: `bash -n` روی `*.sh`های tracked؛
+- shell lint: `shellcheck` روی همان `*.sh`های tracked؛
 - lint خود workflow و ارتقای نسخه‌ی actionها با dependabot.
+
+statix و deadnix از `packages.*` خود Flake اجرا می‌شوند (`nix run .#statix`)، نه از registry. دلیل: CI باید همان nixpkgsای را lint کند که کد با آن نوشته شده — وگرنه نسخه‌ی ابزار با lock هم‌خوان نیست.
 
 CI انجام نمی‌دهد:
 

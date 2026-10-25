@@ -68,6 +68,13 @@
     # exposes only standard devShell outputs.
     devShells.${devSystem} = shells;
 
+    # Linters used by CI. They are exposed as flake outputs so CI runs the
+    # versions from THIS repository's flake.lock instead of the registry's
+    # nixpkgs, which would drift from the code it is checking.
+    packages.${devSystem} = {
+      inherit (pkgs) statix deadnix shellcheck;
+    };
+
     formatter.${devSystem} = pkgs.alejandra;
   };
 }
